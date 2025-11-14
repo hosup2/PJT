@@ -50,14 +50,28 @@ class MovieSerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    movie = MovieSerializer()
+
+    class MovieDetailSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Movie
+            fields = ['title',]
+
+    movie = MovieDetailSerializer(read_only = True)
 
     class Meta:
         model = Review
-        fields = ['id','movie','title','content']
+        fields = ['id','movie','title','content',]
 
 
 class MovieListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
-        fields = ['title','overview']
+        fields = ['title','overview',]
+
+
+class ReviewListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = ['title','content',]
+
+
