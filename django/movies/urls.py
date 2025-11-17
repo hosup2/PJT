@@ -9,4 +9,5 @@ urlpatterns = [
     path('reviews/',views.review_list),
     path('reviews/<int:movies_pk>/create/',views.reviews_create),  
     path('reviews/<int:reviews_pk>/',views.review_detail),
+    path('movies/search/', views.movie_search),
 ]

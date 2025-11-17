@@ -4,7 +4,7 @@ from rest_framework import status
 from .models import Actor,Movie,Review
 from .serializers import ActorSerializer, MovieSerializer, ReviewSerializer
 from .serializers import ActorListserializer, MovieListSerializer, ReviewListSerializer
-
+from django.db.models import Q
 
 # Create your views here.
 
@@ -79,3 +79,17 @@ def reviews_create(request,movies_pk):
     else:
         return Response(status = status.HTTP_405_METHOD_NOT_ALLOWED)
     
+@api_view(['GET'])
+def movie_search(request):
+    query = request.GET.get('q', '')
+
+    if query == '':
+        return Response({"message": "검색어가 비어있습니다."})
+    
+    movies = Movie.objects.filter(
+        Q(title__icontains = query)|
+        Q(overview__icontains = query)
+    )
+
+    serializer = MovieListSerializer(movies, many=True)
+    return Response(serializer.data)
