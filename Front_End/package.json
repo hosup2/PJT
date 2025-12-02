@@ -1,0 +1,21 @@
+{
+      "name": "Movie Rating System",
+      "version": "0.1.0",
+      "private": true,
+      "dependencies": {
+            "class-variance-authority": "^0.7.1",
+            "clsx": "*",
+            "lucide-vue-next": "*",
+            "tailwind-merge": "*",
+            "vue": "*"
+      },
+      "devDependencies": {
+            "@types/node": "^20.10.0",
+            "@vitejs/plugin-vue": "^5.0.5",
+            "vite": "^6.4.1"
+      },
+      "scripts": {
+            "dev": "vite",
+            "build": "vite build"
+      }
+}
