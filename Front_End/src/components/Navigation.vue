@@ -4,7 +4,7 @@
       <div class="flex items-center justify-between h-16">
         <div class="flex items-center gap-2">
           <Film class="w-8 h-8 text-purple-500" />
-          <span class="text-xl">MovieRate</span>
+          <span class="text-xl">MIA</span>
         </div>
         
         <div class="flex items-center gap-6">
