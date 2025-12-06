@@ -15,7 +15,7 @@ RatingDistributionChart.vue
 - 메인 네비게이션 바 (Navigation.vue) 구현        
 - 메인 페이지 Hero 섹션 (Herosection.vue) 구현       
 - 영화 목록을 그리드 형태로 표시하는 MovieGrid.vue 구현
-- 사용자 인증 모달 Authmodal.vue 추가
+- 사용자 인증 모달 AuthModal.vue 추가 (이후 LoginModal.vue로 교체되어 스타일 및 기능 개선)
 - 전역 스타일 및 CSS 초기화 (styles/globals.css, index.css)  
 - 개발용 Mock Data
 ## 12.03

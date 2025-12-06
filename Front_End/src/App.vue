@@ -61,11 +61,10 @@
     </main>
 
     <!-- 로그인 모달 -->
-    <AuthModal
+    <LoginModal
       :is-open="showAuthModal"
       @close="showAuthModal = false"
       @login="handleLogin"
-      @signup="handleSignup"
     />
   </div>
 </template>
@@ -77,7 +76,7 @@ import HeroSection from './components/HeroSection.vue';
 import MovieGrid from './components/MovieGrid.vue';
 import MovieDetail from './components/MovieDetail.vue';
 import UserProfile from './components/UserProfile.vue';
-import AuthModal from './components/AuthModal.vue';
+import LoginModal from './components/LoginModal.vue';
 import { mockMovies, mockUsers } from './data/mockData';
 
 interface User {
@@ -106,7 +105,7 @@ const handleNavigate = (view: 'home' | 'movie' | 'profile', userId?: number) => 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const handleLogin = (email: string, password: string) => {
+const handleLogin = ({ email, password }: { email: string, password: string }) => {
   // TODO: Implement actual authentication
   const user = mockUsers.find(u => u.email === email);
   if (user) {
