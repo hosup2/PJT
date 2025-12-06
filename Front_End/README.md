@@ -1,11 +1,11 @@
 ## FrontEnd
 
 ## 12.05
-- 사용자 프로필 조회 및 편집을 위한 UserProfile.vue,     
-ProfileEditModal.vue 컴포넌트 구조 생성
+- 사용자 프로필 조회 및 편집을 위한 
+UserProfile.vue, ProfileEditModal.vue 컴포넌트 구조 생성
 - 영화 상세 정보 표시를 위한
 MovieDetail.vue 컴포넌트 구조 생성
-- 별점 표시 및 평가를 위한  
+- 별점 표시 및 평가를 위한 
 StarRating.vue 컴포넌트 추가     
 - 댓글 및 평점 목록 관련    
 CommentSection.vue,
