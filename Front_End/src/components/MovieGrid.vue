@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="mb-8">
-      <h1 class="text-3xl mb-2">인기 영화</h1>
+      <!-- <h1 class="text-3xl mb-2">인기 영화</h1> -->
       <p class="text-gray-400">최근 가장 많이 평가된 영화들</p>
     </div>
     
