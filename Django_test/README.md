@@ -1,4 +1,10 @@
 ## Back_End Test
+
+## 12.07
+- API 테스트용 seed_data 생성
+- GMS를 이용해 gpt-4o-mini로 영화 추천 logic 구현 (성공)
+- users 정보 CRUD 구현 (인증 X)
+
 ## 12.06
 - user관련 api 구현
 
@@ -7,5 +13,6 @@
 - Test용 추천로직 구현
 
     -> 해당 유저의 선호 장르 기반 추천
+
 ## 12.05
 - TMDB_API 연결 및 ERD기반 db설계
