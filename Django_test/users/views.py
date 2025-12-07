@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -69,3 +70,34 @@ class WatchedMovieView(APIView):
             {"message": "Watched movie recorded"},
             status=status.HTTP_201_CREATED
         )
+
+# 내 정보 조회
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+        })
+
+# 내 정보 수정
+class MeUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request):
+        user = request.user
+        user.email = request.data.get("email", user.email)
+        user.save()
+        return Response({"message": "Profile updated"})
+
+# 삭제
+class MeDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        request.user.delete()
+        return Response({"message": "User deleted"})
+
