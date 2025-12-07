@@ -15,7 +15,7 @@
   style="width: 300px; height: 400px;"
   >
   <img
-  :src="movie.poster_path"
+  :src="movie.backdrops"
   :alt="movie.title"
   class="w-full h-full object-cover"
   />

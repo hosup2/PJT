@@ -8,7 +8,7 @@
           class="flex items-center gap-2 hover:opacity-90 transition-all duration-200"
         >
           <!-- <img src="/mia.png" alt="MIA 로봇" style="height: 40px; width: auto;" /> -->
-          <img src="/mia_logo1.png" alt="MIA 로고" style="height: 70px; width: auto;" />
+          <img src="/mia_logo1.png" alt="MIA 로고" style="height: 80px; width: auto; margin-left: 30px" />
         </button>
         
         <!-- 메뉴 -->

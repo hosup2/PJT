@@ -20,7 +20,8 @@ export const mockMovies = [
       }
     },
     tmdb_rating: 8.4,
-    imdb_rating: 8.7
+    imdb_rating: 8.7,
+    backdrops: 'https://image.tmdb.org/t/p/w1280/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg'
   },
   {
     id: 2,
@@ -43,8 +44,81 @@ export const mockMovies = [
       }
     },
     tmdb_rating: 8.5,
-    imdb_rating: 8.5
-  }
+    imdb_rating: 8.5,
+    backdrops: 'https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg'
+  },
+   {
+    id: 3,
+    title: '다크 나이트',
+    original_title: 'The Dark Knight',
+    poster_path: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
+    release_date: '2008-08-06',
+    runtime: 152,
+    genres: ['액션', '범죄', '드라마'],
+    overview: '배트맨은 혼돈을 퍼뜨리는 범죄자 조커와 맞서며 정의의 한계를 시험받는다.',
+    stats: {
+      avg_rating: 4.8,
+      rating_count: 31245,
+      rating_distribution: {
+        '5.0': 21032,
+        '4.0': 7812,
+        '3.0': 1890,
+        '2.0': 321,
+        '1.0': 190
+      }
+    },
+    tmdb_rating: 9.0,
+    imdb_rating: 9.0,
+    backdrops: 'https://image.tmdb.org/t/p/original/plDp52MirFHc2PMJRMNWoG0kfr3.jpg'
+  },
+  {
+    id: 4,
+    title: '라라랜드',
+    original_title: 'La La Land',
+    poster_path: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg',
+    release_date: '2016-12-07',
+    runtime: 128,
+    genres: ['로맨스', '드라마', '음악'],
+    overview: '꿈을 꾸는 두 남녀가 사랑과 현실 사이에서 선택을 마주하게 된다.',
+    stats: {
+      avg_rating: 4.1,
+      rating_count: 19842,
+      rating_distribution: {
+        '5.0': 8452,
+        '4.0': 6921,
+        '3.0': 3210,
+        '2.0': 812,
+        '1.0': 447
+      }
+    },
+    tmdb_rating: 7.9,
+    imdb_rating: 8.0,
+    backdrops: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg'
+  },
+  {
+    id: 5,
+    title: '위플래쉬',
+    original_title: 'Whiplash',
+    poster_path: 'https://image.tmdb.org/t/p/original/sNoZ3DAjOtCtpGvaEubMELDNtaS.jpg',
+    release_date: '2015-03-12',
+    runtime: 107,
+    genres: ['드라마', '음악'],
+    overview: '완벽을 향한 광기 어린 집착 속에서 젊은 드러머와 폭군 같은 스승이 충돌하며 벌어지는 이야기.',
+    stats: {
+      avg_rating: 4.6,
+      rating_count: 18432,
+      rating_distribution: {
+        '5.0': 10231,
+        '4.0': 5214,
+        '3.0': 2145,
+        '2.0': 541,
+        '1.0': 301
+      }
+    },
+    tmdb_rating: 8.5,
+    imdb_rating: 8.5,
+    backdrops: 'https://image.tmdb.org/t/p/original/1kuYEvLkX2nTkbfzN6X0w0xQFQU.jpg'
+  },
 ];
 
 export const mockUsers = [

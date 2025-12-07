@@ -1,5 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-950 text-white">
+    <!-- Navigation을 맨 위에 fixed로 겹치기 -->
     <Navigation 
       :current-view="currentView"
       :is-logged-in="isLoggedIn"
@@ -10,12 +11,14 @@
     />
 
     <div class="animate-float" style="position: fixed; bottom: 32px; right: 32px; z-index: 50;">
-  <img src="/mia.png" alt="MIA 로봇" style="height: 100px; width: auto;" class="drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform" />
-</div>
+      <img src="/mia.png" alt="MIA 로봇" style="height: 100px; width: auto;" class="drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform" />
+    </div>
 
-    <main>
+    <!-- main을 padding 없이 시작 -->
+    <main class="relative">
       <!-- 홈 화면 -->
       <template v-if="currentView === 'home'">
+        <!-- HeroSection을 화면 맨 위에서 시작 -->
         <HeroSection />
         
         <!-- 인기 영화 -->
@@ -39,15 +42,15 @@
 
       <!-- 영화 상세 -->
       <MovieDetail 
-      v-if="currentView === 'movie' && selectedMovieId"
-      :movie-id="selectedMovieId"
-      :current-user="currentUser"
-      :is-logged-in="isLoggedIn"  @back="currentView = 'home'"
-      @profile-click="handleNavigate"
-      @open-auth= "showAuthModal = true"
-      @navigate-to-user = "handleNavigateToUser"
-  
-    />
+        v-if="currentView === 'movie' && selectedMovieId"
+        :movie-id="selectedMovieId"
+        :current-user="currentUser"
+        :is-logged-in="isLoggedIn"
+        @back="currentView = 'home'"
+        @profile-click="handleNavigate"
+        @open-auth="showAuthModal = true"
+        @navigate-to-user="handleNavigateToUser"
+      />
 
       <!-- 프로필 -->
       <UserProfile 
@@ -61,10 +64,11 @@
     </main>
 
     <!-- 로그인 모달 -->
-    <LoginModal
+    <AuthModal
       :is-open="showAuthModal"
       @close="showAuthModal = false"
       @login="handleLogin"
+      @signup="handleSignup"
     />
   </div>
 </template>
@@ -76,7 +80,7 @@ import HeroSection from './components/HeroSection.vue';
 import MovieGrid from './components/MovieGrid.vue';
 import MovieDetail from './components/MovieDetail.vue';
 import UserProfile from './components/UserProfile.vue';
-import LoginModal from './components/LoginModal.vue';
+import AuthModal from './components/AuthModal.vue';
 import { mockMovies, mockUsers } from './data/mockData';
 
 interface User {
@@ -105,7 +109,7 @@ const handleNavigate = (view: 'home' | 'movie' | 'profile', userId?: number) => 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const handleLogin = ({ email, password }: { email: string, password: string }) => {
+const handleLogin = (email: string, password: string) => {
   // TODO: Implement actual authentication
   const user = mockUsers.find(u => u.email === email);
   if (user) {
@@ -143,10 +147,9 @@ const handleLogout = () => {
   alert('로그아웃되었습니다.');
 };
 
-// App.vue의 <script setup> (약 89번째 줄 이후에 추가)
 const handleNavigateToUser = (userId: number) => {
   selectedUserId.value = userId; 
-  currentView.value = 'profile'; // 뷰를 profile로 확실하게 전환
+  currentView.value = 'profile';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
