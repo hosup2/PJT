@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import UserRecommendView
+from .views import RecommendMovieView
 
 urlpatterns = [
-    path('', UserRecommendView.as_view()),
+    path("", RecommendMovieView.as_view()),
 ]
