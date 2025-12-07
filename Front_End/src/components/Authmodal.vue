@@ -6,26 +6,102 @@
           &times;
         </button>
         
-        <h2 class="modal-title">로그인</h2>
-        <p class="modal-subtitle">MIA에 오신 것을 환영합니다!</p>
+        <!-- Login Form -->
+        <template v-if="mode === 'login'">
+          <h2 class="modal-title">로그인</h2>
+          <p class="modal-subtitle">MIA에 오신 것을 환영합니다!</p>
 
-        <form @submit.prevent="handleSubmit">
-          <div class="input-group">
-            <label for="email">이메일</label>
-            <input id="email" v-model="email" type="email" placeholder="you@example.com" required />
+          <form @submit.prevent="handleLoginSubmit">
+            <div class="input-group">
+              <label for="login-email">이메일</label>
+              <input 
+                id="login-email" 
+                v-model="loginForm.email" 
+                type="email" 
+                placeholder="you@example.com" 
+                required 
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="login-password">비밀번호</label>
+              <input 
+                id="login-password" 
+                v-model="loginForm.password" 
+                type="password" 
+                placeholder="••••••••" 
+                required 
+              />
+            </div>
+
+            <button type="submit" class="submit-button">로그인</button>
+          </form>
+
+          <div class="switch-mode">
+            <p>계정이 없으신가요? <button @click="mode = 'signup'">회원가입</button></p>
           </div>
+        </template>
 
-          <div class="input-group">
-            <label for="password">비밀번호</label>
-            <input id="password" v-model="password" type="password" placeholder="••••••••" required />
+        <!-- Signup Form -->
+        <template v-else>
+          <h2 class="modal-title">회원가입</h2>
+          <p class="modal-subtitle">MIA와 함께 영화 여행을 시작하세요!</p>
+
+          <form @submit.prevent="handleSignupSubmit">
+            <div class="input-group">
+              <label for="signup-username">사용자명</label>
+              <input 
+                id="signup-username" 
+                v-model="signupForm.username" 
+                type="text" 
+                placeholder="username" 
+                required 
+                minlength="3"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="signup-email">이메일</label>
+              <input 
+                id="signup-email" 
+                v-model="signupForm.email" 
+                type="email" 
+                placeholder="you@example.com" 
+                required 
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="signup-password">비밀번호</label>
+              <input 
+                id="signup-password" 
+                v-model="signupForm.password" 
+                type="password" 
+                placeholder="••••••••" 
+                required 
+                minlength="8"
+              />
+            </div>
+
+            <div class="input-group">
+              <label for="signup-password-confirm">비밀번호 확인</label>
+              <input 
+                id="signup-password-confirm" 
+                v-model="signupForm.passwordConfirm" 
+                type="password" 
+                placeholder="••••••••" 
+                required 
+                minlength="8"
+              />
+            </div>
+
+            <button type="submit" class="submit-button">회원가입</button>
+          </form>
+
+          <div class="switch-mode">
+            <p>이미 계정이 있으신가요? <button @click="mode = 'login'">로그인</button></p>
           </div>
-
-          <button type="submit" class="submit-button">로그인</button>
-        </form>
-
-        <div class="switch-mode">
-          <p>계정이 없으신가요? <button @click="handleSwitchMode">회원가입</button></p>
-        </div>
+        </template>
       </div>
     </div>
   </transition>
@@ -41,18 +117,30 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'login', payload: { email: string; password: string }): void;
-  (e: 'switch-to-signup'): void;
+  (e: 'login', email: string, password: string): void;
+  (e: 'signup', username: string, email: string, password: string): void;
 }>();
 
-const email = ref('');
-const password = ref('');
+const mode = ref<'login' | 'signup'>('login');
+
+const loginForm = ref({
+  email: '',
+  password: ''
+});
+
+const signupForm = ref({
+  username: '',
+  email: '',
+  password: '',
+  passwordConfirm: ''
+});
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
-    // Reset form when modal opens
-    email.value = '';
-    password.value = '';
+    // Reset forms when modal opens
+    mode.value = 'login';
+    loginForm.value = { email: '', password: '' };
+    signupForm.value = { username: '', email: '', password: '', passwordConfirm: '' };
   }
 });
 
@@ -60,14 +148,28 @@ const handleClose = () => {
   emit('close');
 };
 
-const handleSubmit = () => {
-  emit('login', { email: email.value, password: password.value });
+const handleLoginSubmit = () => {
+  emit('login', loginForm.value.email, loginForm.value.password);
 };
 
-const handleSwitchMode = () => {
-  // In a real app, this might emit an event to open a different modal
-  alert('회원가입 UI로 전환하는 기능은 아직 구현되지 않았습니다.');
-  emit('switch-to-signup');
+const handleSignupSubmit = () => {
+  // Basic validation
+  if (signupForm.value.password !== signupForm.value.passwordConfirm) {
+    alert('비밀번호가 일치하지 않습니다.');
+    return;
+  }
+
+  if (signupForm.value.password.length < 8) {
+    alert('비밀번호는 최소 8자 이상이어야 합니다.');
+    return;
+  }
+
+  if (signupForm.value.username.length < 3) {
+    alert('사용자명은 최소 3자 이상이어야 합니다.');
+    return;
+  }
+
+  emit('signup', signupForm.value.username, signupForm.value.email, signupForm.value.password);
 };
 </script>
 
@@ -88,7 +190,7 @@ const handleSwitchMode = () => {
 
 .modal-content {
   position: relative;
-  background: #18181B; /* Darker gray */
+  background: #18181B;
   color: #F8F8F8;
   padding: 40px;
   border-radius: 16px;
@@ -96,6 +198,8 @@ const handleSwitchMode = () => {
   max-width: 420px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
   border: 1px solid #27272A;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .close-button {
@@ -150,6 +254,7 @@ const handleSwitchMode = () => {
   color: #FFFFFF;
   font-size: 16px;
   transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
 }
 
 .input-group input::placeholder {
@@ -158,13 +263,13 @@ const handleSwitchMode = () => {
 
 .input-group input:focus {
   outline: none;
-  border-color: #8B5CF6; /* Purple-500 */
+  border-color: #8B5CF6;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3);
 }
 
 .submit-button {
   width: 100%;
-  background-color: #7C3AED; /* Purple-600 */
+  background-color: #7C3AED;
   color: white;
   font-weight: bold;
   font-size: 16px;
@@ -177,7 +282,7 @@ const handleSwitchMode = () => {
 }
 
 .submit-button:hover {
-  background-color: #6D28D9; /* Purple-700 */
+  background-color: #6D28D9;
 }
 
 .switch-mode {
@@ -190,7 +295,7 @@ const handleSwitchMode = () => {
 .switch-mode button {
   background: none;
   border: none;
-  color: #8B5CF6; /* Purple-500 */
+  color: #8B5CF6;
   font-weight: 500;
   cursor: pointer;
   padding: 0;

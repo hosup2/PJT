@@ -7,6 +7,7 @@ from .views import (
     MeView,
     MeUpdateView,
     MeDeleteView,
+    SignupView,
 )
 
 urlpatterns = [
@@ -17,4 +18,5 @@ urlpatterns = [
     path("me/", MeView.as_view()),
     path("me/update/", MeUpdateView.as_view()),
     path("me/delete/", MeDeleteView.as_view()),
+    path("signup/", SignupView.as_view()),
 ]

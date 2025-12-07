@@ -138,11 +138,61 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Play, Star, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 
 const featuredMovies = ref([
-  { id: 1, title: '인터스텔라', description: '우주를 가로지르는 장대한 모험. 인류의 생존을 위해 새로운 행성을 찾아 떠나는 우주비행사들의 이야기', backdrop: 'https://image.tmdb.org/t/p/original/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg', badge: '지금 인기', rating: '8.6', year: '2014', genre: 'SF, 드라마', duration: '169분' },
-  { id: 2, title: '기생충', description: '전원 백수인 기택 가족이 IT기업 CEO 박사장의 가족에게 접근하면서 벌어지는 이야기', backdrop: 'https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg', badge: '오스카 수상', rating: '8.5', year: '2019', genre: '드라마, 스릴러', duration: '132분' },
-  { id: 3, title: '덩케르크', description: '제2차 세계대전 당시 덩케르크 해변에서 벌어진 역사상 가장 위대한 구출 작전', backdrop: 'https://image.tmdb.org/t/p/original/ddIkmH3TpR6XSc47jj0BrGK5Rbz.jpg', badge: '화제의 작품', rating: '7.9', year: '2017', genre: '전쟁, 액션', duration: '106분' },
-  { id: 4, title: '조커', description: '1980년대 고담시를 배경으로 한 아서 플렉의 광기 어린 변신', backdrop: 'https://image.tmdb.org/t/p/original/hO7KbdvGOtDdeg0W4Y5nKEHeDDh.jpg', badge: '평론가 극찬', rating: '8.4', year: '2019', genre: '범죄, 드라마', duration: '122분' },
-  { id: 5, title: '블레이드 러너 2049', description: '2049년, 새로운 블레이드 러너 K가 30년 전 사라진 릭 데커드를 찾아 나서는 이야기', backdrop: 'https://image.tmdb.org/t/p/original/mVr0UiqyltcfqxbAUcLl9zWL8ah.jpg', badge: '시각적 걸작', rating: '8.0', year: '2017', genre: 'SF, 스릴러', duration: '164분' }
+  {
+    id: 1,
+    title: '인터스텔라',
+    description: '우주를 가로지르는 장대한 모험. 인류의 생존을 위해 새로운 행성을 찾아 떠나는 우주비행사들의 이야기',
+    backdrop: 'https://image.tmdb.org/t/p/original/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg',
+    badge: '지금 인기',
+    rating: '8.6',
+    year: '2014',
+    genre: 'SF, 드라마',
+    duration: '169분'
+  },
+  {
+    id: 2,
+    title: '기생충',
+    description: '전원 백수인 기택 가족이 IT기업 CEO 박사장의 가족에게 접근하면서 벌어지는 이야기',
+    backdrop: 'https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg',
+    badge: '오스카 수상',
+    rating: '8.5',
+    year: '2019',
+    genre: '드라마, 스릴러',
+    duration: '132분'
+  },
+  {
+    id: 6,
+    title: '부산행',
+    description: '정체불명의 바이러스가 퍼진 열차 안에서 살아남기 위한 사람들의 사투',
+    backdrop: 'https://image.tmdb.org/t/p/original/fVpFOcQyHJM2di9upgSIwWD5wac.jpg',
+    badge: '국내 흥행작',
+    rating: '7.6',
+    year: '2016',
+    genre: '액션, 스릴러',
+    duration: '118분'
+  },
+  {
+    id: 4,
+    title: '조커',
+    description: '1980년대 고담시를 배경으로 한 아서 플렉의 광기 어린 변신',
+    backdrop: 'https://image.tmdb.org/t/p/original/hO7KbdvGOtDdeg0W4Y5nKEHeDDh.jpg',
+    badge: '평론가 극찬',
+    rating: '8.4',
+    year: '2019',
+    genre: '범죄, 드라마',
+    duration: '122분'
+  },
+  {
+    id: 7,
+    title: '센과 치히로의 행방불명',
+    description: '신들의 세계에 들어간 소녀 치히로가 가족을 구하기 위해 성장해가는 이야기',
+    backdrop: 'https://image.tmdb.org/t/p/original/ukfI9QkU1aIhOhKXYWE9n3z1mFR.jpg',
+    badge: '애니메이션 명작',
+    rating: '8.6',
+    year: '2001',
+    genre: '애니메이션, 판타지',
+    duration: '125분'
+  }
 ]);
 
 const carouselTrack = ref<HTMLElement | null>(null);

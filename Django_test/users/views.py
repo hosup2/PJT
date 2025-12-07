@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from .serializers import SignupSerializer
 from rest_framework.permissions import IsAuthenticated
 
 from django.shortcuts import get_object_or_404
@@ -101,3 +102,16 @@ class MeDeleteView(APIView):
         request.user.delete()
         return Response({"message": "User deleted"})
 
+# 회원가입
+class SignupView(APIView):
+    permission_classes = []  # ✅ 인증 불필요
+
+    def post(self, request):
+        serializer = SignupSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Signup successful"},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=400)

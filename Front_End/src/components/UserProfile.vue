@@ -25,13 +25,6 @@
               :alt="user.username"
               class="w-24 h-24 rounded-full bg-gray-800 object-cover"
             />
-            <button
-              v-if="isOwnProfile"
-              @click="showEditModal = true"
-              class="absolute bottom-0 right-0 w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors"
-            >
-              <Edit class="w-4 h-4" />
-            </button>
           </div>
           
           <div class="flex-1">

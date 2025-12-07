@@ -3,7 +3,8 @@
 ## 12.07
 - API 테스트용 seed_data 생성
 - GMS를 이용해 gpt-4o-mini로 영화 추천 logic 구현 (성공)
-- users 정보 CRUD 구현 (인증 X)
+- users 정보 CRUD 구현 (성공)
+- JWT token 인증
 
 ## 12.06
 - user관련 api 구현

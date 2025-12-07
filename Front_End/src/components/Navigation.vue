@@ -7,7 +7,6 @@
           @click="emit('navigate', 'home')"
           class="flex items-center gap-2 hover:opacity-90 transition-all duration-200"
         >
-          <!-- <img src="/mia.png" alt="MIA 로봇" style="height: 40px; width: auto;" /> -->
           <img src="/mia_logo1.png" alt="MIA 로고" style="height: 80px; width: auto; margin-left: 30px" />
         </button>
         
@@ -47,7 +46,7 @@
               <span class="text-base">내 영화</span>
             </button>
             
-            <div class="relative">
+            <div class="relative" ref="userMenuRef">
               <button
                 @click="showUserMenu = !showUserMenu"
                 class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-200"
@@ -63,13 +62,33 @@
                 </div>
               </button>
               
+              <!-- 말풍선 스타일 드롭다운 -->
               <div
                 v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl py-2"
+                style="position: absolute; left: calc(100% + 8px); top: 0; width: 140px; background-color: #111827; border: 1px solid rgba(147, 51, 234, 0.3); border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(147, 51, 234, 0.3), 0 8px 10px -6px rgba(147, 51, 234, 0.3); padding: 4px; z-index: 9999;"
               >
+                <!-- 왼쪽 말풍선 화살표 -->
+                <div style="position: absolute; left: -8px; top: 12px; width: 16px; height: 16px; background-color: #111827; border-left: 1px solid rgba(147, 51, 234, 0.3); border-bottom: 1px solid rgba(147, 51, 234, 0.3); transform: rotate(45deg);"></div>
+                
+                <!-- 프로필 편집 버튼 -->
+                <button
+                  @click="handleProfileEdit"
+                  style="width: 100%; padding: 8px 12px; text-align: center; color: #d1d5db; font-weight: 500; font-size: 0.875rem; border-radius: 8px; border: none; background: transparent; cursor: pointer; transition: all 0.2s; margin-bottom: 2px;"
+                  @mouseover="$event.target.style.backgroundColor = '#9333ea'; $event.target.style.color = '#ffffff'"
+                  @mouseout="$event.target.style.backgroundColor = 'transparent'; $event.target.style.color = '#d1d5db'"
+                >
+                  프로필 편집
+                </button>
+
+                <!-- 구분선 -->
+                <div style="height: 1px; background-color: rgba(147, 51, 234, 0.2); margin: 4px 8px;"></div>
+                
+                <!-- 로그아웃 버튼 -->
                 <button
                   @click="handleLogout"
-                  class="w-full px-4 py-3 text-left text-gray-300 hover:bg-gray-800 hover:text-white transition-colors font-medium"
+                  style="width: 100%; padding: 8px 12px; text-align: center; color: #d1d5db; font-weight: 500; font-size: 0.875rem; border-radius: 8px; border: none; background: transparent; cursor: pointer; transition: all 0.2s; margin-top: 2px;"
+                  @mouseover="$event.target.style.backgroundColor = '#9333ea'; $event.target.style.color = '#ffffff'"
+                  @mouseout="$event.target.style.backgroundColor = 'transparent'; $event.target.style.color = '#d1d5db'"
                 >
                   로그아웃
                 </button>
@@ -92,7 +111,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { Film, User, Home } from 'lucide-vue-next';
 
 interface User {
@@ -114,12 +133,34 @@ const emit = defineEmits<{
   navigate: [view: 'home' | 'movie' | 'profile', userId?: number];
   openAuth: [];
   logout: [];
+  editProfile: [];
 }>();
 
 const showUserMenu = ref(false);
+const userMenuRef = ref<HTMLElement | null>(null);
 
 const handleLogout = () => {
   showUserMenu.value = false;
   emit('logout');
 };
+
+const handleProfileEdit = () => {
+  showUserMenu.value = false;
+  emit('editProfile');
+};
+
+// 외부 클릭 감지
+const handleClickOutside = (event: MouseEvent) => {
+  if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
+    showUserMenu.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
 </script>

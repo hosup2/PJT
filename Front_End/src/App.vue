@@ -8,6 +8,7 @@
       @navigate="handleNavigate"
       @open-auth="showAuthModal = true"
       @logout="handleLogout"
+      @edit-profile="showProfileEditModal = true"
     />
 
     <div class="animate-float" style="position: fixed; bottom: 32px; right: 32px; z-index: 50;">
@@ -70,6 +71,14 @@
       @login="handleLogin"
       @signup="handleSignup"
     />
+
+    <!-- 프로필 편집 모달 -->
+    <ProfileEditModal
+      :is-open="showProfileEditModal"
+      :user="currentUser || { username: '', email: '', profile_image: '' }"
+      @close="showProfileEditModal = false"
+      @save="handleProfileEdit"
+    />
   </div>
 </template>
 
@@ -81,6 +90,7 @@ import MovieGrid from './components/MovieGrid.vue';
 import MovieDetail from './components/MovieDetail.vue';
 import UserProfile from './components/UserProfile.vue';
 import AuthModal from './components/AuthModal.vue';
+import ProfileEditModal from './components/ProfileEditModal.vue';
 import { mockMovies, mockUsers } from './data/mockData';
 
 interface User {
@@ -96,6 +106,7 @@ const selectedUserId = ref<number | null>(null);
 const isLoggedIn = ref(false);
 const currentUser = ref<User | null>(null);
 const showAuthModal = ref(false);
+const showProfileEditModal = ref(false);
 
 const handleMovieClick = (movieId: number) => {
   selectedMovieId.value = movieId;
@@ -110,7 +121,6 @@ const handleNavigate = (view: 'home' | 'movie' | 'profile', userId?: number) => 
 };
 
 const handleLogin = (email: string, password: string) => {
-  // TODO: Implement actual authentication
   const user = mockUsers.find(u => u.email === email);
   if (user) {
     currentUser.value = user;
@@ -123,15 +133,13 @@ const handleLogin = (email: string, password: string) => {
 };
 
 const handleSignup = (username: string, email: string, password: string) => {
-  // TODO: Implement actual user registration
   const newUser: User = {
     id: mockUsers.length + 1,
     username,
     email,
-    profile_image: `https://i.pravatar.cc/150?img=${mockUsers.length + 1}`
+    profile_image: '/mia2.png'  // 👈 기본 프로필 이미지를 mia2.png로 설정
   };
   
-  // Add to mockUsers array so the user can be found
   mockUsers.push(newUser);
   
   currentUser.value = newUser;
@@ -155,11 +163,9 @@ const handleNavigateToUser = (userId: number) => {
 
 const handleUpdateProfile = (username: string, profileImage: string) => {
   if (currentUser.value) {
-    // Update current user
     currentUser.value.username = username;
     currentUser.value.profile_image = profileImage;
     
-    // Update in mockUsers array
     const userInArray = mockUsers.find(u => u.id === currentUser.value?.id);
     if (userInArray) {
       userInArray.username = username;
@@ -168,6 +174,22 @@ const handleUpdateProfile = (username: string, profileImage: string) => {
     
     alert('프로필이 업데이트되었습니다!');
   }
+};
+
+const handleProfileEdit = (username: string, profileImage: string) => {
+  if (currentUser.value) {
+    currentUser.value.username = username;
+    currentUser.value.profile_image = profileImage;
+    
+    const userInArray = mockUsers.find(u => u.id === currentUser.value?.id);
+    if (userInArray) {
+      userInArray.username = username;
+      userInArray.profile_image = profileImage;
+    }
+    
+    alert('프로필이 업데이트되었습니다!');
+  }
+  showProfileEditModal.value = false;
 };
 </script>
 
