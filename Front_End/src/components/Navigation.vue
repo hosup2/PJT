@@ -1,7 +1,7 @@
 <template>
-  <nav class="border-b border-gray-800/50 bg-gray-950/95 backdrop-blur-md fixed top-0 z-50 shadow-lg">
+  <nav class="border-b border-gray-800/30 bg-gray-950/70 backdrop-blur-md fixed top-0 w-full z-50 shadow-lg">
     <div class="container mx-auto px-6 max-w-7xl">
-      <div class="flex items-center justify-between h-16">
+      <div class="flex items-center justify-between h-20">
         <!-- 작은 로고 -->
         <button 
           @click="emit('navigate', 'home')"
