@@ -17,6 +17,9 @@ import os
 load_dotenv()
 
 TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+GMS_API_URL = os.getenv("GMS_API_URL")
+GMS_API_KEY = os.getenv("GMS_API_KEY")
+GMS_MODEL = "gpt-4o-mini"
 # SECRET_KEY = os.getenv("SECRET_KEY")
 
 
