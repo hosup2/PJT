@@ -2,8 +2,11 @@ import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.conf import settings
-
+from django.shortcuts import get_object_or_404
 from .models import Movie, Genre
+from movies.serializers import MovieResponseSerializer
+from django.db.models import Q
+from rest_framework.permissions import AllowAny
 
 
 class TMDBImportView(APIView):
@@ -64,3 +67,36 @@ class TMDBImportView(APIView):
                 imported_count += 1
 
         return Response({"message": "Import completed", "imported_movies": imported_count})
+
+
+
+class MovieListView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        qs = Movie.objects.all().order_by("-release_date")[:20]
+        serializer = MovieResponseSerializer(qs, many=True)
+        return Response(serializer.data)
+
+
+class MovieDetailView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+        serializer = MovieResponseSerializer(movie)
+        return Response(serializer.data)
+
+class MovieSearchView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        query = request.GET.get("q", "")
+
+        if not query:
+            return Response([], status=200)
+
+        qs = Movie.objects.filter(
+            Q(title__icontains=query) |
+            Q(original_title__icontains=query)
+        ).distinct()
+
+        serializer = MovieResponseSerializer(qs, many=True)
+        return Response(serializer.data)
