@@ -1,6 +1,12 @@
 ## FrontEnd
 
 
+## 12.09
+- 새로운 사용자 온보딩 페이지 구현
+  - 영화 취향 분석을 위한 온보딩 플로우 추가
+  - `onboarding` 디렉토리 내에 `GenreSelection.vue`, `MovieSelection.vue`, `OnboardingProgress.vue`, `PreferenceComplete.vue`, `PreferenceOnboarding.vue` 컴포넌트 신규 생성
+  - `App.vue` 수정하여 온보딩 기능 통합
+
 ## 12.07
 
 - 네비게이션 바 로고 레이아웃 조정 
