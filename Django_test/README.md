@@ -1,5 +1,11 @@
 ## Back_End Test
 
+## 12.09
+- Movie - Model, Serializer 수정, 
+- 영화목록 조회, 영화 디테일 조회 기능 구현  
+- 페이지네이션 적용
+- 영화 검색 기능 구현
+
 ## 12.07
 - API 테스트용 seed_data 생성
 - GMS를 이용해 gpt-4o-mini로 영화 추천 logic 구현 (성공)
