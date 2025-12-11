@@ -2,7 +2,7 @@
   <div class="movie-selection">
     <div class="content-wrapper">
       <h1 class="title">좋아하는 영화를 선택해주세요</h1>
-      <p class="subtitle">최소 5개 이상 선택해주세요 ({{ selectedMovies.length }}/5)</p>
+      <p class="subtitle">최소 2개 이상 선택해주세요 ({{ selectedMovies.length }}/2)</p>
 
       <div class="movie-grid">
         <button
@@ -15,11 +15,6 @@
           <div class="movie-poster">
             <img :src="movie.poster" :alt="movie.title" />
             <div v-if="isSelected(movie.id)" class="selected-overlay">
-              <div class="check-circle">
-                <svg class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
             </div>
           </div>
           <div class="movie-info">
@@ -36,7 +31,7 @@
           </svg>
           이전
         </button>
-        <button class="btn-next" :disabled="selectedMovies.length < 5" @click="handleNext">
+        <button class="btn-next" :disabled="selectedMovies.length < 2" @click="handleNext">
           다음
         </button>
       </div>
@@ -169,8 +164,8 @@ const handleNext = () => {
   transform: scale(1.05);
 }
 
-.movie-card.selected {
-  transform: scale(1.05);
+.movie-card.selected .movie-poster {
+  box-shadow: 0 0 0 4px #8B5CF6;
 }
 
 .movie-poster {
@@ -179,6 +174,7 @@ const handleNext = () => {
   overflow: hidden;
   aspect-ratio: 2/3;
   margin-bottom: 12px;
+  transition: box-shadow 0.3s ease;
 }
 
 .movie-poster img {
@@ -194,27 +190,13 @@ const handleNext = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(139, 92, 246, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.check-circle {
-  width: 60px;
-  height: 60px;
-  background: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.check-icon {
-  width: 36px;
-  height: 36px;
-  color: #8B5CF6;
+.movie-card.selected .selected-overlay {
+  opacity: 1;
 }
 
 .movie-info {
@@ -299,16 +281,6 @@ const handleNext = () => {
 
   .movie-title {
     font-size: 13px;
-  }
-
-  .check-circle {
-    width: 50px;
-    height: 50px;
-  }
-
-  .check-icon {
-    width: 30px;
-    height: 30px;
   }
 }
 </style>

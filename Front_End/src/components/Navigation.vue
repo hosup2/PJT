@@ -26,7 +26,13 @@
           </button>
 
           <button
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
+            @click="emit('navigate', 'explore')"
+            :class="[
+              'flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium',
+              currentView === 'explore' 
+                ? 'text-white bg-purple-600 shadow-lg shadow-purple-500/30' 
+                : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
+            ]"
           >
             <Film class="w-5 h-5" />
             <span class="text-base">둘러보기</span>
@@ -122,7 +128,7 @@ interface User {
 }
 
 interface Props {
-  currentView: 'home' | 'movie' | 'profile';
+  currentView: 'home' | 'movie' | 'profile' | 'explore';
   isLoggedIn: boolean;
   currentUser?: User | null;
 }
@@ -130,7 +136,7 @@ interface Props {
 defineProps<Props>();
 
 const emit = defineEmits<{
-  navigate: [view: 'home' | 'movie' | 'profile', userId?: number];
+  navigate: [view: 'home' | 'movie' | 'profile' | 'explore', userId?: number];
   openAuth: [];
   logout: [];
   editProfile: [];

@@ -135,9 +135,12 @@ const handleClose = () => {
 };
 
 const setRandomProfile = () => {
-  formData.value.profile_image = `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 70) + 1}`;
+  const styles = ['avataaars', 'bottts', 'pixel-art', 'lorelei', 'adventurer', 'big-smile', 'fun-emoji'];
+  const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+  const randomSeed = Math.random().toString(36).substring(7) + Date.now();
+  
+  formData.value.profile_image = `https://api.dicebear.com/7.x/${randomStyle}/svg?seed=${randomSeed}`;
 };
-
 const handleSubmit = () => {
   emit('save', formData.value.username, formData.value.profile_image);
 };

@@ -36,7 +36,7 @@
           <div class="container mx-auto px-6 py-12 max-w-7xl">
             <div class="flex items-center justify-between mb-8">
               <h2 class="text-3xl font-bold">인기 영화</h2>
-              <button class="text-purple-400 hover:text-purple-300 text-sm font-medium flex items-center gap-1">
+              <button @click="handleNavigate('explore')" class="text-purple-400 hover:text-purple-300 text-sm font-medium flex items-center gap-1">
                 전체보기
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
@@ -51,13 +51,22 @@
           </div>
         </template>
 
+        <!-- 둘러보기 -->
+        <ExploreView 
+          v-if="currentView === 'explore'"
+          :is-logged-in="isLoggedIn"
+          :current-user-id="currentUser?.id"
+          @movie-click="handleMovieClick"
+          @open-auth="showAuthModal = true"
+        />
+
         <!-- 영화 상세 -->
         <MovieDetail 
           v-if="currentView === 'movie' && selectedMovieId"
           :movie-id="selectedMovieId"
           :current-user="currentUser"
           :is-logged-in="isLoggedIn"
-          @back="currentView = 'home'"
+          @back="handleBackFromMovie"
           @profile-click="handleNavigate"
           @open-auth="showAuthModal = true"
           @navigate-to-user="handleNavigateToUser"
@@ -103,6 +112,7 @@ import UserProfile from './components/UserProfile.vue';
 import AuthModal from './components/AuthModal.vue';
 import ProfileEditModal from './components/ProfileEditModal.vue';
 import PreferenceOnboarding from './components/onboarding/PreferenceOnboarding.vue';
+import ExploreView from './components/ExploreView.vue';
 import { mockMovies, mockUsers } from './data/mockData';
 
 interface User {
@@ -116,7 +126,8 @@ interface User {
   };
 }
 
-const currentView = ref<'home' | 'movie' | 'profile'>('home');
+const currentView = ref<'home' | 'movie' | 'profile' | 'explore'>('home');
+const previousView = ref<'home' | 'movie' | 'profile' | 'explore'>('home');
 const selectedMovieId = ref<number | null>(null);
 const selectedUserId = ref<number | null>(null);
 const isLoggedIn = ref(false);
@@ -126,14 +137,21 @@ const showProfileEditModal = ref(false);
 const showOnboarding = ref(false);
 
 const handleMovieClick = (movieId: number) => {
+  previousView.value = currentView.value; // 이전 페이지 저장
   selectedMovieId.value = movieId;
   currentView.value = 'movie';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-const handleNavigate = (view: 'home' | 'movie' | 'profile', userId?: number) => {
+const handleNavigate = (view: 'home' | 'movie' | 'profile' | 'explore', userId?: number) => {
+  previousView.value = currentView.value; // 이전 페이지 저장
   currentView.value = view;
   selectedUserId.value = userId || currentUser.value?.id || null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const handleBackFromMovie = () => {
+  currentView.value = previousView.value; // 이전 페이지로 복귀
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
@@ -181,6 +199,7 @@ const handleLogout = () => {
 };
 
 const handleNavigateToUser = (userId: number) => {
+  previousView.value = currentView.value; // 이전 페이지 저장
   selectedUserId.value = userId; 
   currentView.value = 'profile';
   window.scrollTo({ top: 0, behavior: 'smooth' });

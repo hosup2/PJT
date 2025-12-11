@@ -55,16 +55,16 @@ const selectedGenres = ref<string[]>([]);
 const selectedMovies = ref<number[]>([]);
 
 const handleGenreNext = () => {
-  if (selectedGenres.value.length < 3) {
-    alert('최소 3개의 장르를 선택해주세요.');
+  if (selectedGenres.value.length < 2) {
+    alert('최소 2개의 장르를 선택해주세요.');
     return;
   }
   currentStep.value = 2;
 };
 
 const handleMovieNext = () => {
-  if (selectedMovies.value.length < 5) {
-    alert('최소 5개의 영화를 선택해주세요.');
+  if (selectedMovies.value.length < 2) {
+    alert('최소 2개의 영화를 선택해주세요.');
     return;
   }
   currentStep.value = 3;

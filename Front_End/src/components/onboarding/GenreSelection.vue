@@ -2,7 +2,7 @@
   <div class="genre-selection">
     <div class="content-wrapper">
       <h1 class="title">어떤 장르를 좋아하시나요?</h1>
-      <p class="subtitle">최소 3개 이상 선택해주세요</p>
+      <p class="subtitle">최소 2개 이상 선택해주세요</p>
 
       <div class="genre-grid">
         <button
@@ -14,17 +14,12 @@
         >
           <div class="genre-icon">{{ genre.emoji }}</div>
           <div class="genre-name">{{ genre.name }}</div>
-          <div v-if="isSelected(genre.id)" class="check-badge">
-            <svg class="check-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
         </button>
       </div>
 
       <div class="action-buttons">
-        <button class="btn-next" :disabled="selectedGenres.length < 3" @click="handleNext">
-          다음 ({{ selectedGenres.length }}/3)
+        <button class="btn-next" :disabled="selectedGenres.length < 2" @click="handleNext">
+          다음 ({{ selectedGenres.length }}/2)
         </button>
       </div>
     </div>
