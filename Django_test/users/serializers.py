@@ -1,9 +1,10 @@
 from rest_framework import serializers
-from .models import UserPreference, FavoriteMovie, WatchedMovie
 from django.contrib.auth import get_user_model
-from rest_framework import serializers
+from .models import UserPreference, FavoriteMovie, WatchedMovie
+from movies.serializers import MovieResponseSerializer
 
 User = get_user_model()
+
 
 class UserPreferenceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -12,15 +13,26 @@ class UserPreferenceSerializer(serializers.ModelSerializer):
 
 
 class FavoriteMovieSerializer(serializers.ModelSerializer):
+    movie = MovieResponseSerializer(read_only=True)
+
     class Meta:
         model = FavoriteMovie
-        fields = "__all__"
+        fields = ("id", "movie", "created_at")
 
 
 class WatchedMovieSerializer(serializers.ModelSerializer):
+    movie = MovieResponseSerializer(read_only=True)
+
     class Meta:
         model = WatchedMovie
-        fields = "__all__"
+        fields = ("id", "movie", "watched_at")
+
+
+class MeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ("id", "username", "email")
+
 
 class SignupSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

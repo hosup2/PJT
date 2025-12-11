@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Movie, Genre
+from .models import Movie, Genre, FeaturedMovie
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,7 +30,6 @@ class MovieResponseSerializer(serializers.ModelSerializer):
             "overview",
             "stats",
             "tmdb_rating",
-            "imdb_rating",
             "backdrops",
         ]
 
@@ -49,3 +48,10 @@ class MovieResponseSerializer(serializers.ModelSerializer):
                 "1.0": 0,
             }
         }
+    
+class FeaturedMovieSerializer(serializers.ModelSerializer):
+    movie = MovieResponseSerializer(read_only=True)
+
+    class Meta:
+        model = FeaturedMovie
+        fields = ("id", "priority", "movie")

@@ -1,5 +1,10 @@
 ## Back_End Test
 
+## 12.11
+- Movie / FeaturedMovie 데이터
+- TMDB Top_Rated 데이터 200개 수집 기능
+- 자동으로 20위 내 영화 FeaturedMovie 등록
+
 ## 12.09
 - Movie - Model, Serializer 수정, 
 - 영화목록 조회, 영화 디테일 조회 기능 구현  

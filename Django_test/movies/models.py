@@ -22,6 +22,18 @@ class Movie(models.Model):
     runtime = models.IntegerField(null=True, blank=True)
 
     tmdb_rating = models.FloatField(null=True, blank=True)
-    imdb_rating = models.FloatField(null=True, blank=True)
 
     genres = models.ManyToManyField(Genre)
+
+class FeaturedMovie(models.Model):
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="featured_items")
+    priority = models.IntegerField(default=0)  # 배너에 보이는 순서
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["priority", "-created_at"]  # priority → 최신순
+        verbose_name = "Featured Movie"
+        verbose_name_plural = "Featured Movies"
+
+    def __str__(self):
+        return f"{self.priority} - {self.movie.title}"

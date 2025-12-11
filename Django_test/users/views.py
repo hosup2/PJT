@@ -1,117 +1,109 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import SignupSerializer
-from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 
 from movies.models import Movie
 from .models import UserPreference, FavoriteMovie, WatchedMovie
-from .serializers import UserPreferenceSerializer
-
+from .serializers import (
+    UserPreferenceSerializer,
+    FavoriteMovieSerializer,
+    WatchedMovieSerializer,
+    MeSerializer,
+    SignupSerializer,
+)
+from movies.serializers import MovieResponseSerializer
 
 User = get_user_model()
 
-class UserPreferenceView(APIView):
-    def get(self, request):
-        prefs = UserPreference.objects.filter(user=request.user).first()
-        if not prefs:
-            return Response({"favorite_genres": []})
-        serializer = UserPreferenceSerializer(prefs)
-        return Response(serializer.data)
+# 회원가입
+class SignupView(APIView):
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        prefs, _ = UserPreference.objects.get_or_create(user=request.user)
-        serializer = UserPreferenceSerializer(
-            prefs, data=request.data, partial=True
-        )
+        serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+            user = serializer.save()
+            return Response(MeSerializer(user).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class FavoriteMovieView(APIView):
-    def post(self, request):
-        movie_id = request.data.get("movie_id")
-        movie = get_object_or_404(Movie, id=movie_id)
-
-        FavoriteMovie.objects.get_or_create(
-            user=request.user,
-            movie=movie
-        )
-
-        return Response(
-            {"message": "Favorite added"},
-            status=status.HTTP_201_CREATED
-        )
-
-class FavoriteMovieDetailView(APIView):
-    def delete(self, request, movie_id):
-        favorite = FavoriteMovie.objects.filter(
-            user=request.user,
-            movie_id=movie_id
-        )
-        favorite.delete()
-
-        return Response({"message": "Favorite removed"})
-
-class WatchedMovieView(APIView):
-    def post(self, request):
-        movie_id = request.data.get("movie_id")
-        movie = get_object_or_404(Movie, id=movie_id)
-
-        WatchedMovie.objects.get_or_create(
-            user=request.user,
-            movie=movie
-        )
-
-        return Response(
-            {"message": "Watched movie recorded"},
-            status=status.HTTP_201_CREATED
-        )
-
-# 내 정보 조회
+# 내 정보
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user = request.user
-        return Response({
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-        })
+        return Response(MeSerializer(request.user).data)
 
 # 내 정보 수정
 class MeUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request):
-        user = request.user
-        user.email = request.data.get("email", user.email)
-        user.save()
-        return Response({"message": "Profile updated"})
+    def patch(self, request):
+        serializer = MeSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(MeSerializer(user).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# 삭제
+# 회원 삭제
 class MeDeleteView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
         request.user.delete()
-        return Response({"message": "User deleted"})
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-# 회원가입
-class SignupView(APIView):
-    permission_classes = []  # ✅ 인증 불필요
+# 
+class UserPreferenceView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = SignupSerializer(data=request.data)
+    def get(self, request):
+        pref, _ = UserPreference.objects.get_or_create(user=request.user)
+        serializer = UserPreferenceSerializer(pref)
+        return Response(serializer.data)
+
+    def put(self, request):
+        pref, _ = UserPreference.objects.get_or_create(user=request.user)
+        serializer = UserPreferenceSerializer(pref, data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(
-                {"message": "Signup successful"},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=400)
+            pref = serializer.save()
+            return Response(UserPreferenceSerializer(pref).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FavoriteMovieView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        favorites = FavoriteMovie.objects.filter(user=request.user)\
+                                         .select_related("movie")
+        movies = [fav.movie for fav in favorites]
+        serializer = MovieResponseSerializer(movies, many=True)
+        return Response(serializer.data)
+
+
+class FavoriteMovieDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, movie_id):
+        movie = get_object_or_404(Movie, pk=movie_id)
+        FavoriteMovie.objects.get_or_create(user=request.user, movie=movie)
+        return Response({"detail": "added"}, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, movie_id):
+        movie = get_object_or_404(Movie, pk=movie_id)
+        FavoriteMovie.objects.filter(user=request.user, movie=movie).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class WatchedMovieView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        watched = WatchedMovie.objects.filter(user=request.user)\
+                                      .select_related("movie")
+        movies = [w.movie for w in watched]
+        serializer = MovieResponseSerializer(movies, many=True)
+        return Response(serializer.data)
