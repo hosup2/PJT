@@ -91,9 +91,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { mockMovies, mockLikedMovies } from '../data/mockData';
+import { ref, onMounted, computed } from 'vue';
+import axios from 'axios';
 
+// Movie 인터페이스 정의 (API 응답에 맞춰 조정)
+interface Movie {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  release_date: string;
+  // API 응답에 따라 필요한 다른 속성들 추가
+  year?: number; // year는 release_date에서 파생될 수 있으므로 선택적으로 처리
+}
+
+// 컴포넌트 Props와 Emits 정의
 interface Props {
   isLoggedIn?: boolean;
   currentUserId?: number;
@@ -109,46 +120,59 @@ const emit = defineEmits<{
   (e: 'open-auth'): void;
 }>();
 
-// 타임라인 형식으로 날짜별로 영화 그룹화
+// API에서 받아온 영화 목록을 저장할 반응형 변수
+const movies = ref<Movie[]>([]);
+const error = ref<string | null>(null);
+
+// 컴포넌트가 마운트될 때 API 호출
+onMounted(async () => {
+  try {
+    // Django API 엔드포인트에서 영화 목록을 가져옵니다.
+    const response = await axios.get('http://127.0.0.1:8000/movies/');
+    // DRF 페이지네이션을 사용하는 경우, 결과는 response.data.results에 있습니다.
+    const results = response.data.results || response.data;
+    
+    // year 속성 추가 및 poster_path가 없는 경우 기본 이미지 설정
+    movies.value = results.map((movie: any) => ({
+      ...movie,
+      year: new Date(movie.release_date).getFullYear(),
+      poster_path: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image'
+    }));
+
+  } catch (err) {
+    console.error('Failed to fetch movies:', err);
+    error.value = '영화 목록을 불러오는 데 실패했습니다.';
+  }
+});
+
+// 타임라인 형식으로 날짜별로 영화 그룹화하는 computed 속성
 const movieGroups = computed(() => {
-  return [
-    {
-      date: '토요일',
-      platforms: [
-        {
-          count: 1,
-          movies: mockMovies.slice(0, 1)
-        }
-      ]
-    },
-    {
-      date: '12.15',
-      platforms: [
-        {
-          count: 4,
-          movies: mockMovies.slice(1, 5)
-        }
-      ]
-    },
-    {
-      date: '12.17',
-      platforms: [
-        {
-          count: 3,
-          movies: mockMovies.slice(5, 8)
-        }
-      ]
-    },
-    {
-      date: '12.20',
-      platforms: [
-        {
-          count: 4,
-          movies: mockMovies.slice(8, 12)
-        }
-      ]
+  if (!movies.value.length) {
+    return [];
+  }
+
+  // 날짜를 기준으로 영화들을 그룹화
+  const groups: { [key: string]: Movie[] } = movies.value.reduce((acc, movie) => {
+    const date = movie.release_date;
+    if (!acc[date]) {
+      acc[date] = [];
     }
-  ];
+    acc[date].push(movie);
+    return acc;
+  }, {} as { [key: string]: Movie[] });
+
+  // 템플릿이 기대하는 구조로 변환
+  return Object.entries(groups)
+    .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime()) // 최신 날짜 순으로 정렬
+    .map(([date, movieList]) => ({
+      date: new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }),
+      platforms: [
+        {
+          count: movieList.length,
+          movies: movieList,
+        },
+      ],
+    }));
 });
 
 const handleLoginRequired = () => {
@@ -157,26 +181,8 @@ const handleLoginRequired = () => {
 };
 
 const handleAddToLikes = (movieId: number) => {
-  const movie = mockMovies.find(m => m.id === movieId);
-  if (!movie) return;
-  
-  // 이미 좋아요한 영화인지 확인
-  const alreadyLiked = mockLikedMovies.some(m => m.id === movieId);
-  
-  if (alreadyLiked) {
-    alert('이미 좋아요한 영화입니다! 🎬');
-    return;
-  }
-  
-  // 좋아요 목록에 추가
-  mockLikedMovies.push({
-    id: movie.id,
-    title: movie.title,
-    poster_path: movie.poster_path,
-    release_date: movie.release_date || '2024-01-01'
-  });
-  
-  alert('✨ 내가 좋아하는 영화에 추가되었습니다!');
+  // TODO: 실제 '좋아요' API 연동 필요
+  alert(`'${movies.value.find(m => m.id === movieId)?.title}' 영화를 좋아합니다! (API 연동 필요)`);
 };
 
 const onMovieClick = (movieId: number) => {

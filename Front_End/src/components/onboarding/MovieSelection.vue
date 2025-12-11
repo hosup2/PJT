@@ -4,7 +4,13 @@
       <h1 class="title">좋아하는 영화를 선택해주세요</h1>
       <p class="subtitle">최소 2개 이상 선택해주세요 ({{ selectedMovies.length }}/2)</p>
 
-      <div class="movie-grid">
+      <div v-if="loading" class="text-center py-16">
+        <p class="text-gray-400">영화 목록을 불러오는 중...</p>
+      </div>
+      <div v-else-if="error" class="text-center py-16">
+        <p class="text-red-400">{{ error }}</p>
+      </div>
+      <div v-else class="movie-grid">
         <button
           v-for="movie in displayMovies"
           :key="movie.id"
@@ -40,14 +46,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import axios from 'axios';
 
 interface Movie {
   id: number;
   title: string;
-  poster: string;
-  year: number;
-  genres: string[];
+  poster_path: string;
+  release_date: string;
+  genres: { name: string }[]; // Assuming genres are objects with a name property
+}
+
+interface DisplayMovie {
+    id: number;
+    title: string;
+    poster: string;
+    year: number;
+    genres: string[];
 }
 
 interface Props {
@@ -62,38 +77,38 @@ const emit = defineEmits<{
   (e: 'back'): void;
 }>();
 
-// Mock movie data - 실제로는 props.selectedGenres에 따라 필터링된 영화들을 API에서 가져와야 함
-const allMovies: Movie[] = [
-  { id: 1, title: '인터스텔라', poster: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg', year: 2014, genres: ['sf', 'drama'] },
-  { id: 2, title: '다크 나이트', poster: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg', year: 2008, genres: ['action', 'crime'] },
-  { id: 3, title: '기생충', poster: 'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg', year: 2019, genres: ['drama', 'thriller'] },
-  { id: 4, title: '어벤져스: 엔드게임', poster: 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9sl16pB3iy.jpg', year: 2019, genres: ['action', 'sf'] },
-  { id: 5, title: '코코', poster: 'https://image.tmdb.org/t/p/w500/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg', year: 2017, genres: ['animation', 'fantasy'] },
-  { id: 6, title: '헤어질 결심', poster: 'https://image.tmdb.org/t/p/w500/yXKmy4FMPIbhUH23NqYLbFpVCyh.jpg', year: 2022, genres: ['romance', 'thriller'] },
-  { id: 7, title: '조커', poster: 'https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', year: 2019, genres: ['drama', 'crime'] },
-  { id: 8, title: '겨울왕국', poster: 'https://image.tmdb.org/t/p/w500/kgwjIb1CkFCMvESYlMG8mfjfAQW.jpg', year: 2013, genres: ['animation', 'fantasy'] },
-  { id: 9, title: '인셉션', poster: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg', year: 2010, genres: ['sf', 'thriller'] },
-  { id: 10, title: '라라랜드', poster: 'https://image.tmdb.org/t/p/w500/uDO8zWDhfWwoFdKS4fzkUJt0Rf0.jpg', year: 2016, genres: ['romance', 'drama'] },
-  { id: 11, title: '설국열차', poster: 'https://image.tmdb.org/t/p/w500/koP1qo31J6H0s8SvbFTyTT0HHGG.jpg', year: 2013, genres: ['sf', 'action'] },
-  { id: 12, title: '범죄도시', poster: 'https://image.tmdb.org/t/p/w500/jBJWaqoSCiARWtfV0GlqHrcdidd.jpg', year: 2017, genres: ['action', 'crime'] },
-  { id: 13, title: '반지의 제왕', poster: 'https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg', year: 2001, genres: ['fantasy', 'adventure'] },
-  { id: 14, title: '컨저링', poster: 'https://image.tmdb.org/t/p/w500/wVYREutTvI2tmxr6ujrHT704wGF.jpg', year: 2013, genres: ['horror', 'thriller'] },
-  { id: 15, title: '쇼생크 탈출', poster: 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg', year: 1994, genres: ['drama'] },
-  { id: 16, title: '어바웃 타임', poster: 'https://image.tmdb.org/t/p/w500/vPVN0ZRFH7zB4cwH8wJbnAHPZYA.jpg', year: 2013, genres: ['romance', 'comedy'] },
-  { id: 17, title: '해리포터', poster: 'https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg', year: 2001, genres: ['fantasy', 'adventure'] },
-  { id: 18, title: '타이타닉', poster: 'https://image.tmdb.org/t/p/w500/9xjZS2rlVxm8SFx8kPC3aIGCOYQ.jpg', year: 1997, genres: ['romance', 'drama'] },
-  { id: 19, title: '매드 맥스', poster: 'https://image.tmdb.org/t/p/w500/hA2ple9q4qnwxp3hKVNhroipsir.jpg', year: 2015, genres: ['action', 'sf'] },
-  { id: 20, title: '아바타', poster: 'https://image.tmdb.org/t/p/w500/6EiRUJpuoeQPghrs3YNktfnqOVh.jpg', year: 2009, genres: ['sf', 'fantasy'] },
-];
+const allMovies = ref<DisplayMovie[]>([]);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+onMounted(async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/movies/?ordering=-tmdb_rating&limit=40');
+    const moviesData: Movie[] = response.data.results || response.data;
+    allMovies.value = moviesData.map(movie => ({
+      id: movie.id,
+      title: movie.title,
+      poster: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image',
+      year: new Date(movie.release_date).getFullYear(),
+      genres: movie.genres.map(g => g.name.toLowerCase()), // Assuming genre names need to be lowercased
+    }));
+  } catch (err) {
+    console.error('Failed to fetch movies for onboarding:', err);
+    error.value = '영화를 불러오는데 실패했습니다.';
+  } finally {
+    loading.value = false;
+  }
+});
+
 
 const selectedMovies = ref<number[]>(props.selectedMovies);
 
 // Filter movies based on selected genres (simple filtering)
 const displayMovies = computed(() => {
   if (props.selectedGenres.length === 0) {
-    return allMovies;
+    return allMovies.value;
   }
-  return allMovies.filter(movie => 
+  return allMovies.value.filter(movie => 
     movie.genres.some(genre => props.selectedGenres.includes(genre))
   );
 });

@@ -1,7 +1,13 @@
 <template>
-  <div v-if="movie">
+  <div v-if="loading" class="text-center p-12">
+    <p>Loading...</p>
+  </div>
+  <div v-else-if="error" class="text-center p-12 text-red-400">
+    <p>{{ error }}</p>
+  </div>
+  <div v-else-if="movie">
     <button
-      @click="emit('back')"
+      @click="router.back()"
       class="flex items-center gap-2 text-gray-400 hover:text-gray-200 transition-colors mb-6"
     >
       <ArrowLeft class="w-5 h-5" />
@@ -15,7 +21,7 @@
   style="width: 300px; height: 400px;"
   >
   <img
-  :src="movie.backdrops"
+  :src="backdropUrl"
   :alt="movie.title"
   class="w-full h-full object-cover"
   />
@@ -118,7 +124,7 @@
     <!-- Rating Distribution -->
     <div class="mb-12">
       <RatingDistributionChart 
-        :movie-id="movieId"
+        :movie-id="parseInt(id)"
         :distribution="movie.stats.rating_distribution"
         :total-count="movie.stats.rating_count"
       />
@@ -140,72 +146,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, onMounted, computed, inject } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 import { ArrowLeft, Calendar, Clock, Star, Heart } from 'lucide-vue-next';
-import { mockMovies, mockComments } from '../data/mockData';
 import StarRating from './StarRating.vue';
 import RatingDistributionChart from './RatingDistributionChart.vue';
 import CommentSection from './CommentSection.vue';
 
-interface Props {
-  movieId: number;
-  isLoggedIn: boolean;
-  currentUserId?: number;
+// --- Interfaces ---
+interface Movie {
+  id: number;
+  title: string;
+  original_title: string;
+  poster_path: string;
+  backdrops: string;
+  release_date: string;
+  runtime: number;
+  genres: string[];
+  overview: string;
+  stats: {
+    avg_rating: number;
+    rating_count: number;
+    rating_distribution: Record<string, number>;
+  };
+  tmdb_rating: number;
+  imdb_rating: number;
+  comments: Comment[]; // Assuming comments are nested
 }
 
-const props = defineProps<Props>();
-const emit = defineEmits<{
-  back: [];
-  openAuth: [];
-  navigateToUser: [userId: number];
+interface Comment {
+  id: number;
+  user_id: number;
+  username: string;
+  profile_image: string;
+  review_content: string;
+  spoiler: boolean;
+  created_at: string;
+  likes_count: number;
+  isLiked: boolean;
+}
+
+interface User {
+  id: number;
+  username: string;
+}
+
+// --- Props & Emits ---
+const props = defineProps<{
+  id: string; // From router params
 }>();
 
-const userRating = ref(0);
-const isMovieLiked = ref(false);
-const movieLikesCount = ref(142);
+const emit = defineEmits<{
+  openAuth: [];
+}>();
 
-const movie = computed(() => mockMovies.find(m => m.id === props.movieId));
-const comments = ref(mockComments.filter(c => c.movie_id === props.movieId));
+
+// --- State ---
+const router = useRouter();
+const movie = ref<Movie | null>(null);
+const loading = ref(true);
+const error = ref<string | null>(null);
+
+// Injected global state
+const isLoggedIn = inject<ref<boolean>>('isLoggedIn', ref(false));
+const currentUser = inject<ref<User | null>>('currentUser', ref(null));
+
+
+// --- Data Fetching ---
+onMounted(async () => {
+  try {
+    const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`);
+    // Assuming the API returns the full movie object structure including comments
+    // and correctly formatted poster/backdrop paths
+    movie.value = response.data;
+  } catch (err) {
+    console.error(`Failed to fetch movie ${props.id}:`, err);
+    error.value = '영화 정보를 불러오는 데 실패했습니다.';
+  } finally {
+    loading.value = false;
+  }
+});
+
+// --- Computed Properties ---
+const comments = computed(() => movie.value?.comments || []);
+const posterUrl = computed(() => {
+    if (movie.value?.poster_path && !movie.value.poster_path.startsWith('http')) {
+        return `https://image.tmdb.org/t/p/w500${movie.value.poster_path}`;
+    }
+    return movie.value?.poster_path || 'https://via.placeholder.com/500x750?text=No+Image';
+});
+const backdropUrl = computed(() => {
+    if (movie.value?.backdrops && !movie.value.backdrops.startsWith('http')) {
+        return `https://image.tmdb.org/t/p/w1280${movie.value.backdrops}`;
+    }
+    return movie.value?.backdrops || '';
+});
+
+
+// --- Event Handlers ---
+const userRating = ref(0); // This would also come from API if user has rated
+const isMovieLiked = ref(false); // This would come from API
+const movieLikesCount = ref(movie.value?.stats.rating_count || 0); // This is an approximation
 
 const handleRatingChange = (rating: number) => {
+  if (!isLoggedIn.value) return emit('openAuth');
   userRating.value = rating;
-  // TODO: API call to save rating
+  console.log(`User rating changed to ${rating}. TODO: Implement API call.`);
+  // TODO: API POST to /movies/{props.id}/rate/
 };
 
 const handleLikeMovie = () => {
-  if (!props.isLoggedIn) return;
+  if (!isLoggedIn.value) return emit('openAuth');
   isMovieLiked.value = !isMovieLiked.value;
   movieLikesCount.value += isMovieLiked.value ? 1 : -1;
-  // TODO: API call to save like
+  console.log(`Movie like status: ${isMovieLiked.value}. TODO: Implement API call.`);
+  // TODO: API POST to /movies/{props.id}/like/
 };
 
 const handleSubmitComment = (content: string, spoiler: boolean) => {
-  // TODO: API call to submit comment
-  const newComment = {
-    id: Date.now(),
-    user_id: props.currentUserId || 1,
-    movie_id: props.movieId,
-    review_content: content,
-    spoiler: spoiler,
-    created_at: new Date().toISOString(),
-    username: '현재 사용자', // TODO: Get from current user
-    profile_image: 'https://i.pravatar.cc/150?img=1',
-    likes_count: 0,
-    isLiked: false
-  };
-  comments.value.unshift(newComment);
+  console.log(`Submitting comment: ${content}. TODO: Implement API call.`);
+  // TODO: API POST to /movies/{props.id}/comments/
+  // On success, re-fetch comments or optimistically add to list.
 };
 
 const handleLikeComment = (commentId: number) => {
-  const comment = comments.value.find(c => c.id === commentId);
-  if (comment) {
-    comment.isLiked = !comment.isLiked;
-    comment.likes_count += comment.isLiked ? 1 : -1;
-    // TODO: API call to save like
-  }
+  console.log(`Liking comment ${commentId}. TODO: Implement API call.`);
+  // TODO: API POST to /comments/{commentId}/like/
 };
 
 const handleNavigateToUser = (userId: number) => {
-  emit('navigateToUser', userId);
+  router.push({ name: 'UserProfile', params: { userId } });
 };
+
 </script>

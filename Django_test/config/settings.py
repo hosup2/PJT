@@ -15,7 +15,7 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    # 기본은 공개
+    # 기본?� 공개
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.AllowAny",
     ),
@@ -81,7 +81,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 ROOT_URLCONF = 'config.urls'
 
@@ -155,5 +158,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    BASE_DIR / '../Front_End/build/assets',
+]
 
 # AUTH_USER_MODEL = 'accounts.User'

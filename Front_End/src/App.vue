@@ -10,12 +10,9 @@
 
     <!-- 일반 앱 화면 -->
     <template v-else>
-      <!-- Navigation을 맨 위에 fixed로 겹치기 -->
       <Navigation 
-        :current-view="currentView"
         :is-logged-in="isLoggedIn"
         :current-user="currentUser"
-        @navigate="handleNavigate"
         @open-auth="showAuthModal = true"
         @logout="handleLogout"
         @edit-profile="showProfileEditModal = true"
@@ -25,62 +22,12 @@
         <img src="/mia.png" alt="MIA 로봇" style="height: 100px; width: auto;" class="drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform" />
       </div>
 
-      <!-- main을 padding 없이 시작 -->
-      <main class="relative">
-        <!-- 홈 화면 -->
-        <template v-if="currentView === 'home'">
-          <!-- HeroSection을 화면 맨 위에서 시작 -->
-          <HeroSection />
-          
-          <!-- 인기 영화 -->
-          <div class="container mx-auto px-6 py-12 max-w-7xl">
-            <div class="flex items-center justify-between mb-8">
-              <h2 class="text-3xl font-bold">인기 영화</h2>
-              <button @click="handleNavigate('explore')" class="text-purple-400 hover:text-purple-300 text-sm font-medium flex items-center gap-1">
-                전체보기
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-            
-            <MovieGrid 
-              :movies="mockMovies"
-              @movie-click="handleMovieClick"
-            />
-          </div>
-        </template>
-
-        <!-- 둘러보기 -->
-        <ExploreView 
-          v-if="currentView === 'explore'"
-          :is-logged-in="isLoggedIn"
-          :current-user-id="currentUser?.id"
-          @movie-click="handleMovieClick"
-          @open-auth="showAuthModal = true"
-        />
-
-        <!-- 영화 상세 -->
-        <MovieDetail 
-          v-if="currentView === 'movie' && selectedMovieId"
-          :movie-id="selectedMovieId"
-          :current-user="currentUser"
-          :is-logged-in="isLoggedIn"
-          @back="handleBackFromMovie"
-          @profile-click="handleNavigate"
-          @open-auth="showAuthModal = true"
-          @navigate-to-user="handleNavigateToUser"
-        />
-
-        <!-- 프로필 -->
-        <UserProfile 
-          v-if="currentView === 'profile' && selectedUserId"
-          :user-id="selectedUserId"
-          :current-user-id="currentUser?.id"
-          @movie-click="handleMovieClick"
-          @go-home="currentView = 'home'"
-          @update-profile="handleUpdateProfile"
-        />
+      <main class="relative pt-20"> <!-- Add padding top to account for fixed navigation -->
+        <router-view v-slot="{ Component, route }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" :key="route.path" />
+          </transition>
+        </router-view>
       </main>
 
       <!-- 로그인 모달 -->
@@ -103,17 +50,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, provide, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
+import axios from 'axios';
 import Navigation from './components/Navigation.vue';
-import HeroSection from './components/HeroSection.vue';
-import MovieGrid from './components/MovieGrid.vue';
-import MovieDetail from './components/MovieDetail.vue';
-import UserProfile from './components/UserProfile.vue';
 import AuthModal from './components/AuthModal.vue';
 import ProfileEditModal from './components/ProfileEditModal.vue';
 import PreferenceOnboarding from './components/onboarding/PreferenceOnboarding.vue';
-import ExploreView from './components/ExploreView.vue';
-import { mockMovies, mockUsers } from './data/mockData';
 
 interface User {
   id: number;
@@ -126,141 +69,140 @@ interface User {
   };
 }
 
-const currentView = ref<'home' | 'movie' | 'profile' | 'explore'>('home');
-const previousView = ref<'home' | 'movie' | 'profile' | 'explore'>('home');
-const selectedMovieId = ref<number | null>(null);
-const selectedUserId = ref<number | null>(null);
+const router = useRouter();
 const isLoggedIn = ref(false);
 const currentUser = ref<User | null>(null);
 const showAuthModal = ref(false);
 const showProfileEditModal = ref(false);
 const showOnboarding = ref(false);
 
-const handleMovieClick = (movieId: number) => {
-  previousView.value = currentView.value; // 이전 페이지 저장
-  selectedMovieId.value = movieId;
-  currentView.value = 'movie';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+// Provide user state to all child components
+provide('isLoggedIn', isLoggedIn);
+provide('currentUser', currentUser);
+provide('openAuthModal', () => showAuthModal.value = true);
+
+// ---- Authentication Logic ----
+const setAuthTokens = (access: string, refresh: string) => {
+  localStorage.setItem('accessToken', access);
+  localStorage.setItem('refreshToken', refresh);
+  axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 };
 
-const handleNavigate = (view: 'home' | 'movie' | 'profile' | 'explore', userId?: number) => {
-  previousView.value = currentView.value; // 이전 페이지 저장
-  currentView.value = view;
-  selectedUserId.value = userId || currentUser.value?.id || null;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+const clearAuthTokens = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  delete axios.defaults.headers.common['Authorization'];
 };
 
-const handleBackFromMovie = () => {
-  currentView.value = previousView.value; // 이전 페이지로 복귀
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-const handleLogin = (email: string, password: string) => {
-  const user = mockUsers.find(u => u.email === email);
-  if (user) {
-    currentUser.value = user as User;
+const fetchCurrentUser = async () => {
+  try {
+    const { data } = await axios.get('http://127.0.0.1:8000/users/me/');
+    currentUser.value = data;
     isLoggedIn.value = true;
-    showAuthModal.value = false;
-    alert('로그인 성공!');
-    
-    // 선호도가 없는 기존 사용자는 온보딩 표시
-    if (!currentUser.value.preferences) {
-      showOnboarding.value = true;
-    }
-  } else {
-    alert('사용자를 찾을 수 없습니다.');
+  } catch (error) {
+    console.error('Failed to fetch user', error);
+    handleLogout(); // Clear state if user fetch fails
   }
 };
 
-const handleSignup = (username: string, email: string, password: string) => {
-  const newUser: User = {
-    id: mockUsers.length + 1,
-    username,
-    email,
-    profile_image: '/mia2.png'
-  };
-  
-  mockUsers.push(newUser);
-  
-  currentUser.value = newUser;
-  isLoggedIn.value = true;
-  showAuthModal.value = false;
-  
-  // 새 사용자는 항상 온보딩 표시
-  showOnboarding.value = true;
+// On app startup, check for existing tokens
+onMounted(() => {
+  const token = localStorage.getItem('accessToken');
+  if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    fetchCurrentUser();
+  }
+});
+
+const handleLogin = async (email: string, password: string) => {
+  try {
+    const { data } = await axios.post('http://127.0.0.1:8000/api/token/', { email, password });
+    setAuthTokens(data.access, data.refresh);
+    await fetchCurrentUser();
+    showAuthModal.value = false;
+    alert('로그인 성공!');
+    if (!currentUser.value?.preferences) {
+      showOnboarding.value = true;
+    }
+  } catch (error) {
+    console.error('Login failed', error);
+    alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+  }
+};
+
+const handleSignup = async (username: string, email: string, password: string) => {
+  try {
+    await axios.post('http://127.0.0.1:8000/users/signup/', { username, email, password });
+    // After signup, log the user in
+    await handleLogin(email, password);
+    showOnboarding.value = true; // Always show onboarding for new users
+  } catch (error: any) {
+    console.error('Signup failed', error);
+    const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : 'An unknown error occurred.';
+    alert(`회원가입에 실패했습니다: ${errorMsg}`);
+  }
 };
 
 const handleLogout = () => {
+  clearAuthTokens();
   currentUser.value = null;
   isLoggedIn.value = false;
-  currentView.value = 'home';
   showOnboarding.value = false;
   alert('로그아웃되었습니다.');
-};
-
-const handleNavigateToUser = (userId: number) => {
-  previousView.value = currentView.value; // 이전 페이지 저장
-  selectedUserId.value = userId; 
-  currentView.value = 'profile';
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-};
-
-const handleUpdateProfile = (username: string, profileImage: string) => {
-  if (currentUser.value) {
-    currentUser.value.username = username;
-    currentUser.value.profile_image = profileImage;
-    
-    const userInArray = mockUsers.find(u => u.id === currentUser.value?.id);
-    if (userInArray) {
-      userInArray.username = username;
-      userInArray.profile_image = profileImage;
-    }
-    
-    alert('프로필이 업데이트되었습니다!');
+  if(router.currentRoute.value.path !== '/') {
+    router.push('/');
   }
 };
 
-const handleProfileEdit = (username: string, profileImage: string) => {
+// ---- Profile & Onboarding ----
+
+const handleProfileEdit = async (username: string, profileImage: string) => {
   if (currentUser.value) {
-    currentUser.value.username = username;
-    currentUser.value.profile_image = profileImage;
-    
-    const userInArray = mockUsers.find(u => u.id === currentUser.value?.id);
-    if (userInArray) {
-      userInArray.username = username;
-      userInArray.profile_image = profileImage;
+    try {
+      // NOTE: This assumes your API accepts form-data for file uploads
+      // This is a simplified version. A real implementation would use FormData.
+      const { data } = await axios.patch(`http://127.0.0.1:8000/users/me/update/`, {
+        username: username,
+        // profile_image update needs FormData and is more complex. Skipping for now.
+      });
+      currentUser.value = data; // Update user with response
+      alert('프로필이 업데이트되었습니다!');
+    } catch(error) {
+       console.error('Profile update failed', error);
+       alert('프로필 업데이트에 실패했습니다.');
     }
-    
-    alert('프로필이 업데이트되었습니다!');
   }
   showProfileEditModal.value = false;
 };
 
-const handleOnboardingComplete = (data: { genres: string[], movies: number[] }) => {
-  console.log('온보딩 완료:', data);
-  
-  // 사용자에게 선호도 저장
+const handleOnboardingComplete = async (data: { genres: string[], movies: number[] }) => {
   if (currentUser.value) {
-    currentUser.value.preferences = data;
-    
-    // mockUsers 배열에도 업데이트
-    const userInArray = mockUsers.find(u => u.id === currentUser.value?.id);
-    if (userInArray) {
-      (userInArray as User).preferences = data;
-    }
+     try {
+        await axios.post(`http://127.0.0.1:8000/users/preferences/`, {
+            genres: data.genres,
+            movie_pks: data.movies
+        });
+        // Re-fetch user to get updated preferences
+        await fetchCurrentUser();
+        showOnboarding.value = false;
+        alert('선호도가 저장되었습니다! 이제 맞춤 추천을 받아보세요.');
+     } catch(error) {
+        console.error('Onboarding save failed', error);
+        alert('선호도 저장에 실패했습니다.');
+     }
   }
-  
-  // TODO: API 호출로 선호도 저장
-  // await saveUserPreferences(currentUser.value.id, data);
-  
-  showOnboarding.value = false;
-  alert('선호도가 저장되었습니다! 이제 맞춤 추천을 받아보세요.');
 };
 
 const handleOnboardingSkip = () => {
   showOnboarding.value = false;
   alert('선호도 설정을 건너뛰었습니다. 나중에 프로필에서 설정할 수 있습니다.');
 };
+
+// Watch for route changes to provide global props if needed
+watch(() => router.currentRoute.value.path, (newPath) => {
+  // This is a good place to add logic that runs on every route change
+});
+
 </script>
 
 <style scoped>
@@ -275,5 +217,15 @@ const handleOnboardingSkip = () => {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
