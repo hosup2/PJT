@@ -33,6 +33,7 @@
       <!-- 로그인 모달 -->
       <AuthModal
         :is-open="showAuthModal"
+        :is-loading="isLoading"
         @close="showAuthModal = false"
         @login="handleLogin"
         @signup="handleSignup"
@@ -75,6 +76,7 @@ const currentUser = ref<User | null>(null);
 const showAuthModal = ref(false);
 const showProfileEditModal = ref(false);
 const showOnboarding = ref(false);
+const isLoading = ref(false); // 로딩 상태 추가
 
 // Provide user state to all child components
 provide('isLoggedIn', isLoggedIn);
@@ -115,6 +117,8 @@ onMounted(() => {
 });
 
 const handleLogin = async (username: string, password: string) => {
+  if (isLoading.value) return;
+  isLoading.value = true;
   try {
     const { data } = await axios.post(
       'http://127.0.0.1:8000/api/token/',
@@ -126,6 +130,8 @@ const handleLogin = async (username: string, password: string) => {
     showAuthModal.value = false;
   } catch {
     alert('로그인에 실패했습니다.');
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -137,21 +143,33 @@ interface SignupPayload {
 }
 
 const handleSignup = async (payload: SignupPayload) => {
+  if (isLoading.value) return;
+  isLoading.value = true;
   try {
     console.log('📦 signup payload:', payload); // 디버깅용
 
     await axios.post('http://127.0.0.1:8000/users/signup/', payload);
 
-    // 회원가입 직후 로그인
-    await handleLogin(payload.email, payload.password);
+    // 회원가입 직후 로그인 시도
+    await handleLogin(payload.username, payload.password);
 
-    showOnboarding.value = true;
+    showOnboarding.value = true; // 온보딩 시작
+    showAuthModal.value = false; // 모달 닫기
   } catch (error: any) {
     console.error('Signup failed', error);
-    const errorMsg = error.response?.data
-      ? JSON.stringify(error.response.data)
-      : 'An unknown error occurred.';
+    let errorMsg = '알 수 없는 오류가 발생했습니다.';
+    if (error.response && error.response.data) {
+      const errors = error.response.data;
+      const errorKey = Object.keys(errors)[0];
+      if (errorKey && Array.isArray(errors[errorKey]) && errors[errorKey].length > 0) {
+        errorMsg = errors[errorKey][0];
+      } else {
+        errorMsg = JSON.stringify(errors);
+      }
+    }
     alert(`회원가입에 실패했습니다: ${errorMsg}`);
+  } finally {
+    isLoading.value = false;
   }
 };
 

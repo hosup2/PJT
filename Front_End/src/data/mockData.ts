@@ -1,6 +1,6 @@
 export const mockMovies = [
   {
-    id: 1,
+    id: 15,
     title: '인터스텔라',
     original_title: 'Interstellar',
     poster_path: 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
@@ -24,7 +24,7 @@ export const mockMovies = [
     backdrops: 'https://image.tmdb.org/t/p/w1280/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg'
   },
   {
-    id: 2,
+    id: 10,
     title: '기생충',
     original_title: 'Parasite',
     poster_path: 'https://image.tmdb.org/t/p/w500/7IiTTgloJzvGI1TAYymCfbfl3vT.jpg',
@@ -48,7 +48,7 @@ export const mockMovies = [
     backdrops: 'https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg'
   },
    {
-    id: 3,
+    id: 7,
     title: '다크 나이트',
     original_title: 'The Dark Knight',
     poster_path: 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
@@ -96,7 +96,7 @@ export const mockMovies = [
     backdrops: 'https://image.tmdb.org/t/p/original/nlPCdZlHtRNcF6C9hzUH4ebmV1w.jpg'
   },
   {
-    id: 5,
+    id: 40,
     title: '위플래쉬',
     original_title: 'Whiplash',
     poster_path: 'https://image.tmdb.org/t/p/original/sNoZ3DAjOtCtpGvaEubMELDNtaS.jpg',

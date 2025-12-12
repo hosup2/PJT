@@ -23,12 +23,22 @@ class SignupView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        # 1. 요청 데이터 로깅 (디버깅 목적)
+        print("Received signup request with data:", request.data)
+
+        # 2. username 중복 확인
+        username = request.data.get('username')
+        if username and User.objects.filter(username=username).exists():
+            return Response({"username": ["이미 사용 중인 아이디입니다."]}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. 기존 serializer 로직 실행
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             return Response(MeSerializer(user).data, status=201)
 
-        print("❌ signup errors:", serializer.errors)  # ← 추가
+        # 유효성 검사 실패 시 에러 출력
+        print("❌ signup errors:", serializer.errors)
         return Response(serializer.errors, status=400)
 
 

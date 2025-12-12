@@ -32,7 +32,9 @@
               />
             </div>
 
-            <button type="submit" class="submit-button">로그인</button>
+            <button type="submit" class="submit-button" :disabled="isLoading">
+              {{ isLoading ? '로그인 중...' : '로그인' }}
+            </button>
           </form>
 
           <div class="switch-mode">
@@ -93,7 +95,9 @@
               />
             </div>
 
-            <button type="submit" class="submit-button">회원가입</button>
+            <button type="submit" class="submit-button" :disabled="isLoading">
+              {{ isLoading ? '가입하는 중...' : '회원가입' }}
+            </button>
           </form>
 
           <div class="switch-mode">
@@ -110,6 +114,7 @@ import { ref, watch } from 'vue';
 
 interface Props {
   isOpen: boolean;
+  isLoading: boolean;
 }
 
 const props = defineProps<Props>();
@@ -143,7 +148,7 @@ watch(() => props.isOpen, (newVal) => {
   if (newVal) {
     // Reset forms when modal opens
     mode.value = 'login';
-    loginForm.value = { email: '', password: '' };
+    loginForm.value = { username: '', password: '' };
     signupForm.value = { username: '', email: '', password: '', passwordConfirm: '' };
   }
 });
