@@ -22,10 +22,14 @@
         <img src="/mia.png" alt="MIA 로봇" style="height: 100px; width: auto;" class="drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform" />
       </div>
 
-      <main class="relative pt-20"> <!-- Add padding top to account for fixed navigation -->
+      <main class="relative pt-20 px-4 max-w-7xl mx-auto">
         <router-view v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
-            <component :is="Component" :key="route.path" />
+            <component 
+              :is="Component" 
+              :key="route.path"
+              @open-auth="showAuthModal = true"
+            />
           </transition>
         </router-view>
       </main>
@@ -76,7 +80,7 @@ const currentUser = ref<User | null>(null);
 const showAuthModal = ref(false);
 const showProfileEditModal = ref(false);
 const showOnboarding = ref(false);
-const isLoading = ref(false); // 로딩 상태 추가
+const isLoading = ref(false);
 
 // Provide user state to all child components
 provide('isLoggedIn', isLoggedIn);
@@ -103,11 +107,10 @@ const fetchCurrentUser = async () => {
     isLoggedIn.value = true;
   } catch (error) {
     console.error('Failed to fetch user', error);
-    handleLogout(); // Clear state if user fetch fails
+    handleLogout();
   }
 };
 
-// On app startup, check for existing tokens
 onMounted(() => {
   const token = localStorage.getItem('accessToken');
   if (token) {
@@ -146,15 +149,10 @@ const handleSignup = async (payload: SignupPayload) => {
   if (isLoading.value) return;
   isLoading.value = true;
   try {
-    console.log('📦 signup payload:', payload); // 디버깅용
-
     await axios.post('http://127.0.0.1:8000/users/signup/', payload);
-
-    // 회원가입 직후 로그인 시도
     await handleLogin(payload.username, payload.password);
-
-    showOnboarding.value = true; // 온보딩 시작
-    showAuthModal.value = false; // 모달 닫기
+    showOnboarding.value = true;
+    showAuthModal.value = false;
   } catch (error: any) {
     console.error('Signup failed', error);
     let errorMsg = '알 수 없는 오류가 발생했습니다.';
@@ -173,7 +171,6 @@ const handleSignup = async (payload: SignupPayload) => {
   }
 };
 
-
 const handleLogout = () => {
   clearAuthTokens();
   currentUser.value = null;
@@ -185,18 +182,13 @@ const handleLogout = () => {
   }
 };
 
-// ---- Profile & Onboarding ----
-
 const handleProfileEdit = async (username: string, profileImage: string) => {
   if (currentUser.value) {
     try {
-      // NOTE: This assumes your API accepts form-data for file uploads
-      // This is a simplified version. A real implementation would use FormData.
       const { data } = await axios.patch(`http://127.0.0.1:8000/users/me/update/`, {
         username: username,
-        // profile_image update needs FormData and is more complex. Skipping for now.
       });
-      currentUser.value = data; // Update user with response
+      currentUser.value = data;
       alert('프로필이 업데이트되었습니다!');
     } catch(error) {
        console.error('Profile update failed', error);
@@ -213,7 +205,6 @@ const handleOnboardingComplete = async (data: { genres: string[], movies: number
             genres: data.genres,
             movie_pks: data.movies
         });
-        // Re-fetch user to get updated preferences
         await fetchCurrentUser();
         showOnboarding.value = false;
         alert('선호도가 저장되었습니다! 이제 맞춤 추천을 받아보세요.');
@@ -229,11 +220,9 @@ const handleOnboardingSkip = () => {
   alert('선호도 설정을 건너뛰었습니다. 나중에 프로필에서 설정할 수 있습니다.');
 };
 
-// Watch for route changes to provide global props if needed
 watch(() => router.currentRoute.value.path, (newPath) => {
-  // This is a good place to add logic that runs on every route change
+  // Route change logic if needed
 });
-
 </script>
 
 <style scoped>
