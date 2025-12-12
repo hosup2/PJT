@@ -26,8 +26,11 @@ class SignupView(APIView):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            return Response(MeSerializer(user).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(MeSerializer(user).data, status=201)
+
+        print("❌ signup errors:", serializer.errors)  # ← 추가
+        return Response(serializer.errors, status=400)
+
 
 # 내 정보
 class MeView(APIView):

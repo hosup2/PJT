@@ -13,12 +13,11 @@
 
           <form @submit.prevent="handleLoginSubmit">
             <div class="input-group">
-              <label for="login-email">이메일</label>
+              <label for="login-email">ID</label>
               <input 
-                id="login-email" 
-                v-model="loginForm.email" 
-                type="email" 
-                placeholder="you@example.com" 
+                id="login-username" 
+                v-model="loginForm.username" 
+                type="text"  
                 required 
               />
             </div>
@@ -29,7 +28,6 @@
                 id="login-password" 
                 v-model="loginForm.password" 
                 type="password" 
-                placeholder="••••••••" 
                 required 
               />
             </div>
@@ -118,13 +116,19 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'login', email: string, password: string): void;
-  (e: 'signup', username: string, email: string, password: string): void;
+  (e: 'signup', payload: {
+    username: string;
+    email: string;
+    password: string;
+    password2: string;
+  }): void;
 }>();
+
 
 const mode = ref<'login' | 'signup'>('login');
 
 const loginForm = ref({
-  email: '',
+  username: '',
   password: ''
 });
 
@@ -149,28 +153,23 @@ const handleClose = () => {
 };
 
 const handleLoginSubmit = () => {
-  emit('login', loginForm.value.email, loginForm.value.password);
+  emit('login', loginForm.value.username, loginForm.value.password);
 };
 
 const handleSignupSubmit = () => {
-  // Basic validation
   if (signupForm.value.password !== signupForm.value.passwordConfirm) {
     alert('비밀번호가 일치하지 않습니다.');
     return;
   }
 
-  if (signupForm.value.password.length < 8) {
-    alert('비밀번호는 최소 8자 이상이어야 합니다.');
-    return;
-  }
-
-  if (signupForm.value.username.length < 3) {
-    alert('사용자명은 최소 3자 이상이어야 합니다.');
-    return;
-  }
-
-  emit('signup', signupForm.value.username, signupForm.value.email, signupForm.value.password);
+  emit('signup', {
+    username: signupForm.value.username,
+    email: signupForm.value.email,
+    password: signupForm.value.password,
+    password2: signupForm.value.passwordConfirm,
+  });
 };
+
 </script>
 
 <style scoped>

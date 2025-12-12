@@ -114,34 +114,47 @@ onMounted(() => {
   }
 });
 
-const handleLogin = async (email: string, password: string) => {
+const handleLogin = async (username: string, password: string) => {
   try {
-    const { data } = await axios.post('http://127.0.0.1:8000/api/token/', { email, password });
+    const { data } = await axios.post(
+      'http://127.0.0.1:8000/api/token/',
+      { username, password }
+    );
+
     setAuthTokens(data.access, data.refresh);
     await fetchCurrentUser();
     showAuthModal.value = false;
-    alert('로그인 성공!');
-    if (!currentUser.value?.preferences) {
-      showOnboarding.value = true;
-    }
-  } catch (error) {
-    console.error('Login failed', error);
-    alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+  } catch {
+    alert('로그인에 실패했습니다.');
   }
 };
 
-const handleSignup = async (username: string, email: string, password: string) => {
+interface SignupPayload {
+  username: string;
+  email: string;
+  password: string;
+  password2: string;
+}
+
+const handleSignup = async (payload: SignupPayload) => {
   try {
-    await axios.post('http://127.0.0.1:8000/users/signup/', { username, email, password });
-    // After signup, log the user in
-    await handleLogin(email, password);
-    showOnboarding.value = true; // Always show onboarding for new users
+    console.log('📦 signup payload:', payload); // 디버깅용
+
+    await axios.post('http://127.0.0.1:8000/users/signup/', payload);
+
+    // 회원가입 직후 로그인
+    await handleLogin(payload.email, payload.password);
+
+    showOnboarding.value = true;
   } catch (error: any) {
     console.error('Signup failed', error);
-    const errorMsg = error.response?.data ? JSON.stringify(error.response.data) : 'An unknown error occurred.';
+    const errorMsg = error.response?.data
+      ? JSON.stringify(error.response.data)
+      : 'An unknown error occurred.';
     alert(`회원가입에 실패했습니다: ${errorMsg}`);
   }
 };
+
 
 const handleLogout = () => {
   clearAuthTokens();

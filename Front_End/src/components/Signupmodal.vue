@@ -46,10 +46,10 @@
           </div>
 
           <div class="input-group">
-            <label for="passwordConfirm">비밀번호 확인</label>
+            <label for="password2">비밀번호 확인</label>
             <input 
-              id="passwordConfirm" 
-              v-model="passwordConfirm" 
+              id="password2" 
+              v-model="password2" 
               type="password" 
               placeholder="••••••••" 
               required 
@@ -78,14 +78,20 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'signup', payload: { username: string; email: string; password: string; passwordConfirm: string }): void;
+  (e: 'signup', payload: {
+    username: string;
+    email: string;
+    password: string;
+    password2: string;
+  }): void;
   (e: 'switch-to-login'): void;
 }>();
+
 
 const username = ref('');
 const email = ref('');
 const password = ref('');
-const passwordConfirm = ref('');
+const password2 = ref('');
 
 watch(() => props.isOpen, (newVal) => {
   if (newVal) {
@@ -93,7 +99,7 @@ watch(() => props.isOpen, (newVal) => {
     username.value = '';
     email.value = '';
     password.value = '';
-    passwordConfirm.value = '';
+    password2.value = '';
   }
 });
 
@@ -103,7 +109,7 @@ const handleClose = () => {
 
 const handleSubmit = () => {
   // Basic validation
-  if (password.value !== passwordConfirm.value) {
+  if (password.value !== password2.value) {
     alert('비밀번호가 일치하지 않습니다.');
     return;
   }
@@ -117,8 +123,9 @@ const handleSubmit = () => {
     username: username.value, 
     email: email.value, 
     password: password.value,
-    passwordConfirm: passwordConfirm.value
+    password2: password2.value,
   });
+
 };
 
 const handleSwitchMode = () => {
