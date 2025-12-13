@@ -5,16 +5,19 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 
-from movies.models import Movie
-from .models import UserPreference, FavoriteMovie, WatchedMovie
+from movies.models import Movie, MovieRating
+from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow
 from .serializers import (
     UserPreferenceSerializer,
     FavoriteMovieSerializer,
     WatchedMovieSerializer,
     MeSerializer,
     SignupSerializer,
+    PublicUserProfileSerializer,
 )
-from movies.serializers import MovieResponseSerializer
+from movies.serializers import (
+    MovieResponseSerializer,
+    )
 
 User = get_user_model()
 
@@ -120,3 +123,82 @@ class WatchedMovieView(APIView):
         movies = [w.movie for w in watched]
         serializer = MovieResponseSerializer(movies, many=True)
         return Response(serializer.data)
+
+class UserProfileView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        serializer = PublicUserProfileSerializer(user)
+        return Response(serializer.data)
+
+class UserReviewListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        reviews = MovieRating.objects.filter(user=user).select_related("movie")
+
+        data = [
+            {
+                "movie": review.movie.title,
+                "movie_id": review.movie.id,
+                "rating": review.rating,
+                "comment": review.comment,
+            }
+            for review in reviews
+        ]
+
+        return Response(data)
+
+
+class FollowToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        target = get_object_or_404(User, id=user_id)
+
+        # 자기 자신 팔로우 방지
+        if target == request.user:
+            return Response({"error": "You cannot follow yourself."}, status=400)
+
+        follow, created = UserFollow.objects.get_or_create(
+            follower=request.user,
+            following=target
+        )
+
+        if not created:
+            follow.delete()
+            return Response({"followed": False})
+
+        return Response({"followed": True})
+
+class FollowerListView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        followers = user.followers.select_related("follower")
+
+        data = [
+            {
+                "id": f.follower.id,
+                "username": f.follower.username
+            }
+            for f in followers
+        ]
+
+        return Response(data)
+
+class FollowingListView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        following = user.following.select_related("following")
+
+        data = [
+            {
+                "id": f.following.id,
+                "username": f.following.username
+            }
+            for f in following
+        ]
+
+        return Response(data)

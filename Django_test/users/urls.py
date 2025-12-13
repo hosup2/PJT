@@ -8,6 +8,11 @@ from .views import (
     MeUpdateView,
     MeDeleteView,
     SignupView,
+    UserProfileView,
+    UserReviewListView,
+    FollowToggleView,
+    FollowerListView,
+    FollowingListView,
 )
 
 urlpatterns = [
@@ -19,4 +24,10 @@ urlpatterns = [
     path("me/update/", MeUpdateView.as_view()),
     path("me/delete/", MeDeleteView.as_view()),
     path("signup/", SignupView.as_view()),
+    path("<int:user_id>/profile/", UserProfileView.as_view()),
+    path("<int:user_id>/reviews/", UserReviewListView.as_view()),
+    path("<int:user_id>/follow/", FollowToggleView.as_view()),
+    path("<int:user_id>/followers/", FollowerListView.as_view()),
+    path("<int:user_id>/following/", FollowingListView.as_view()),
+
 ]

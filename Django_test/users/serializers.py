@@ -1,7 +1,9 @@
 from rest_framework import serializers
+from django.db import models
 from django.contrib.auth import get_user_model
-from .models import UserPreference, FavoriteMovie, WatchedMovie
+from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow
 from movies.serializers import MovieResponseSerializer
+
 
 User = get_user_model()
 
@@ -58,3 +60,32 @@ class SignupSerializer(serializers.ModelSerializer):
         )
         return user
 
+class PublicUserProfileSerializer(serializers.ModelSerializer):
+    stats = serializers.SerializerMethodField()
+    follow_info = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ("id", "username", "stats", "follow_info")
+
+    def get_follow_info(self, obj):
+        request = self.context.get("request")
+
+        is_following = False
+        if request and request.user.is_authenticated:
+            is_following = obj.followers.filter(
+                follower=request.user
+            ).exists()
+
+        return {
+            "followers_count": obj.followers.count(),
+            "following_count": obj.following.count(),
+            "is_following": is_following
+        }
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserFollow
+        fields = ("id", "follower", "following", "created_at")
+        read_only_fields = ("follower",)

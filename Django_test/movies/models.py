@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 class Genre(models.Model):
     name = models.CharField(max_length=50)
@@ -37,3 +38,25 @@ class FeaturedMovie(models.Model):
 
     def __str__(self):
         return f"{self.priority} - {self.movie.title}"
+
+class MovieRating(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="movie_ratings"
+    )
+    movie = models.ForeignKey(
+        Movie,   # 같은 파일이므로 바로 참조 가능
+        on_delete=models.CASCADE,
+        related_name="ratings"
+    )
+
+
+    rating = models.FloatField()  # 0.5 ~ 5.0
+    comment = models.TextField(blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "movie")  # 중복 평가 방지
