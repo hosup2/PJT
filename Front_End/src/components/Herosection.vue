@@ -1,6 +1,6 @@
 <template>
   <!-- 영화 캐러셀 히어로 섹션 - 화면 전체를 차지 -->
-  <div class="hero-carousel-wrapper" style="position: relative; width: 100vw; height: 100vh; overflow: hidden; background-color: #000; margin: 0; padding: 0;">
+  <div class="hero-carousel-wrapper" style="position: relative; width: 100%; height: 100vh; overflow: hidden; background-color: #000; margin: 0; padding: 0;">
     <div class="hero-carousel group" style="position: relative; width: 100%; height: 100%; overflow: hidden;">
       <!-- 캐러셀 컨테이너 -->
       <div 
@@ -24,7 +24,7 @@
         >
           <!-- 영화 배경 이미지 -->
           <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-            <div style="position: relative; height: 100%; width: 250%; max-width: none;">
+            <div style="position: relative; height: 100%; width: 100%; max-width: none;">
               <img 
                 :src="movie.backdrop" 
                 :alt="movie.title"

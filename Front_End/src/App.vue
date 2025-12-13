@@ -22,7 +22,7 @@
         <img src="/mia.png" alt="MIA 로봇" style="height: 100px; width: auto;" class="drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform" />
       </div>
 
-      <main class="relative pt-20 px-4 max-w-7xl mx-auto">
+      <main :class="mainClass">
         <router-view v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
             <component 
@@ -55,8 +55,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide, onMounted, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, provide, onMounted, watch, computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import Navigation from './components/Navigation.vue';
 import AuthModal from './components/AuthModal.vue';
@@ -75,12 +75,20 @@ interface User {
 }
 
 const router = useRouter();
+const route = useRoute();
 const isLoggedIn = ref(false);
 const currentUser = ref<User | null>(null);
 const showAuthModal = ref(false);
 const showProfileEditModal = ref(false);
 const showOnboarding = ref(false);
 const isLoading = ref(false);
+
+const mainClass = computed(() => {
+  if (route.name === 'Home') {
+    return 'relative pt-20';
+  }
+  return 'relative pt-20 px-4 max-w-7xl mx-auto';
+});
 
 // Provide user state to all child components
 provide('isLoggedIn', isLoggedIn);

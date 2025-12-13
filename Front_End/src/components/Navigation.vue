@@ -3,54 +3,43 @@
     <div class="container mx-auto px-6 max-w-7xl">
       <div class="flex items-center justify-between h-20">
         <!-- 작은 로고 -->
-        <button 
-          @click="emit('navigate', 'home')"
+        <router-link 
+          :to="{ name: 'Home' }"
           class="flex items-center gap-2 hover:opacity-90 transition-all duration-200"
         >
           <img src="/mia_logo1.png" alt="MIA 로고" style="height: 80px; width: auto; margin-left: 30px" />
-        </button>
+        </router-link>
         
         <!-- 메뉴 -->
         <div class="flex items-center gap-6">
-          <button
-            @click="emit('navigate', 'home')"
-            :class="[
-              'flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium',
-              currentView === 'home' 
-                ? 'text-white bg-purple-600 shadow-lg shadow-purple-500/30' 
-                : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-            ]"
+          <router-link
+            :to="{ name: 'Home' }"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
+            active-class="!text-white !bg-purple-600 !shadow-lg !shadow-purple-500/30"
           >
             <Home class="w-5 h-5" />
             <span class="text-base">홈</span>
-          </button>
+          </router-link>
 
-          <button
-            @click="emit('navigate', 'explore')"
-            :class="[
-              'flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium',
-              currentView === 'explore' 
-                ? 'text-white bg-purple-600 shadow-lg shadow-purple-500/30' 
-                : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-            ]"
+          <router-link
+            :to="{ name: 'Explore' }"
+            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
+            active-class="!text-white !bg-purple-600 !shadow-lg !shadow-purple-500/30"
           >
             <Film class="w-5 h-5" />
             <span class="text-base">둘러보기</span>
-          </button>
+          </router-link>
           
           <template v-if="isLoggedIn">
-            <button
-              @click="emit('navigate', 'profile', currentUser?.id)"
-              :class="[
-                'flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium',
-                currentView === 'profile' 
-                  ? 'text-white bg-purple-600 shadow-lg shadow-purple-500/30' 
-                  : 'text-gray-300 hover:text-white hover:bg-gray-800/50'
-              ]"
+            <router-link
+              v-if="currentUser"
+              :to="{ name: 'UserProfile', params: { userId: currentUser.id } }"
+              class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
+              active-class="!text-white !bg-purple-600 !shadow-lg !shadow-purple-500/30"
             >
               <User class="w-5 h-5" />
               <span class="text-base">내 영화</span>
-            </button>
+            </router-link>
             
             <div class="relative" ref="userMenuRef">
               <button
@@ -128,7 +117,6 @@ interface User {
 }
 
 interface Props {
-  currentView: 'home' | 'movie' | 'profile' | 'explore';
   isLoggedIn: boolean;
   currentUser?: User | null;
 }
@@ -136,7 +124,6 @@ interface Props {
 defineProps<Props>();
 
 const emit = defineEmits<{
-  navigate: [view: 'home' | 'movie' | 'profile' | 'explore', userId?: number];
   openAuth: [];
   logout: [];
   editProfile: [];
