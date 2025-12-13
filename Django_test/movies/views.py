@@ -11,6 +11,7 @@ from .models import Movie, Genre, FeaturedMovie, MovieRating
 from .serializers import MovieResponseSerializer, FeaturedMovieSerializer
 from .serializers import MovieRatingSerializer
 
+
 # TMDB 날짜 안전 파서
 def safe_date(value):
     return value if value else None
@@ -190,6 +191,57 @@ class TMDBPopularImportView(APIView):
             "featured_updated": 20 - featured_created,
             "pages_loaded": pages,
         })
+
+
+
+class TMDBPopularPageImportView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, page):
+        TMDB_KEY = settings.TMDB_API_KEY
+        BASE_URL = "https://api.themoviedb.org/3/movie/popular"
+
+        if page < 1 or page > 500:
+            return Response(
+                {"error": "page must be between 1 and 500"},
+                status=400
+            )
+
+        url = f"{BASE_URL}?api_key={TMDB_KEY}&language=ko-KR&page={page}"
+        res = requests.get(url)
+        data = res.json()
+
+        movies = data.get("results", [])
+        imported = 0
+        skipped = 0
+
+        for item in movies:
+            movie, created = Movie.objects.get_or_create(
+                tmdb_id=item["id"],
+                defaults={
+                    "title": item.get("title"),
+                    "original_title": item.get("original_title"),
+                    "overview": item.get("overview") or "",
+                    "poster_path": item.get("poster_path"),
+                    "backdrops": item.get("backdrop_path"),
+                    "release_date": item.get("release_date") or None,
+                    "tmdb_rating": item.get("vote_average"),
+                }
+            )
+
+            if created:
+                imported += 1
+            else:
+                skipped += 1
+
+        return Response({
+            "requested_page": page,
+            "movies_in_page": len(movies),
+            "imported": imported,
+            "skipped": skipped,
+            "message": f"Popular page {page} imported successfully"
+        })
+
 
 
 class MovieRatingView(APIView):

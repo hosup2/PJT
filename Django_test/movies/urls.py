@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import TMDBImportView, MovieDetailView, MovieListView, MovieSearchView
 from .views import FeaturedMovieView, TMDBPopularImportView, MovieRatingListView, MovieRatingView
+from .views import TMDBPopularPageImportView
 
 urlpatterns = [
     path("import/", TMDBImportView.as_view()),          # 관리자
@@ -11,4 +12,6 @@ urlpatterns = [
     path("popular/", TMDBPopularImportView.as_view()),
     path("<int:movie_id>/rating/", MovieRatingView.as_view()),
     path("<int:movie_id>/ratings/", MovieRatingListView.as_view()),
+    path("popular/import/<int:page>/", TMDBPopularPageImportView.as_view()),
+
 ]
