@@ -5,10 +5,11 @@ from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+from rest_framework import status
 
-from .models import Movie, Genre, FeaturedMovie
+from .models import Movie, Genre, FeaturedMovie, MovieRating
 from .serializers import MovieResponseSerializer, FeaturedMovieSerializer
-
+from .serializers import MovieRatingSerializer
 
 # TMDB 날짜 안전 파서
 def safe_date(value):
@@ -190,3 +191,37 @@ class TMDBPopularImportView(APIView):
             "pages_loaded": pages,
         })
 
+
+class MovieRatingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+
+        rating_obj, created = MovieRating.objects.update_or_create(
+            user=request.user,
+            movie=movie,
+            defaults={
+                "rating": request.data.get("rating"),
+                "comment": request.data.get("comment", ""),
+            }
+        )
+
+        serializer = MovieRatingSerializer(rating_obj)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def delete(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+        MovieRating.objects.filter(user=request.user, movie=movie).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class MovieRatingListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+        ratings = MovieRating.objects.filter(movie=movie).select_related("user")
+
+        serializer = MovieRatingSerializer(ratings, many=True)
+        return Response(serializer.data)
