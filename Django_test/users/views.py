@@ -129,7 +129,7 @@ class UserProfileView(APIView):
 
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
-        serializer = PublicUserProfileSerializer(user)
+        serializer = PublicUserProfileSerializer(user, context={'request': request})
         return Response(serializer.data)
 
 class UserReviewListView(APIView):

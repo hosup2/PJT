@@ -28,6 +28,7 @@
             <component 
               :is="Component" 
               :key="route.path"
+              :current-user-id="currentUser?.id"
               @open-auth="showAuthModal = true"
             />
           </transition>

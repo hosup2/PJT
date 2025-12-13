@@ -60,6 +60,11 @@ class SignupSerializer(serializers.ModelSerializer):
         )
         return user
 
+from movies.models import MovieRating
+from django.db.models import Avg, Count
+from django.db.models.functions import Coalesce
+
+
 class PublicUserProfileSerializer(serializers.ModelSerializer):
     stats = serializers.SerializerMethodField()
     follow_info = serializers.SerializerMethodField()
@@ -67,6 +72,25 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ("id", "username", "stats", "follow_info")
+
+    def get_stats(self, obj):
+        # obj is the user instance
+        ratings = MovieRating.objects.filter(user=obj)
+        
+        # Coalesce is used to ensure we get 0 instead of None for users with no ratings
+        avg_rating = ratings.aggregate(avg=Coalesce(Avg('rating'), 0.0))['avg']
+        
+        total_ratings = ratings.count()
+        total_comments = ratings.filter(comment__isnull=False).exclude(comment__exact='').count()
+        
+        liked_movies = FavoriteMovie.objects.filter(user=obj).count()
+        
+        return {
+            'total_ratings': total_ratings,
+            'avg_rating': avg_rating,
+            'liked_movies': liked_movies,
+            'total_comments': total_comments
+        }
 
     def get_follow_info(self, obj):
         request = self.context.get("request")
