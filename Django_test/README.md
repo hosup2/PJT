@@ -1,7 +1,8 @@
 ## Back_End Test
 
-## 12.12
-- 
+## 12.13
+- 영화 리뷰, 평점 기능
+- 유저간 팔로우 기능
 
 ## 12.11
 - Movie / FeaturedMovie 데이터
