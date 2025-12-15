@@ -44,6 +44,12 @@ import { useRouter } from 'vue-router';
 import { Star } from 'lucide-vue-next';
 import axios from 'axios';
 
+interface FeaturedMovie {
+  id: number;
+  priority: number;
+  movie: Movie;
+}
+
 interface Movie {
   id: number;
   title: string;
@@ -55,28 +61,24 @@ interface Movie {
   };
 }
 
-const router = useRouter();
 const movies = ref<Movie[]>([]);
-const loading = ref(true);
 
 onMounted(async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/movies/');
-    movies.value = response.data;
+    const response = await axios.get(
+      'http://127.0.0.1:8000/movies/featured/'
+    );
+
+    // ⭐ 핵심: movie만 꺼내서 사용
+    movies.value = response.data.map(
+      (item: FeaturedMovie) => item.movie
+    );
+
   } catch (error) {
-    console.error('Failed to fetch movies:', error);
+    console.error('Failed to fetch featured movies:', error);
   } finally {
     loading.value = false;
   }
 });
 
-const getImageUrl = (path: string) => {
-  if (!path) return 'https://via.placeholder.com/500x750?text=No+Image';
-  if (path.startsWith('http')) return path;
-  return `https://image.tmdb.org/t/p/w500${path}`;
-};
-
-const navigateToMovie = (movieId: number) => {
-  router.push({ name: 'MovieDetail', params: { id: movieId } });
-};
 </script>
