@@ -21,7 +21,7 @@
             <div class="absolute bottom-3 left-3 right-3">
               <div class="flex items-center gap-1 text-yellow-400 mb-1">
                 <Star class="w-4 h-4 fill-yellow-400" />
-                <span class="text-sm">{{ movie.stats.avg_rating.toFixed(1) }}</span>
+                <span class="text-sm">{{ movie.tmdb_rating.toFixed(1) }}</span>
               </div>
               <p class="text-xs text-gray-300">{{ movie.stats.rating_count.toLocaleString() }}명 평가</p>
             </div>
@@ -39,16 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Star } from 'lucide-vue-next';
-import axios from 'axios';
-
-interface FeaturedMovie {
-  id: number;
-  priority: number;
-  movie: Movie;
-}
 
 interface Movie {
   id: number;
@@ -61,24 +53,20 @@ interface Movie {
   };
 }
 
-const movies = ref<Movie[]>([]);
+defineProps<{
+  movies: Movie[];
+}>();
 
-onMounted(async () => {
-  try {
-    const response = await axios.get(
-      'http://127.0.0.1:8000/movies/featured/'
-    );
+const router = useRouter();
 
-    // ⭐ 핵심: movie만 꺼내서 사용
-    movies.value = response.data.map(
-      (item: FeaturedMovie) => item.movie
-    );
+const navigateToMovie = (id: number) => {
+  router.push({ name: 'MovieDetail', params: { id } });
+};
 
-  } catch (error) {
-    console.error('Failed to fetch featured movies:', error);
-  } finally {
-    loading.value = false;
+const getImageUrl = (path: string | null) => {
+  if (!path) {
+    return 'https://via.placeholder.com/500x750?text=No+Image';
   }
-});
-
+  return `https://image.tmdb.org/t/p/w500${path}`;
+};
 </script>

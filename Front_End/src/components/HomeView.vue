@@ -41,16 +41,10 @@ const popularMovies = ref<Movie[]>([]);
 
 const fetchPopularMovies = async () => {
   try {
-    // '/movies/featured/' 또는 다른 인기 영화 API 엔드포인트를 사용합니다.
-    const response = await axios.get('http://127.0.0.1:8000/movies/?ordering=-tmdb_rating&limit=10'); 
-    const movies = response.data.results || response.data;
+    const response = await axios.get('http://127.0.0.1:8000/movies/featured/'); 
+    const featuredMovies = response.data;
 
-    popularMovies.value = movies.map((movie: any) => ({
-      ...movie,
-      poster_path: movie.poster_path 
-        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` 
-        : 'https://via.placeholder.com/500x750?text=No+Image'
-    }));
+    popularMovies.value = featuredMovies.map((featured: any) => featured.movie);
   } catch (error) {
     console.error('인기 영화를 가져오는 데 실패했습니다:', error);
   }

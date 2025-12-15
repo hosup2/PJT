@@ -113,7 +113,7 @@ class FeaturedMovieView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        qs = FeaturedMovie.objects.select_related("movie").order_by("priority")[:10]
+        qs = FeaturedMovie.objects.select_related("movie").order_by("priority")[:20]
         serializer = FeaturedMovieSerializer(qs, many=True)
         return Response(serializer.data)
 
