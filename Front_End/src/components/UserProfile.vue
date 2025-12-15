@@ -17,85 +17,109 @@
     <!-- Profile content -->
     <div v-if="user">
       <!-- Profile Header -->
-      <div class="bg-gray-900 rounded-lg p-8 mb-8">
-        <div class="flex items-start gap-6">
-          <div class="relative">
+      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 mb-8 border border-gray-700/50">
+        <!-- Profile Info Section -->
+        <div class="flex flex-col items-center text-center mb-8">
+          <!-- Profile Image -->
+          <div class="relative mb-4">
             <img
               :src="user.profile_image"
               :alt="user.username"
-              class="w-24 h-24 rounded-full bg-gray-800 object-cover"
+              class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-800 object-cover ring-4 ring-purple-500/20"
             />
+            <div class="absolute -bottom-2 -right-2 bg-purple-600 rounded-full p-2">
+              <Star class="w-4 h-4 md:w-5 md:h-5 text-white fill-white" />
+            </div>
           </div>
           
-          <div class="flex-1">
-            <div class="flex items-center gap-4 mb-4">
-              <h1 class="text-3xl">{{ user.username }}</h1>
-              <button
-                v-if="!isOwnProfile"
-                @click="toggleFollow"
-                :class="[
-                  'px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2',
-                  user.follow_info.is_following
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                    : 'bg-purple-600 text-white hover:bg-purple-500'
-                ]"
-              >
-                <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
-                <UserPlus v-else class="w-4 h-4" />
-                <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
-              </button>
+          <!-- Username & Follow Button -->
+          <h1 class="text-4xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+            {{ user.username }}
+          </h1>
+          
+          <p class="text-gray-400 mb-4">{{ user.email }}</p>
+          
+          <button
+            v-if="!isOwnProfile"
+            @click="toggleFollow"
+            :class="[
+              'px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg',
+              user.follow_info.is_following
+                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:shadow-gray-600/50'
+                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/50'
+            ]"
+          >
+            <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
+            <UserPlus v-else class="w-4 h-4" />
+            <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
+          </button>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 max-w-5xl mx-auto">
+          <!-- Followers -->
+          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20">
+                <Users class="w-5 h-5 text-emerald-400" />
+              </div>
+              <span class="text-2xl font-bold text-emerald-400">{{ user.follow_info.followers_count }}</span>
+              <p class="text-xs text-gray-400">팔로워</p>
             </div>
-            <p class="text-gray-400 mb-6">{{ user.email }}</p>
-            
-            <div class="grid grid-cols-3 md:grid-cols-6 gap-6">
-              <!-- Follower/Following Stats -->
-              <div>
-                <div class="flex items-center gap-2 text-green-400 mb-1">
-                  <Users class="w-5 h-5" />
-                  <span class="text-2xl">{{ user.follow_info.followers_count }}</span>
-                </div>
-                <p class="text-sm text-gray-400">팔로워</p>
+          </div>
+          
+          <!-- Following -->
+          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20">
+                <UserCheck class="w-5 h-5 text-emerald-400" />
               </div>
-              <div>
-                <div class="flex items-center gap-2 text-green-400 mb-1">
-                  <UserCheck class="w-5 h-5" />
-                  <span class="text-2xl">{{ user.follow_info.following_count }}</span>
-                </div>
-                <p class="text-sm text-gray-400">팔로잉</p>
-              </div>
+              <span class="text-2xl font-bold text-emerald-400">{{ user.follow_info.following_count }}</span>
+              <p class="text-xs text-gray-400">팔로잉</p>
+            </div>
+          </div>
 
-              <!-- Other Stats -->
-              <div>
-                <div class="flex items-center gap-2 text-purple-400 mb-1">
-                  <Film class="w-5 h-5" />
-                  <span class="text-2xl">{{ stats.total_ratings }}</span>
-                </div>
-                <p class="text-sm text-gray-400">평가한 영화</p>
+          <!-- Rated Movies -->
+          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-purple-500/50 transition-all duration-200 hover:scale-105">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-purple-500/20">
+                <Film class="w-5 h-5 text-purple-400" />
               </div>
-              
-              <div>
-                <div class="flex items-center gap-2 text-yellow-400 mb-1">
-                  <Star class="w-5 h-5" />
-                  <span class="text-2xl">{{ stats.avg_rating.toFixed(1) }}</span>
-                </div>
-                <p class="text-sm text-gray-400">평균 평점</p>
+              <span class="text-2xl font-bold text-purple-400">{{ stats.total_ratings }}</span>
+              <p class="text-xs text-gray-400">평가</p>
+            </div>
+          </div>
+          
+          <!-- Average Rating -->
+          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-yellow-500/50 transition-all duration-200 hover:scale-105">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-500/20">
+                <Star class="w-5 h-5 text-yellow-400 fill-yellow-400" />
               </div>
-              
-              <div>
-                <div class="flex items-center gap-2 text-red-400 mb-1">
-                  <Heart class="w-5 h-5" />
-                  <span class="text-2xl">{{ stats.liked_movies }}</span>
-                </div>
-                <p class="text-sm text-gray-400">좋아요</p>
+              <span class="text-2xl font-bold text-yellow-400">{{ stats.avg_rating.toFixed(1) }}</span>
+              <p class="text-xs text-gray-400">평균</p>
+            </div>
+          </div>
+          
+          <!-- Likes -->
+          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-red-500/50 transition-all duration-200 hover:scale-105">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/20">
+                <Heart class="w-5 h-5 text-red-400" />
               </div>
-              
-              <div>
-                <div class="flex items-center gap-2 text-blue-400 mb-1">
-                  <MessageSquare class="w-5 h-5" />
-                  <span class="text-2xl">{{ stats.total_comments }}</span>
-                </div>
-                <p class="text-sm text-gray-400">리뷰</p>
+              <span class="text-2xl font-bold text-red-400">{{ stats.liked_movies }}</span>
+              <p class="text-xs text-gray-400">좋아요</p>
+            </div>
+          </div>
+          
+          <!-- Reviews -->
+          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-blue-500/50 transition-all duration-200 hover:scale-105">
+            <div class="flex flex-col items-center gap-2">
+              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/20">
+                <MessageSquare class="w-5 h-5 text-blue-400" />
               </div>
+              <span class="text-2xl font-bold text-blue-400">{{ stats.total_comments }}</span>
+              <p class="text-xs text-gray-400">리뷰</p>
             </div>
           </div>
         </div>
