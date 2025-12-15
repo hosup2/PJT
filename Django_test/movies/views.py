@@ -193,7 +193,6 @@ class TMDBPopularImportView(APIView):
         })
 
 
-
 class TMDBPopularPageImportView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -243,28 +242,43 @@ class TMDBPopularPageImportView(APIView):
         })
 
 
-
+# ⭐ 수정: 여러 댓글을 작성할 수 있도록 변경
 class MovieRatingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
 
-        rating_obj, created = MovieRating.objects.update_or_create(
+        # ⭐ 변경: update_or_create 대신 create 사용
+        # 이제 같은 영화에 여러 리뷰를 작성할 수 있음
+        rating_obj = MovieRating.objects.create(
             user=request.user,
             movie=movie,
-            defaults={
-                "rating": request.data.get("rating"),
-                "comment": request.data.get("comment", ""),
-            }
+            rating=request.data.get("rating"),
+            comment=request.data.get("comment", ""),
         )
 
         serializer = MovieRatingSerializer(rating_obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    # ⭐ 변경: 특정 리뷰만 삭제하도록 수정
     def delete(self, request, movie_id):
-        movie = get_object_or_404(Movie, id=movie_id)
-        MovieRating.objects.filter(user=request.user, movie=movie).delete()
+        # URL에 rating_id가 있어야 함: /movies/{movie_id}/ratings/{rating_id}/
+        rating_id = request.data.get('rating_id')
+        
+        if not rating_id:
+            return Response(
+                {"error": "rating_id is required"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        rating = get_object_or_404(
+            MovieRating, 
+            id=rating_id,
+            movie_id=movie_id,
+            user=request.user
+        )
+        rating.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

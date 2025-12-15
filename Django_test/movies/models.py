@@ -26,6 +26,7 @@ class Movie(models.Model):
 
     genres = models.ManyToManyField(Genre)
 
+
 class FeaturedMovie(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="featured_items")
     priority = models.IntegerField(default=0)  # 배너에 보이는 순서
@@ -39,6 +40,7 @@ class FeaturedMovie(models.Model):
     def __str__(self):
         return f"{self.priority} - {self.movie.title}"
 
+
 class MovieRating(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -46,17 +48,18 @@ class MovieRating(models.Model):
         related_name="movie_ratings"
     )
     movie = models.ForeignKey(
-        Movie,   # 같은 파일이므로 바로 참조 가능
+        Movie,
         on_delete=models.CASCADE,
         related_name="ratings"
     )
 
-
-    rating = models.FloatField()  # 0.5 ~ 5.0
+    rating = models.FloatField(null=True, blank=True)  # ⭐ null=True 추가 (평점 없이 댓글만 가능)
     comment = models.TextField(blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ("user", "movie")  # 중복 평가 방지
+        # ⭐ unique_together 제거! 이제 같은 영화에 여러 리뷰 작성 가능
+        # unique_together = ("user", "movie")  # 이 줄 삭제 또는 주석처리
+        ordering = ["-created_at"]  # 최신순 정렬

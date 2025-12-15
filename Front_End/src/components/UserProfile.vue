@@ -299,7 +299,7 @@
             :key="comment.id"
             class="bg-gray-900/50 rounded-xl p-6 border border-gray-800 hover:border-purple-500/30 transition-all"
           >
-            <!-- Header: Movie Title, Rating, Date -->
+            <!-- Header: Movie Title, Rating, Date, Delete Button -->
             <div class="flex items-start justify-between mb-4">
               <div class="flex-1">
                 <!-- Movie Title - Clickable -->
@@ -327,9 +327,21 @@
                 </div>
               </div>
               
-              <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
-                {{ formatDate(comment.created_at) }}
-              </span>
+              <div class="flex items-center gap-3 ml-4">
+                <span class="text-sm text-gray-500 whitespace-nowrap">
+                  {{ formatDate(comment.created_at) }}
+                </span>
+                
+                <!-- Delete Button - Only show for own profile -->
+                <button
+                  v-if="isOwnProfile"
+                  @click="handleDeleteReview(comment.id, comment.movie_id)"
+                  class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                  title="리뷰 삭제"
+                >
+                  <Trash2 class="w-5 h-5" />
+                </button>
+              </div>
             </div>
             
             <!-- Review Content -->
@@ -377,7 +389,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { Star, Film, Heart, MessageSquare, UserPlus, UserCheck, Users } from 'lucide-vue-next';
+import { Star, Film, Heart, MessageSquare, UserPlus, UserCheck, Users, Trash2 } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 import ProfileEditModal from './ProfileEditModal.vue';
 
@@ -571,6 +583,27 @@ const handleSaveProfile = (username: string, profileImage: string) => {
 
 const handleMovieClick = (movieId: number) => {
   router.push({ name: 'MovieDetail', params: { id: movieId } });
+};
+
+const handleDeleteReview = async (reviewId: number, movieId?: number) => {
+  if (!confirm('이 리뷰를 삭제하시겠습니까?')) {
+    return;
+  }
+
+  try {
+    // rating_id를 body에 포함해서 전송
+    await axios.delete(`http://127.0.0.1:8000/movies/${movieId}/rating/`, {
+      data: { rating_id: reviewId }
+    });
+    
+    // Refresh user profile data
+    await fetchUserProfile();
+    
+    alert('리뷰가 삭제되었습니다.');
+  } catch (error) {
+    console.error('Failed to delete review:', error);
+    alert('리뷰 삭제에 실패했습니다.');
+  }
 };
 
 // This computed property will now be empty as we are not using mock data
