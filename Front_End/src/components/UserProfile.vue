@@ -219,14 +219,15 @@
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           <div v-for="rating in filteredRatings" :key="rating.id" class="group">
             <button
-              @click="emit('movieClick', rating.movie_id)"
+              @click="handleMovieClick(rating.movie_id)"
               class="w-full text-left"
             >
               <div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 bg-gray-800">
                 <img
-                  :src="rating.poster_path"
+                  :src="getFullImageUrl(rating.poster_path)"
                   :alt="rating.title"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  @error="handleImageError"
                 />
               </div>
               
@@ -257,14 +258,15 @@
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
           <div v-for="movie in likedMovies" :key="movie.id" class="group">
             <button
-              @click="emit('movieClick', movie.id)"
+              @click="handleMovieClick(movie.id)"
               class="w-full text-left"
             >
               <div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 bg-gray-800">
                 <img
-                  :src="movie.poster_path"
+                  :src="getFullImageUrl(movie.poster_path)"
                   :alt="movie.title"
                   class="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  @error="handleImageError"
                 />
                 <div class="absolute top-3 right-3">
                   <Heart class="w-5 h-5 text-red-400 fill-current" />
@@ -295,49 +297,65 @@
           <div
             v-for="comment in userComments"
             :key="comment.id"
-            class="bg-gray-900 rounded-lg p-6"
+            class="bg-gray-900/50 rounded-xl p-6 border border-gray-800 hover:border-purple-500/30 transition-all"
           >
-            <div class="flex items-start gap-4 mb-4">
-              <button
-                @click="emit('movieClick', comment.movie_id)"
-                class="flex-shrink-0"
-              >
-                <img
-                  :src="comment.movie_poster"
-                  :alt="comment.movie_title"
-                  class="w-16 h-24 rounded object-cover hover:ring-2 hover:ring-purple-500 transition-all"
-                />
-              </button>
-              
+            <!-- Header: Movie Title, Rating, Date -->
+            <div class="flex items-start justify-between mb-4">
               <div class="flex-1">
+                <!-- Movie Title - Clickable -->
                 <button
-                  @click="emit('movieClick', comment.movie_id)"
-                  class="text-lg hover:text-purple-400 transition-colors mb-2"
+                  v-if="comment.movie_id"
+                  @click="handleMovieClick(comment.movie_id)"
+                  class="text-xl font-bold hover:text-purple-400 transition-colors mb-2 text-left block hover:underline"
                 >
-                  {{ comment.movie_title }}
+                  {{ comment.movie_title || '영화 제목' }}
                 </button>
                 
-                <div class="flex items-center gap-3 mb-3">
+                <!-- Fallback if no movie info -->
+                <div v-else class="text-xl font-bold text-gray-500 mb-2">
+                  {{ comment.movie_title || '영화 정보 없음' }}
+                </div>
+                
+                <!-- Rating if exists -->
+                <div v-if="comment.rating && comment.rating > 0" class="flex items-center gap-2 mb-2">
                   <StarRating
-                    v-if="comment.rating"
                     :initial-rating="comment.rating"
                     :readonly="true"
                     size="sm"
                   />
-                  <span class="text-sm text-gray-500">
-                    {{ formatDate(comment.created_at) }}
-                  </span>
-                </div>
-                
-                <p class="text-gray-300 leading-relaxed">
-                  {{ comment.content }}
-                </p>
-                
-                <div class="flex items-center gap-2 mt-3 text-gray-400">
-                  <Heart class="w-4 h-4" />
-                  <span class="text-sm">{{ comment.likes_count }}</span>
+                  <span class="text-sm text-yellow-400 font-semibold">{{ comment.rating.toFixed(1) }}점</span>
                 </div>
               </div>
+              
+              <span class="text-sm text-gray-500 whitespace-nowrap ml-4">
+                {{ formatDate(comment.created_at) }}
+              </span>
+            </div>
+            
+            <!-- Review Content -->
+            <div v-if="getReviewContent(comment)" class="bg-gray-800/30 rounded-lg p-4 mb-4">
+              <p class="text-gray-200 leading-relaxed whitespace-pre-wrap text-base">
+                {{ getReviewContent(comment) }}
+              </p>
+            </div>
+            <div v-else class="bg-gray-800/30 rounded-lg p-4 mb-4">
+              <p class="text-gray-500 italic text-sm">
+                리뷰 내용이 없습니다.
+              </p>
+            </div>
+            
+            <!-- Footer: Likes -->
+            <div class="flex items-center gap-2 pt-2">
+              <Heart 
+                class="w-5 h-5 transition-colors" 
+                :class="comment.likes_count > 0 ? 'fill-current text-red-500' : 'text-gray-600'" 
+              />
+              <span 
+                class="text-sm font-medium" 
+                :class="comment.likes_count > 0 ? 'text-red-500' : 'text-gray-600'"
+              >
+                좋아요 {{ comment.likes_count }}개
+              </span>
             </div>
           </div>
         </div>
@@ -357,10 +375,16 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { Star, Film, Heart, MessageSquare, UserPlus, UserCheck, Users } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 import ProfileEditModal from './ProfileEditModal.vue';
+
+const router = useRouter();
+
+// TMDB Image Base URL
+const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 // Type definitions based on backend serializers
 interface FollowInfo {
@@ -376,6 +400,9 @@ interface UserProfile {
   profile_image?: string;
   stats: any; // Define stats structure later
   follow_info: FollowInfo;
+  rated_movies: UserRating[];
+  liked_movies: LikedMovie[];
+  reviews: UserComment[];
 }
 
 interface UserRating {
@@ -395,17 +422,25 @@ interface LikedMovie {
 
 interface UserComment {
   id: number;
-  movie_id: number;
-  movie_title: string;
-  movie_poster: string;
+  user_id: number;
+  username: string;
   rating: number | null;
-  content: string;
+  comment: string;
+  review_content: string;
   created_at: string;
   likes_count: number;
+  is_liked: boolean;
+  // These fields should come from backend but might be missing
+  movie_id?: number;
+  movie_title?: string;
+  movie?: {
+    id: number;
+    title: string;
+  };
 }
 
 interface Props {
-  userId: number;
+  userId: number | string;
   currentUserId?: number;
 }
 
@@ -414,12 +449,17 @@ const emit = defineEmits<{
   movieClick: [movieId: number];
   goHome: [];
   updateProfile: [username: string, profileImage: string];
+  navigateToUser: [userId: number];
 }>();
 
+const handleNavigateToUser = (userId: number) => {
+  emit('navigateToUser', userId);
+};
+
 const user = ref<UserProfile | null>(null);
-const userRatings = ref<UserRating[]>([]);
-const likedMovies = ref<LikedMovie[]>([]);
-const userComments = ref<UserComment[]>([]);
+const userRatings = computed(() => user.value?.rated_movies || []);
+const likedMovies = computed(() => user.value?.liked_movies || []);
+const userComments = computed(() => user.value?.reviews || []);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 
@@ -429,40 +469,79 @@ const showEditModal = ref(false);
 
 const isOwnProfile = computed(() => Number(props.userId) === props.currentUserId);
 
+// Helper function to get full image URL
+const getFullImageUrl = (path: string | null | undefined): string => {
+  if (!path) {
+    return '/placeholder-movie.png'; // Fallback image
+  }
+  
+  // If path already starts with http, return as is
+  if (path.startsWith('http')) {
+    return path;
+  }
+  
+  // If path starts with /, it's already a TMDB path
+  if (path.startsWith('/')) {
+    return `${TMDB_IMAGE_BASE_URL}${path}`;
+  }
+  
+  // Otherwise, assume it needs the base URL
+  return `${TMDB_IMAGE_BASE_URL}/${path}`;
+};
+
+// Handle image loading errors
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  target.src = '/placeholder-movie.png'; // Set fallback image
+};
+
 const fetchUserProfile = async () => {
-  console.log('Fetching profile for userId:', props.userId); // Diagnostic log
+  const numericUserId = Number(props.userId);
+  console.log('Fetching profile for userId:', numericUserId);
   isLoading.value = true;
   error.value = null;
   try {
-    const response = await axios.get(`http://127.0.0.1:8000/users/${props.userId}/profile/`);
+    const response = await axios.get(`http://127.0.0.1:8000/users/${numericUserId}/profile/`);
     user.value = response.data;
-  } catch (e) {
+    
+    // Debug logging
+    console.log('User profile data:', response.data);
+    console.log('Reviews data:', response.data.reviews);
+    console.log('Number of reviews:', response.data.reviews?.length || 0);
+    
+    // Debug each review to see structure
+    if (response.data.reviews && response.data.reviews.length > 0) {
+      const firstReview = response.data.reviews[0];
+      console.log('First review structure:', firstReview);
+      console.log('First review keys:', Object.keys(firstReview));
+      console.log('Movie title attempt 1 (movie?.title):', firstReview.movie?.title);
+      console.log('Movie title attempt 2 (movie_title):', firstReview.movie_title);
+      console.log('Movie title attempt 3 (title):', firstReview.title);
+      console.log('Content attempt 1 (content):', firstReview.content);
+      console.log('Content attempt 2 (comment):', firstReview.comment);
+      console.log('Content attempt 3 (review_content):', firstReview.review_content);
+    }
+  } catch (e: any) {
     console.error('Failed to fetch user profile:', e);
     error.value = '사용자 정보를 불러오는 데 실패했습니다.';
     user.value = null;
+    if (e.response?.data) {
+      console.log('Error response:', e.response.data);
+    }
   } finally {
     isLoading.value = false;
   }
 };
 
-// Fetch other user data (ratings, comments, etc.)
-const fetchUserActivity = async () => {
-  // Placeholder for fetching other data - implement later
-  // For now, clear mock data
-  userRatings.value = [];
-  likedMovies.value = [];
-  userComments.value = [];
-};
-
 onMounted(() => {
   fetchUserProfile();
-  fetchUserActivity();
 });
 
 const toggleFollow = async () => {
   if (!isOwnProfile.value && user.value) {
+    const numericUserId = Number(props.userId);
     try {
-      const response = await axios.post(`http://127.0.0.1:8000/users/${props.userId}/follow/`);
+      const response = await axios.post(`http://127.0.0.1:8000/users/${numericUserId}/follow/`);
       const { followed } = response.data;
       
       if (user.value.follow_info) {
@@ -482,13 +561,16 @@ const toggleFollow = async () => {
 
 watch(() => props.userId, () => {
   fetchUserProfile();
-  fetchUserActivity();
 });
 
 
 const handleSaveProfile = (username: string, profileImage: string) => {
   emit('updateProfile', username, profileImage);
   showEditModal.value = false;
+};
+
+const handleMovieClick = (movieId: number) => {
+  router.push({ name: 'MovieDetail', params: { id: movieId } });
 };
 
 // This computed property will now be empty as we are not using mock data
@@ -519,5 +601,10 @@ const filteredRatings = computed(() => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ko-KR');
+};
+
+// Helper function to get review content - backend sends 'comment' and 'review_content' (they're the same)
+const getReviewContent = (comment: UserComment): string => {
+  return comment.comment || comment.review_content || '';
 };
 </script>

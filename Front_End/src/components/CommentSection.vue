@@ -5,6 +5,9 @@
       <h3 class="text-lg mb-4">리뷰 작성</h3>
       
       <form @submit.prevent="handleSubmitComment">
+        <div class="mb-4">
+          <StarRating :initial-rating="rating" @change="handleRatingChange" />
+        </div>
         <textarea
           v-model="newComment"
           placeholder="이 영화에 대한 리뷰를 작성해주세요..."
@@ -150,20 +153,26 @@ interface Comment {
 interface Props {
   comments: Comment[];
   isLoggedIn: boolean;
+  rating: number;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 
 const emit = defineEmits<{
   submitComment: [content: string, spoiler: boolean];
   likeComment: [commentId: number];
   navigateToUser: [userId: number];
   openAuth: [];
+  ratingChange: [rating: number];
 }>();
 
 const newComment = ref('');
 const includeSpoiler = ref(false);
 const showSpoilers = ref(new Set<number>());
+
+const handleRatingChange = (rating: number) => {
+  emit('ratingChange', rating);
+};
 
 const handleSubmitComment = () => {
   if (newComment.value.trim()) {

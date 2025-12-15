@@ -32,7 +32,20 @@
       <div class="relative h-full flex items-center px-8 gap-8 max-w-7xl mx-auto">
         <!-- Movie Info on Left -->
         <div class="flex-1 z-10 max-w-2xl">
-          <h1 class="text-5xl font-bold mb-2">{{ movie.title }}</h1>
+          <div class="flex items-center gap-4 mb-2">
+            <h1 class="text-5xl font-bold">{{ movie.title }}</h1>
+            <button
+              @click="handleLikeMovie"
+              :disabled="!isLoggedIn"
+              :class="[
+                'p-2 rounded-full transition-colors',
+                isMovieLiked ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400',
+                isLoggedIn ? 'hover:bg-red-500/30 cursor-pointer' : 'cursor-not-allowed opacity-50'
+              ]"
+            >
+              <Heart :class="['w-8 h-8', isMovieLiked && 'fill-current']" />
+            </button>
+          </div>
           <p v-if="movie.original_title !== movie.title" class="text-xl text-gray-300 mb-4">
             {{ movie.original_title }}
           </p>
@@ -113,10 +126,12 @@
           <CommentSection
             :comments="comments"
             :is-logged-in="isLoggedIn"
+            :rating="userRating"
             @submit-comment="handleSubmitComment"
             @like-comment="handleLikeComment"
             @navigate-to-user="handleNavigateToUser"
             @open-auth="emit('openAuth')"
+            @rating-change="handleRatingChange"
           />
         </div>
       </div>
@@ -138,36 +153,14 @@
           <!-- User Rating -->
           <div class="mb-6 pb-6 border-b border-gray-800">
             <p class="text-sm text-gray-400 mb-3">이 영화를 평가해주세요</p>
-            <div v-if="isLoggedIn">
-              <StarRating
-                :initial-rating="userRating"
-                @change="handleRatingChange"
-              />
+            <div v-if="!isLoggedIn">
+              <button
+                @click="emit('openAuth')"
+                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+              >
+                로그인하고 평가하기
+              </button>
             </div>
-            <button
-              v-else
-              @click="emit('openAuth')"
-              class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-            >
-              로그인하고 평가하기
-            </button>
-          </div>
-
-          <!-- Like Button -->
-          <div>
-            <button
-              @click="handleLikeMovie"
-              :disabled="!isLoggedIn"
-              :class="[
-                'w-full flex items-center justify-center gap-2 py-3 rounded-lg transition-colors',
-                isMovieLiked ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400',
-                isLoggedIn ? 'hover:bg-red-500/30 cursor-pointer' : 'cursor-not-allowed opacity-50'
-              ]"
-            >
-              <Heart :class="['w-5 h-5', isMovieLiked && 'fill-current']" />
-              <span>{{ isMovieLiked ? '좋아요 취소' : '좋아요' }}</span>
-              <span class="text-sm">({{ movieLikesCount }})</span>
-            </button>
           </div>
         </div>
       </div>
@@ -203,6 +196,11 @@ interface Movie {
   tmdb_rating: number;
   imdb_rating: number;
   comments: Comment[];
+  user_data?: {
+    rating: number;
+    comment: string;
+    is_liked: boolean;
+  };
 }
 
 interface Comment {
@@ -232,6 +230,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   openAuth: [];
+  'activity-updated': [];
 }>();
 
 // --- State ---
@@ -326,7 +325,7 @@ const saveActivity = async () => {
         });
       }
     }
-
+    emit('activity-updated');
   } catch (err) {
     console.error('Failed to save activity:', err);
     alert('리뷰 저장에 실패했습니다.');
@@ -336,7 +335,6 @@ const saveActivity = async () => {
 const handleRatingChange = (rating: number) => {
   if (!isLoggedIn.value) return emit('openAuth');
   userRating.value = rating;
-  saveActivity();
 };
 
 const handleLikeMovie = async () => {
@@ -356,6 +354,7 @@ const handleLikeMovie = async () => {
       // If it was not liked, now like it
       await axios.post(`http://127.0.0.1:8000/users/favorites/${props.id}/`);
     }
+    emit('activity-updated');
   } catch (err) {
     console.error('Failed to update like status:', err);
     alert('좋아요 상태를 업데이트하는 데 실패했습니다.');

@@ -30,6 +30,7 @@
               :key="route.path"
               :current-user-id="currentUser?.id"
               @open-auth="showAuthModal = true"
+              @activity-updated="fetchCurrentUser"
             />
           </transition>
         </router-view>

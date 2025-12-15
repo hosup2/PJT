@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db import models
 from django.contrib.auth import get_user_model
 from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow
-from movies.serializers import MovieResponseSerializer
+from movies.serializers import MovieResponseSerializer, MovieRatingSerializer
 
 
 User = get_user_model()
@@ -68,10 +68,13 @@ from django.db.models.functions import Coalesce
 class PublicUserProfileSerializer(serializers.ModelSerializer):
     stats = serializers.SerializerMethodField()
     follow_info = serializers.SerializerMethodField()
+    rated_movies = serializers.SerializerMethodField()
+    liked_movies = serializers.SerializerMethodField()
+    reviews = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ("id", "username", "stats", "follow_info")
+        fields = ("id", "username", "stats", "follow_info", "rated_movies", "liked_movies", "reviews")
 
     def get_stats(self, obj):
         # obj is the user instance
@@ -83,12 +86,12 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
         total_ratings = ratings.count()
         total_comments = ratings.filter(comment__isnull=False).exclude(comment__exact='').count()
         
-        liked_movies = FavoriteMovie.objects.filter(user=obj).count()
+        liked_movies_count = FavoriteMovie.objects.filter(user=obj).count()
         
         return {
             'total_ratings': total_ratings,
             'avg_rating': avg_rating,
-            'liked_movies': liked_movies,
+            'liked_movies': liked_movies_count,
             'total_comments': total_comments
         }
 
@@ -106,6 +109,20 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
             "following_count": obj.following.count(),
             "is_following": is_following
         }
+
+    def get_rated_movies(self, obj):
+        ratings = MovieRating.objects.filter(user=obj).select_related('movie')
+        movies = [rating.movie for rating in ratings]
+        return MovieResponseSerializer(movies, many=True, context=self.context).data
+    
+    def get_liked_movies(self, obj):
+        liked_movies = FavoriteMovie.objects.filter(user=obj).select_related('movie')
+        movies = [fav.movie for fav in liked_movies]
+        return MovieResponseSerializer(movies, many=True, context=self.context).data
+
+    def get_reviews(self, obj):
+        reviews = MovieRating.objects.filter(user=obj, comment__isnull=False).exclude(comment__exact='').select_related('movie')
+        return MovieRatingSerializer(reviews, many=True, context=self.context).data
 
 
 class FollowSerializer(serializers.ModelSerializer):
