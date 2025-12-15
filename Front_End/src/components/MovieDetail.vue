@@ -209,12 +209,15 @@ interface Comment {
   id: number;
   user_id: number;
   username: string;
-  profile_image: string;
-  review_content: string;
-  spoiler: boolean;
+  rating?: number;
+  comment: string;
   created_at: string;
-  likes_count: number;
-  isLiked: boolean;
+  // Optional fields not provided by all serializers
+  profile_image?: string;
+  review_content?: string; // This is the same as comment
+  spoiler?: boolean;
+  likes_count?: number;
+  isLiked?: boolean;
 }
 
 interface User {
@@ -246,6 +249,20 @@ onMounted(async () => {
   try {
     const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`);
     movie.value = response.data;
+
+    // Set initial user-specific state
+    if (movie.value?.user_data) {
+      userRating.value = movie.value.user_data.rating || 0;
+      commentText.value = movie.value.user_data.comment || '';
+      isMovieLiked.value = movie.value.user_data.is_liked;
+    }
+    
+    // The likes count should also come from the backend, ideally in stats.
+    // Let's assume it's part of the main movie object for now, if not we need another fix.
+    // movieLikesCount.value = movie.value?.likes_count || 0; 
+    // This is a placeholder, as the field does not exist. The optimistic update will have to do for now.
+
+
   } catch (err) {
     console.error(`Failed to fetch movie ${props.id}:`, err);
     error.value = '영화 정보를 불러오는 데 실패했습니다.';
@@ -272,24 +289,86 @@ const backdropUrl = computed(() => {
 
 // --- Event Handlers ---
 const userRating = ref(0);
+const commentText = ref('');
 const isMovieLiked = ref(false);
 const movieLikesCount = ref(0);
+
+const saveActivity = async () => {
+  if (!isLoggedIn.value) return;
+
+  try {
+    const payload = {
+      rating: userRating.value,
+      comment: commentText.value,
+    };
+    const response = await axios.post(`http://127.0.0.1:8000/movies/${props.id}/rating/`, payload);
+    
+    alert('리뷰가 저장되었습니다.');
+
+    // Update the comments list in the UI
+    if (movie.value && movie.value.comments) {
+      const newComment = response.data;
+      const index = movie.value.comments.findIndex(c => c.user_id === newComment.user_id);
+
+      if (index !== -1) {
+        // Update existing comment
+        movie.value.comments[index] = { ...movie.value.comments[index], ...newComment };
+      } else {
+        // Add new comment to the top
+        movie.value.comments.unshift({
+            ...newComment,
+            // Add missing fields the frontend expects, with default values
+            profile_image: currentUser.value?.profile_image || '',
+            review_content: newComment.comment,
+            spoiler: false,
+            likes_count: 0,
+            isLiked: false,
+        });
+      }
+    }
+
+  } catch (err) {
+    console.error('Failed to save activity:', err);
+    alert('리뷰 저장에 실패했습니다.');
+  }
+};
 
 const handleRatingChange = (rating: number) => {
   if (!isLoggedIn.value) return emit('openAuth');
   userRating.value = rating;
-  console.log(`User rating changed to ${rating}. TODO: Implement API call.`);
+  saveActivity();
 };
 
-const handleLikeMovie = () => {
+const handleLikeMovie = async () => {
   if (!isLoggedIn.value) return emit('openAuth');
+  
+  const originalLikedStatus = isMovieLiked.value;
+
+  // Optimistic update
   isMovieLiked.value = !isMovieLiked.value;
   movieLikesCount.value += isMovieLiked.value ? 1 : -1;
-  console.log(`Movie like status: ${isMovieLiked.value}. TODO: Implement API call.`);
+
+  try {
+    if (originalLikedStatus) {
+      // If it was liked, now unlike it
+      await axios.delete(`http://127.0.0.1:8000/users/favorites/${props.id}/`);
+    } else {
+      // If it was not liked, now like it
+      await axios.post(`http://127.0.0.1:8000/users/favorites/${props.id}/`);
+    }
+  } catch (err) {
+    console.error('Failed to update like status:', err);
+    alert('좋아요 상태를 업데이트하는 데 실패했습니다.');
+    // Revert optimistic update on failure
+    isMovieLiked.value = originalLikedStatus;
+    movieLikesCount.value += originalLikedStatus ? 1 : -1;
+  }
 };
 
 const handleSubmitComment = (content: string, spoiler: boolean) => {
-  console.log(`Submitting comment: ${content}. TODO: Implement API call.`);
+  commentText.value = content;
+  // spoiler is ignored for now as backend does not support it
+  saveActivity();
 };
 
 const handleLikeComment = (commentId: number) => {

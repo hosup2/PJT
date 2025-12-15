@@ -1,5 +1,8 @@
 from rest_framework import serializers
 from django.db.models import Avg
+from rest_framework import serializers
+from django.db.models import Avg
+from users.models import FavoriteMovie
 from .models import Movie, Genre, FeaturedMovie, MovieRating
 
 class GenreSerializer(serializers.ModelSerializer):
@@ -14,11 +17,26 @@ class MovieSerializer(serializers.ModelSerializer):
         model = Movie
         fields = "__all__"
 
+class MovieRatingSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    # The profile_image is not available on the User model directly.
+    # The frontend will need to handle a missing profile_image.
+
+    class Meta:
+        model = MovieRating
+        fields = (
+            "id",
+            "user_id", "username",
+            "rating", "comment",
+            "created_at",
+        )
+
 class MovieResponseSerializer(serializers.ModelSerializer):
     genres = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
-    avg_rating = serializers.SerializerMethodField()   # ⭐ 추가
-    rating_count = serializers.SerializerMethodField() # ⭐ 추가
+    user_data = serializers.SerializerMethodField()
+    comments = MovieRatingSerializer(source='ratings', many=True, read_only=True)
 
     class Meta:
         model = Movie
@@ -33,34 +51,43 @@ class MovieResponseSerializer(serializers.ModelSerializer):
             "overview",
             "tmdb_rating",
             "backdrops",
-            "avg_rating",      # ⭐
-            "rating_count",    # ⭐
             "stats",
+            "user_data",
+            "comments",
         ]
 
     def get_genres(self, obj):
         return [g.name for g in obj.genres.all()]
 
-    # ⭐ 평균 별점 계산
-    def get_avg_rating(self, obj):
-        avg = obj.ratings.aggregate(Avg("rating"))["rating__avg"]
-        return round(avg, 1) if avg else 0
-
-    # ⭐ 평가 개수
-    def get_rating_count(self, obj):
-        return obj.ratings.count()
-
     def get_stats(self, obj):
+        ratings = obj.ratings.all()
+        avg = ratings.aggregate(Avg("rating"))["rating__avg"]
+        
+        distribution = {f"{i}.0": 0 for i in range(1, 6)}
+        for r in ratings:
+            key = f"{int(r.rating)}.0"
+            if key in distribution:
+                distribution[key] += 1
+        
         return {
-            "avg_rating": self.get_avg_rating(obj),
-            "rating_count": self.get_rating_count(obj),
-            "rating_distribution": {
-                "5.0": 0,
-                "4.0": 0,
-                "3.0": 0,
-                "2.0": 0,
-                "1.0": 0,
-            }
+            "avg_rating": round(avg, 1) if avg else 0,
+            "rating_count": ratings.count(),
+            "rating_distribution": distribution
+        }
+
+    def get_user_data(self, obj):
+        request = self.context.get('request', None)
+        if not request or not request.user.is_authenticated:
+            return None
+
+        user = request.user
+        user_rating = MovieRating.objects.filter(movie=obj, user=user).first()
+        is_liked = FavoriteMovie.objects.filter(movie=obj, user=user).exists()
+
+        return {
+            'rating': user_rating.rating if user_rating else 0,
+            'comment': user_rating.comment if user_rating else "",
+            'is_liked': is_liked,
         }
 
     
@@ -70,22 +97,3 @@ class FeaturedMovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturedMovie
         fields = ("id", "priority", "movie")
-
-class MovieRatingSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MovieRating
-        fields = (
-            "id",
-            "user",
-            "rating",
-            "comment",
-            "created_at",
-        )
-
-    def get_user(self, obj):
-        return {
-            "id": obj.user.id,
-            "username": obj.user.username,
-        }

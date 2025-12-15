@@ -28,10 +28,43 @@
           </div>
           
           <div class="flex-1">
-            <h1 class="text-3xl mb-2">{{ user.username }}</h1>
-            <p class="text-gray-400 mb-4">{{ user.email }}</p>
+            <div class="flex items-center gap-4 mb-4">
+              <h1 class="text-3xl">{{ user.username }}</h1>
+              <button
+                v-if="!isOwnProfile"
+                @click="toggleFollow"
+                :class="[
+                  'px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200 flex items-center gap-2',
+                  user.follow_info.is_following
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    : 'bg-purple-600 text-white hover:bg-purple-500'
+                ]"
+              >
+                <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
+                <UserPlus v-else class="w-4 h-4" />
+                <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
+              </button>
+            </div>
+            <p class="text-gray-400 mb-6">{{ user.email }}</p>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div class="grid grid-cols-3 md:grid-cols-6 gap-6">
+              <!-- Follower/Following Stats -->
+              <div>
+                <div class="flex items-center gap-2 text-green-400 mb-1">
+                  <Users class="w-5 h-5" />
+                  <span class="text-2xl">{{ user.follow_info.followers_count }}</span>
+                </div>
+                <p class="text-sm text-gray-400">팔로워</p>
+              </div>
+              <div>
+                <div class="flex items-center gap-2 text-green-400 mb-1">
+                  <UserCheck class="w-5 h-5" />
+                  <span class="text-2xl">{{ user.follow_info.following_count }}</span>
+                </div>
+                <p class="text-sm text-gray-400">팔로잉</p>
+              </div>
+
+              <!-- Other Stats -->
               <div>
                 <div class="flex items-center gap-2 text-purple-400 mb-1">
                   <Film class="w-5 h-5" />
@@ -299,11 +332,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { Star, Film, Heart, MessageSquare, Edit } from 'lucide-vue-next';
-import { mockUsers, mockUserRatings, mockLikedMovies, mockUserComments } from '../data/mockData';
+import { ref, computed, onMounted, watch } from 'vue';
+import axios from 'axios';
+import { Star, Film, Heart, MessageSquare, UserPlus, UserCheck, Users } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 import ProfileEditModal from './ProfileEditModal.vue';
+
+// Type definitions based on backend serializers
+interface FollowInfo {
+  followers_count: number;
+  following_count: number;
+  is_following: boolean;
+}
+
+interface UserProfile {
+  id: number;
+  username: string;
+  email: string; // Note: email might not be public
+  profile_image?: string;
+  stats: any; // Define stats structure later
+  follow_info: FollowInfo;
+}
+
+interface UserRating {
+  id: number;
+  movie_id: number;
+  title: string;
+  poster_path: string;
+  rating: number;
+}
+
+interface LikedMovie {
+  id: number;
+  title: string;
+  poster_path: string;
+  release_date: string;
+}
+
+interface UserComment {
+  id: number;
+  movie_id: number;
+  movie_title: string;
+  movie_poster: string;
+  rating: number | null;
+  content: string;
+  created_at: string;
+  likes_count: number;
+}
 
 interface Props {
   userId: number;
@@ -317,53 +392,106 @@ const emit = defineEmits<{
   updateProfile: [username: string, profileImage: string];
 }>();
 
+const user = ref<UserProfile | null>(null);
+const userRatings = ref<UserRating[]>([]);
+const likedMovies = ref<LikedMovie[]>([]);
+const userComments = ref<UserComment[]>([]);
+const isLoading = ref(true);
+const error = ref<string | null>(null);
+
 const activeTab = ref<'ratings' | 'likes' | 'comments'>('ratings');
 const ratingFilter = ref<'all' | 'high' | 'low'>('all');
 const showEditModal = ref(false);
 
-// Find user
-const user = computed(() => {
-  const foundUser = mockUsers.find(u => u.id === props.userId);
-  console.log('UserProfile - Looking for user with ID:', props.userId);
-  console.log('UserProfile - Found user:', foundUser);
-  console.log('UserProfile - All users:', mockUsers);
-  return foundUser;
+const isOwnProfile = computed(() => Number(props.userId) === props.currentUserId);
+
+const fetchUserProfile = async () => {
+  console.log('Fetching profile for userId:', props.userId); // Diagnostic log
+  isLoading.value = true;
+  error.value = null;
+  try {
+    const response = await axios.get(`http://127.0.0.1:8000/users/${props.userId}/profile/`);
+    user.value = response.data;
+  } catch (e) {
+    console.error('Failed to fetch user profile:', e);
+    error.value = '사용자 정보를 불러오는 데 실패했습니다.';
+    user.value = null;
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Fetch other user data (ratings, comments, etc.)
+const fetchUserActivity = async () => {
+  // Placeholder for fetching other data - implement later
+  // For now, clear mock data
+  userRatings.value = [];
+  likedMovies.value = [];
+  userComments.value = [];
+};
+
+onMounted(() => {
+  fetchUserProfile();
+  fetchUserActivity();
 });
 
-const isOwnProfile = computed(() => props.userId === props.currentUserId);
+const toggleFollow = async () => {
+  if (!isOwnProfile.value && user.value) {
+    try {
+      const response = await axios.post(`http://127.0.0.1:8000/users/${props.userId}/follow/`);
+      const { followed } = response.data;
+      
+      if (user.value.follow_info) {
+        user.value.follow_info.is_following = followed;
+        if (followed) {
+          user.value.follow_info.followers_count++;
+        } else {
+          user.value.follow_info.followers_count--;
+        }
+      }
+    } catch (err) {
+      console.error("Follow/unfollow failed:", err);
+      alert("요청을 처리할 수 없습니다.");
+    }
+  }
+};
+
+watch(() => props.userId, () => {
+  fetchUserProfile();
+  fetchUserActivity();
+});
+
 
 const handleSaveProfile = (username: string, profileImage: string) => {
   emit('updateProfile', username, profileImage);
   showEditModal.value = false;
 };
 
-// Calculate stats
+// This computed property will now be empty as we are not using mock data
 const stats = computed(() => {
-  const ratings = mockUserRatings.length;
-  const avgRating = ratings > 0 
-    ? mockUserRatings.reduce((sum, r) => sum + r.rating, 0) / ratings 
-    : 0;
-
-  return {
-    total_ratings: ratings,
-    avg_rating: avgRating,
-    high_ratings: mockUserRatings.filter(r => r.rating >= 4.0).length,
-    low_ratings: mockUserRatings.filter(r => r.rating <= 2.0).length,
-    liked_movies: mockLikedMovies.length,
-    total_comments: mockUserComments.length
-  };
+    if (user.value && user.value.stats) {
+        return {
+            total_ratings: user.value.stats.total_ratings || 0,
+            avg_rating: user.value.stats.avg_rating || 0,
+            liked_movies: user.value.stats.liked_movies || 0,
+            total_comments: user.value.stats.total_comments || 0,
+        };
+    }
+    return {
+        total_ratings: 0,
+        avg_rating: 0,
+        liked_movies: 0,
+        total_comments: 0,
+    };
 });
 
 // Filtered ratings based on selected filter
 const filteredRatings = computed(() => {
-  if (ratingFilter.value === 'all') return mockUserRatings;
-  if (ratingFilter.value === 'high') return mockUserRatings.filter(r => r.rating >= 4.0);
-  if (ratingFilter.value === 'low') return mockUserRatings.filter(r => r.rating <= 2.0);
-  return mockUserRatings;
+  if (ratingFilter.value === 'all') return userRatings.value;
+  if (ratingFilter.value === 'high') return userRatings.value.filter(r => r.rating >= 4.0);
+  if (ratingFilter.value === 'low') return userRatings.value.filter(r => r.rating <= 2.0);
+  return userRatings.value;
 });
-
-const likedMovies = mockLikedMovies;
-const userComments = mockUserComments;
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ko-KR');
