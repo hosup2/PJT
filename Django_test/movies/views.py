@@ -192,10 +192,7 @@ class TMDBPopularImportView(APIView):
             "pages_loaded": pages,
         })
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 78651ced0dc233bc322026a9f2d77f2a366a1df4
 class TMDBPopularPageImportView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -218,8 +215,6 @@ class TMDBPopularPageImportView(APIView):
         skipped = 0
 
         for item in movies:
-            genre_ids = item.get("genre_ids", [])
-
             movie, created = Movie.objects.get_or_create(
                 tmdb_id=item["id"],
                 defaults={
@@ -233,10 +228,7 @@ class TMDBPopularPageImportView(APIView):
                 }
             )
 
-            # ⭐ 장르 처리
             if created:
-                genres = Genre.objects.filter(id__in=genre_ids)
-                movie.genres.set(genres)
                 imported += 1
             else:
                 skipped += 1
@@ -250,12 +242,7 @@ class TMDBPopularPageImportView(APIView):
         })
 
 
-<<<<<<< HEAD
 # ⭐ 수정: 여러 댓글을 작성할 수 있도록 변경
-=======
-
-
->>>>>>> 78651ced0dc233bc322026a9f2d77f2a366a1df4
 class MovieRatingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -295,6 +282,27 @@ class MovieRatingView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# ⭐ 새로운 뷰: 개별 리뷰 수정
+class MovieRatingDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, movie_id, rating_id):
+        """특정 리뷰 수정"""
+        rating = get_object_or_404(
+            MovieRating,
+            id=rating_id,
+            movie_id=movie_id,
+            user=request.user
+        )
+        
+        rating.rating = request.data.get('rating', rating.rating)
+        rating.comment = request.data.get('comment', rating.comment)
+        rating.save()
+        
+        serializer = MovieRatingSerializer(rating)
+        return Response(serializer.data)
+
+
 class MovieRatingListView(APIView):
     permission_classes = [AllowAny]
 
@@ -303,65 +311,4 @@ class MovieRatingListView(APIView):
         ratings = MovieRating.objects.filter(movie=movie).select_related("user")
 
         serializer = MovieRatingSerializer(ratings, many=True)
-<<<<<<< HEAD
         return Response(serializer.data)
-=======
-        return Response(serializer.data)
-
-
-class TMDBMovieDetailView(APIView):
-    """
-    영화 상세 페이지용
-    - TMDB 상세 API를 호출해서
-    - 프론트에서 바로 쓸 수 있게 가공해서 반환
-    """
-    permission_classes = [AllowAny]
-
-    def get(self, request, movie_id):
-        # 1️⃣ 우리 DB에서 Movie 찾기
-        movie = get_object_or_404(Movie, id=movie_id)
-
-        # 2️⃣ TMDB 상세 API 호출
-        url = f"https://api.themoviedb.org/3/movie/{movie.tmdb_id}"
-        params = {
-            "api_key": settings.TMDB_API_KEY,
-            "language": "ko-KR",
-        }
-
-        res = requests.get(url, params=params)
-        tmdb_data = res.json()
-
-        if res.status_code != 200:
-            return Response(
-                {"error": "Failed to fetch TMDB movie detail"},
-                status=500
-            )
-
-        # 3️⃣ 프론트에 내려줄 데이터 정리
-        detail = {
-            "id": movie.id,
-            "tmdb_id": movie.tmdb_id,
-
-            # 기본 정보 (DB)
-            "title": movie.title,
-            "original_title": movie.original_title,
-            "overview": movie.overview,
-            "poster_path": movie.poster_path,
-            "backdrops": movie.backdrops,
-            "release_date": movie.release_date,
-            "tmdb_rating": movie.tmdb_rating,
-
-            # TMDB 상세 정보
-            "runtime": tmdb_data.get("runtime"),
-            "genres": [g["name"] for g in tmdb_data.get("genres", [])],
-            "tagline": tmdb_data.get("tagline"),
-            "status": tmdb_data.get("status"),
-            "budget": tmdb_data.get("budget"),
-            "revenue": tmdb_data.get("revenue"),
-            "production_countries": [
-                c["name"] for c in tmdb_data.get("production_countries", [])
-            ],
-        }
-
-        return Response(detail)
->>>>>>> 78651ced0dc233bc322026a9f2d77f2a366a1df4
