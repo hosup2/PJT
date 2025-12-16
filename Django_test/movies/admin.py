@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Movie, FeaturedMovie, Genre
+from .models import Movie, FeaturedMovie, Genre, HeroMovie
 
 
 @admin.register(FeaturedMovie)
@@ -15,3 +15,16 @@ class MovieAdmin(admin.ModelAdmin):
     list_display = ("id", "title", "release_date", "tmdb_rating")
     search_fields = ("title", "original_title")
     list_filter = ("release_date",)
+
+@admin.register(HeroMovie)
+class HeroMovieAdmin(admin.ModelAdmin):
+    list_display = ("priority", "movie", "keyword", "is_active", "updated_at")
+    list_editable = ("priority", "keyword", "is_active")
+    list_display_links = ("movie",)
+    ordering = ("priority",)
+    autocomplete_fields = ("movie",)
+
+
+@admin.register(Genre)
+class GenreAdmin(admin.ModelAdmin):
+    search_fields = ("name",)

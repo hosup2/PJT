@@ -7,9 +7,9 @@ from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework import status
 
-from .models import Movie, Genre, FeaturedMovie, MovieRating
+from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
 from .serializers import MovieResponseSerializer, FeaturedMovieSerializer
-from .serializers import MovieRatingSerializer
+from .serializers import MovieRatingSerializer, HeroMovieSerializer
 
 
 # TMDB 날짜 안전 파서
@@ -19,11 +19,40 @@ def safe_date(value):
 
 # TMDB 장르 처리 함수
 def get_or_create_genres(genre_ids):
-    genres = []
-    for gid in genre_ids:
-        g, _ = Genre.objects.get_or_create(id=gid, defaults={"name": f"Genre {gid}"})
-        genres.append(g)
-    return genres
+    return Genre.objects.filter(id__in=genre_ids)
+
+class TMDBGenreSyncView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        url = "https://api.themoviedb.org/3/genre/movie/list"
+        params = {
+            "api_key": settings.TMDB_API_KEY,
+            "language": "ko-KR",
+        }
+
+        res = requests.get(url, params=params)
+        data = res.json()
+
+        genres = data.get("genres", [])
+        created, updated = 0, 0
+
+        for g in genres:
+            genre, is_created = Genre.objects.update_or_create(
+                id=g["id"],
+                defaults={"name": g["name"]}
+            )
+            if is_created:
+                created += 1
+            else:
+                updated += 1
+
+        return Response({
+            "total": len(genres),
+            "created": created,
+            "updated": updated,
+        })
+
 
 
 class TMDBImportView(APIView):
@@ -78,17 +107,6 @@ class MovieListView(APIView):
         qs = Movie.objects.all().order_by("-release_date")[:20]
         serializer = MovieResponseSerializer(qs, many=True)
         return Response(serializer.data)
-
-
-# 영화 상세
-class MovieDetailView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, movie_id):
-        movie = get_object_or_404(Movie, id=movie_id)
-        serializer = MovieResponseSerializer(movie, context={'request': request})
-        return Response(serializer.data)
-
 
 # 영화 검색
 class MovieSearchView(APIView):
@@ -311,4 +329,57 @@ class MovieRatingListView(APIView):
         ratings = MovieRating.objects.filter(movie=movie).select_related("user")
 
         serializer = MovieRatingSerializer(ratings, many=True)
+        return Response(serializer.data)
+    
+
+class HeroMovieListView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        heroes = HeroMovie.objects.filter(is_active=True).order_by("priority")[:5]
+        serializer = HeroMovieSerializer(heroes, many=True)
+        return Response(serializer.data)
+
+def fetch_tmdb_movie_detail(tmdb_id):
+        url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
+        params = {
+            "api_key": settings.TMDB_API_KEY,
+            "language": "ko-KR",
+        }
+        res = requests.get(url, params=params)
+        return res.json()
+
+# 영화 디테일 요청
+class MovieDetailView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
+
+        # 🔑 디테일 정보가 충분한지 판단
+        need_tmdb_fetch = (
+            movie.runtime is None or
+            movie.overview == "" or
+            movie.genres.count() == 0
+        )
+
+        if need_tmdb_fetch:
+            tmdb_data = fetch_tmdb_movie_detail(movie.tmdb_id)
+
+            # DB 업데이트 (필요한 필드만)
+            movie.runtime = tmdb_data.get("runtime")
+            movie.overview = tmdb_data.get("overview") or movie.overview
+            movie.save()
+
+            # 장르 동기화
+            genres = []
+            for g in tmdb_data.get("genres", []):
+                genre, _ = Genre.objects.get_or_create(
+                    id=g["id"],
+                    defaults={"name": g["name"]}
+                )
+                genres.append(genre)
+            movie.genres.set(genres)
+
+        serializer = MovieResponseSerializer(movie)
         return Response(serializer.data)

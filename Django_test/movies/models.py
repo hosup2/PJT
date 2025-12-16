@@ -2,10 +2,12 @@ from django.db import models
 from django.conf import settings
 
 class Genre(models.Model):
+    id = models.IntegerField(primary_key=True)  # TMDB genre id
     name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
+
 
 
 class Movie(models.Model):
@@ -63,3 +65,28 @@ class MovieRating(models.Model):
         # ⭐ unique_together 제거! 이제 같은 영화에 여러 리뷰 작성 가능
         # unique_together = ("user", "movie")  # 이 줄 삭제 또는 주석처리
         ordering = ["-created_at"]  # 최신순 정렬
+
+
+class HeroMovie(models.Model):
+    movie = models.ForeignKey(
+        Movie,
+        on_delete=models.CASCADE,
+        related_name="hero_items"
+    )
+    priority = models.IntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    keyword = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="예: 개봉임박, 오스카 수상, 평론가 극찬"
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["priority", "-updated_at"]
+
+    def __str__(self):
+        return f"{self.priority}. {self.movie.title}"
+

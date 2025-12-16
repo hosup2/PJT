@@ -56,9 +56,23 @@
               </h2>
 
               <!-- 설명 -->
-              <p style="font-size: 1.25rem; color: rgb(209, 213, 219); margin-bottom: 2rem; line-height: 1.75; max-width: 36rem;">
-                {{ movie.description }}
+              <p
+                style="font-size: 1.25rem; color: rgb(209, 213, 219);
+                margin-bottom: 0.75rem; line-height: 1.75; max-width: 36rem;"
+              >
+                {{ getDisplayDescription(movie) }}
               </p>
+
+              <!-- 더보기 / 접기 -->
+              <button
+                v-if="movie.description.length > MAX_DESC_LENGTH"
+                @click="toggleExpand(movie.id)"
+                style="color: rgb(147, 51, 234); font-size: 0.9rem; font-weight: 500;
+                background: none; border: none; cursor: pointer; margin-bottom: 2rem;"
+              >
+                {{ isExpanded(movie.id) ? '접기' : '줄거리' }}
+              </button>
+
 
               <!-- 메타 정보 -->
               <div style="display: flex; align-items: center; gap: 1rem; color: rgb(156, 163, 175); margin-bottom: 2rem;">
@@ -136,64 +150,48 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Play, Star, ChevronLeft, ChevronRight } from 'lucide-vue-next';
+import axios from 'axios';
 
-const featuredMovies = ref([
-  {
-    id: 1,
-    title: '인터스텔라',
-    description: '우주를 가로지르는 장대한 모험. 인류의 생존을 위해 새로운 행성을 찾아 떠나는 우주비행사들의 이야기',
-    backdrop: 'https://image.tmdb.org/t/p/original/vgnoBSVzWAV9sNQUORaDGvDp7wx.jpg',
-    badge: '지금 인기',
-    rating: '8.6',
-    year: '2014',
-    genre: 'SF, 드라마',
-    duration: '169분'
-  },
-  {
-    id: 2,
-    title: '기생충',
-    description: '전원 백수인 기택 가족이 IT기업 CEO 박사장의 가족에게 접근하면서 벌어지는 이야기',
-    backdrop: 'https://image.tmdb.org/t/p/w1280/ApiBzeaa95TNYliSbQ8pJv4Fje7.jpg',
-    badge: '오스카 수상',
-    rating: '8.5',
-    year: '2019',
-    genre: '드라마, 스릴러',
-    duration: '132분'
-  },
-  {
-    id: 6,
-    title: '부산행',
-    description: '정체불명의 바이러스가 퍼진 열차 안에서 살아남기 위한 사람들의 사투',
-    backdrop: 'https://image.tmdb.org/t/p/original/fVpFOcQyHJM2di9upgSIwWD5wac.jpg',
-    badge: '국내 흥행작',
-    rating: '7.6',
-    year: '2016',
-    genre: '액션, 스릴러',
-    duration: '118분'
-  },
-  {
-    id: 4,
-    title: '조커',
-    description: '1980년대 고담시를 배경으로 한 아서 플렉의 광기 어린 변신',
-    backdrop: 'https://image.tmdb.org/t/p/original/hO7KbdvGOtDdeg0W4Y5nKEHeDDh.jpg',
-    badge: '평론가 극찬',
-    rating: '8.4',
-    year: '2019',
-    genre: '범죄, 드라마',
-    duration: '122분'
-  },
-  {
-    id: 7,
-    title: '센과 치히로의 행방불명',
-    description: '신들의 세계에 들어간 소녀 치히로가 가족을 구하기 위해 성장해가는 이야기',
-    backdrop: 'https://image.tmdb.org/t/p/original/ukfI9QkU1aIhOhKXYWE9n3z1mFR.jpg',
-    badge: '애니메이션 명작',
-    rating: '8.6',
-    year: '2001',
-    genre: '애니메이션, 판타지',
-    duration: '125분'
+interface HeroMovie {
+  id: number;
+  title: string;
+  description: string;
+  backdrop: string;
+  badge: string;
+  rating: string;
+  year: string;
+  genre: string;
+  duration: string;
+}
+
+const featuredMovies = ref<HeroMovie[]>([]);
+
+const fetchHeroMovies = async () => {
+  try {
+    const res = await axios.get('http://127.0.0.1:8000/movies/hero/');
+
+    featuredMovies.value = res.data.map((item: any) => {
+      const movie = item.movie;
+
+      return {
+        id: movie.id,
+        title: movie.title,
+        description: movie.overview,
+        backdrop: movie.backdrops?.startsWith('http')
+          ? movie.backdrops
+          : `https://image.tmdb.org/t/p/original${movie.backdrops}`,
+        badge: item.keyword || '',
+        rating: movie.tmdb_rating?.toFixed(1) ?? '0.0',
+        year: movie.release_date?.slice(0, 4) ?? '',
+        genre: movie.genres.join(', '),
+        duration: movie.runtime ? `${movie.runtime}분` : ''
+      };
+    });
+  } catch (e) {
+    console.error('Failed to fetch hero movies', e);
   }
-]);
+};
+
 
 const carouselTrack = ref<HTMLElement | null>(null);
 const isTransitioning = ref(false);
@@ -275,14 +273,50 @@ const stopAutoSlide = () => {
 const playMovie = (movie: any) => console.log('재생:', movie.title);
 const showDetails = (movie: any) => console.log('상세정보:', movie.title);
 
-onMounted(() => {
-  currentSlide.value = 1;
-  startAutoSlide();
+onMounted(async () => {
+  await fetchHeroMovies();
+
+  if (featuredMovies.value.length > 0) {
+    currentSlide.value = 1;
+    startAutoSlide();
+  }
 });
+
 
 onUnmounted(() => {
   stopAutoSlide();
 });
+
+const MAX_DESC_LENGTH = 0;
+
+const expandedSet = ref<Set<number>>(new Set());
+
+const isExpanded = (movieId: number) => {
+  return expandedSet.value.has(movieId);
+};
+
+const toggleExpand = (movieId: number) => {
+  if (expandedSet.value.has(movieId)) {
+    expandedSet.value.delete(movieId);
+  } else {
+    expandedSet.value.add(movieId);
+  }
+};
+
+const getDisplayDescription = (movie: HeroMovie) => {
+  if (movie.description.length <= MAX_DESC_LENGTH) {
+    return movie.description;
+  }
+
+  if (isExpanded(movie.id)) {
+    return movie.description;
+  }
+
+  return movie.description.slice(0, MAX_DESC_LENGTH) + '';
+};
+
+
+
 </script>
 
 <style scoped>
