@@ -53,7 +53,7 @@
           <div class="flex flex-wrap items-center gap-4 mb-4 text-gray-300">
             <div class="flex items-center gap-2">
               <Calendar class="w-4 h-4" />
-              <span>{{ new Date(movie.release_date).getFullYear() }}</span>
+              <span>{{ formatDate(movie.release_date) }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Clock class="w-4 h-4" />
@@ -357,4 +357,16 @@ const handleLikeComment = (commentId: number) => {
 const handleNavigateToUser = (userId: number) => {
   router.push({ name: 'UserProfile', params: { userId } });
 };
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+
+  const date = new Date(dateStr);
+
+  const yy = String(date.getFullYear()); // year
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); // month
+  const dd = String(date.getDate()).padStart(2, '0'); // day
+
+  return `${yy}.${mm}.${dd}`;
+};
+
 </script>

@@ -149,6 +149,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Play, Star, ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import axios from 'axios';
 
@@ -270,8 +271,47 @@ const stopAutoSlide = () => {
   }
 };
 
-const playMovie = (movie: any) => console.log('재생:', movie.title);
-const showDetails = (movie: any) => console.log('상세정보:', movie.title);
+const playMovie = async (movie: HeroMovie) => {
+  try {
+    const res = await axios.get(
+      `https://api.themoviedb.org/3/movie/${movie.tmdb_id}/videos`,
+      {
+        params: {
+          api_key: import.meta.env.VITE_TMDB_API_KEY,
+          language: 'ko-KR'
+        }
+      }
+    );
+
+    const videos = res.data.results || [];
+
+    // 유튜브 트레일러 우선
+    const trailer = videos.find(
+      (v: any) => v.site === 'YouTube' && v.type === 'Trailer'
+    );
+
+    if (trailer) {
+      window.open(
+        `https://www.youtube.com/watch?v=${trailer.key}`,
+        '_blank'
+      );
+    } else {
+      // 트레일러 없으면 상세 페이지로
+      showDetails(movie);
+    }
+  } catch (e) {
+    console.error('트레일러 로드 실패', e);
+    showDetails(movie);
+  }
+};
+
+const showDetails = (movie: HeroMovie) => {
+  router.push({
+    name: 'MovieDetail',
+    params: { id: movie.id }
+  });
+};
+
 
 onMounted(async () => {
   await fetchHeroMovies();
@@ -287,7 +327,7 @@ onUnmounted(() => {
   stopAutoSlide();
 });
 
-const MAX_DESC_LENGTH = 0;
+const MAX_DESC_LENGTH = 120;
 
 const expandedSet = ref<Set<number>>(new Set());
 
@@ -312,10 +352,10 @@ const getDisplayDescription = (movie: HeroMovie) => {
     return movie.description;
   }
 
-  return movie.description.slice(0, MAX_DESC_LENGTH) + '';
+  return movie.description.slice(0, MAX_DESC_LENGTH) + '...';
 };
 
-
+const router = useRouter();
 
 </script>
 

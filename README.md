@@ -2,14 +2,17 @@
 
 ### [Notion](https://www.notion.so/2aae9e31af908065b2c3e27638e1a98e?source=copy_link)
 
+## 12.17
+- HeroSection 상세정보 페이지 연결 ✅
+
 ## 12.16
-- HeroSection 하드코딩 구조 개선✅
+- HeroSection 하드코딩 구조 개선 ✅
 - 상세 정보 페이지 디테일 정보 추가 ✅  
     (
         DB 탐색 후 영화 디테일이 존재하면 db에서 response, 
         없다면 Tmdb API 요청
     )
-- 장르 ID => 장르 이름으로 맵핑
+- 장르 ID => 장르 이름으로 맵핑 ✅
 
 
 ## 12.15
