@@ -19,41 +19,49 @@
       <!-- Profile Header -->
       <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 mb-8 border border-gray-700/50">
         <!-- Profile Info Section -->
-        <div class="flex flex-col items-center text-center mb-8">
+        <!-- Profile Info Section -->
+      <div class="mb-8">
+        <!-- Profile Image & Username - Horizontal Layout -->
+        <div class="flex items-center justify-center gap-6 mb-6">
           <!-- Profile Image -->
-          <div class="relative mb-4">
+          <div class="relative flex-shrink-0">
             <img
               :src="user.profile_image"
               :alt="user.username"
               class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-800 object-cover ring-4 ring-purple-500/20"
             />
             <div class="absolute -bottom-2 -right-2 bg-purple-600 rounded-full p-2">
-              <Star class="w-4 h-4 md:w-5 md:h-5 text-white fill-white" />
+        
             </div>
           </div>
           
-          <!-- Username & Follow Button -->
-          <h1 class="text-4xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
-            {{ user.username }}
-          </h1>
-          
-          <p class="text-gray-400 mb-4">{{ user.email }}</p>
-          
-          <button
-            v-if="!isOwnProfile"
-            @click="toggleFollow"
-            :class="[
-              'px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg',
-              user.follow_info.is_following
-                ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:shadow-gray-600/50'
-                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/50'
-            ]"
-          >
-            <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
-            <UserPlus v-else class="w-4 h-4" />
-            <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
-          </button>
+          <!-- Username -->
+          <div class="text-left">
+            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+              {{ user.username }}
+            </h1>
+            <p class="text-gray-400">{{ user.email }}</p>
+          </div>
         </div>
+  
+  <!-- Follow Button - Centered -->
+  <div class="flex justify-center">
+    <button
+      v-if="!isOwnProfile"
+      @click="toggleFollow"
+      :class="[
+        'px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg',
+        user.follow_info.is_following
+          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:shadow-gray-600/50'
+          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/50'
+      ]"
+    >
+      <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
+      <UserPlus v-else class="w-4 h-4" />
+      <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
+    </button>
+  </div>
+</div>
         
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 max-w-5xl mx-auto">
@@ -231,14 +239,6 @@
                 />
               </div>
               
-              <div class="flex items-center gap-2 mb-1">
-                <StarRating
-                  :initial-rating="rating.rating"
-                  :readonly="true"
-                  size="sm"
-                />
-              </div>
-              
               <h3 class="line-clamp-2 text-sm group-hover:text-purple-400 transition-colors">
                 {{ rating.title }}
               </h3>
@@ -306,7 +306,7 @@
                 <button
                   v-if="comment.movie_id"
                   @click="handleMovieClick(comment.movie_id)"
-                  class="text-xl font-bold hover:text-purple-400 transition-colors mb-2 text-left block hover:underline"
+                 class="text- font-bold text-purple-400 hover:text-purple-300 transition-colors mb-2 text-left block underline decoration-transparent hover:decoration-purple-400 underline-offset-2"
                 >
                   {{ comment.movie_title || '영화 제목' }}
                 </button>
@@ -323,7 +323,7 @@
                     :readonly="true"
                     size="sm"
                   />
-                  <span class="text-sm text-yellow-400 font-semibold">{{ comment.rating.toFixed(1) }}점</span>
+                  <!-- <span class="text-sm text-yellow-400 font-semibold">{{ comment.rating.toFixed(1) }}점</span> -->
                 </div>
               </div>
               
@@ -516,6 +516,9 @@ const fetchUserProfile = async () => {
     const response = await axios.get(`http://127.0.0.1:8000/users/${numericUserId}/profile/`);
     user.value = response.data;
     
+    if (user.value && !user.value.profile_image) {
+      user.value.profile_image = '/mia5.png';  
+    }
     // Debug logging
     console.log('User profile data:', response.data);
     console.log('Reviews data:', response.data.reviews);

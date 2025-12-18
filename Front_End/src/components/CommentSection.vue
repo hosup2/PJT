@@ -61,9 +61,10 @@
             class="flex-shrink-0"
           >
             <img
-              :src="comment.profile_image"
+              :src="getProfileImage(comment.profile_image)"
               :alt="comment.username"
               class="w-12 h-12 rounded-full bg-gray-800 object-cover hover:ring-2 hover:ring-purple-500 transition-all"
+              @error="handleImageError"
             />
           </button>
           
@@ -169,6 +170,32 @@ const emit = defineEmits<{
 const newComment = ref('');
 const includeSpoiler = ref(false);
 const showSpoilers = ref(new Set<number>());
+
+// 👇 프로필 이미지 처리 함수 추가
+const getProfileImage = (profileImage: string | null | undefined): string => {
+  if (!profileImage) {
+    return '/mia5.png'; // 기본 프로필 이미지
+  }
+  
+  // 이미 전체 URL인 경우
+  if (profileImage.startsWith('http')) {
+    return profileImage;
+  }
+  
+  // 상대 경로인 경우 (/)
+  if (profileImage.startsWith('/')) {
+    return profileImage;
+  }
+  
+  // 그 외의 경우 (혹시 모를 상황 대비)
+  return `/mia5.png`;
+};
+
+// 👇 이미지 로딩 에러 처리 함수 추가
+const handleImageError = (event: Event) => {
+  const target = event.target as HTMLImageElement;
+  target.src = '/mia5.png'; // 에러 발생 시 기본 이미지로 대체
+};
 
 const handleRatingChange = (rating: number) => {
   emit('ratingChange', rating);

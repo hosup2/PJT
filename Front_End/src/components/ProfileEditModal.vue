@@ -124,7 +124,7 @@ watch(() => props.isOpen, (isOpen) => {
     formData.value = {
       username: props.user.username,
       email: props.user.email,
-      profile_image: props.user.profile_image || 'https://i.pravatar.cc/150'
+      profile_image: props.user.profile_image || '/mia5.png'
     };
     showImageUrlInput.value = false;
   }

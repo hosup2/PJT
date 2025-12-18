@@ -112,13 +112,22 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
 
     def get_rated_movies(self, obj):
         ratings = MovieRating.objects.filter(user=obj).select_related('movie')
-        movies = [rating.movie for rating in ratings]
-        return MovieResponseSerializer(movies, many=True, context=self.context).data
-    
+        return [{
+            'id': rating.id,
+            'movie_id': rating.movie.id,
+            'title': rating.movie.title,
+            'poster_path': rating.movie.poster_path,
+            'rating': rating.rating,
+        } for rating in ratings if rating.rating is not None]
+
     def get_liked_movies(self, obj):
         liked_movies = FavoriteMovie.objects.filter(user=obj).select_related('movie')
-        movies = [fav.movie for fav in liked_movies]
-        return MovieResponseSerializer(movies, many=True, context=self.context).data
+        return [{
+            'id': fav.movie.id,
+            'title': fav.movie.title,
+            'poster_path': fav.movie.poster_path,
+            'release_date': str(fav.movie.release_date) if fav.movie.release_date else None,
+        } for fav in liked_movies]
 
     def get_reviews(self, obj):
         reviews = MovieRating.objects.filter(user=obj, comment__isnull=False).exclude(comment__exact='').select_related('movie')

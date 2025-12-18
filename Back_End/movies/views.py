@@ -210,10 +210,6 @@ class TMDBPopularImportView(APIView):
             "pages_loaded": pages,
         })
 
-<<<<<<< HEAD:Django_test/movies/views.py
-=======
-
->>>>>>> b3e1e3f419b084da2827d3a6cf3b31ec08e94e1a:Back_End/movies/views.py
 class TMDBPopularPageImportView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -263,28 +259,37 @@ class TMDBPopularPageImportView(APIView):
         })
 
 
-# ⭐ 수정: 여러 댓글을 작성할 수 있도록 변경
 class MovieRatingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
+        
+        # 받은 데이터 검증
+        rating_value = request.data.get("rating")
+        comment_value = request.data.get("comment", "")
+        
+        # rating이 없으면 에러 반환 (별점은 필수)
+        if rating_value is None:
+            return Response(
+                {"error": "Rating is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # ⭐ 변경: update_or_create 대신 create 사용
-        # 이제 같은 영화에 여러 리뷰를 작성할 수 있음
-        rating_obj = MovieRating.objects.create(
+        rating_obj, created = MovieRating.objects.update_or_create(
             user=request.user,
             movie=movie,
-            rating=request.data.get("rating"),
-            comment=request.data.get("comment", ""),
+            defaults={
+                'rating': rating_value,
+                'comment': comment_value,
+            }
         )
 
         serializer = MovieRatingSerializer(rating_obj)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        return Response(serializer.data, status=status_code)
 
-    # ⭐ 변경: 특정 리뷰만 삭제하도록 수정
     def delete(self, request, movie_id):
-        # URL에 rating_id가 있어야 함: /movies/{movie_id}/ratings/{rating_id}/
         rating_id = request.data.get('rating_id')
         
         if not rating_id:
@@ -369,9 +374,6 @@ class MovieDetailView(APIView):
         if need_tmdb_fetch:
             tmdb_data = fetch_tmdb_movie_detail(movie.tmdb_id)
 
-<<<<<<< HEAD:Django_test/movies/views.py
-        return Response(detail)
-=======
             # DB 업데이트 (필요한 필드만)
             movie.runtime = tmdb_data.get("runtime")
             movie.overview = tmdb_data.get("overview") or movie.overview
@@ -389,4 +391,3 @@ class MovieDetailView(APIView):
 
         serializer = MovieResponseSerializer(movie)
         return Response(serializer.data)
->>>>>>> b3e1e3f419b084da2827d3a6cf3b31ec08e94e1a:Back_End/movies/views.py

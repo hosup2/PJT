@@ -75,17 +75,29 @@ class MovieResponseSerializer(serializers.ModelSerializer):
 
     def get_stats(self, obj):
         ratings = obj.ratings.all()
-        avg = ratings.aggregate(Avg("rating"))["rating__avg"]
         
+        # None이 아닌 rating만 필터링
+        valid_ratings = [r for r in ratings if r.rating is not None]
+        
+        # 평균 계산
+        if valid_ratings:
+            avg = sum(r.rating for r in valid_ratings) / len(valid_ratings)
+        else:
+            avg = 0
+        
+        # 분포 계산
         distribution = {f"{i}.0": 0 for i in range(1, 6)}
-        for r in ratings:
-            key = f"{int(r.rating)}.0"
-            if key in distribution:
-                distribution[key] += 1
+        for r in valid_ratings:
+            try:
+                key = f"{int(r.rating)}.0"
+                if key in distribution:
+                    distribution[key] += 1
+            except (ValueError, TypeError):
+                continue
         
         return {
             "avg_rating": round(avg, 1) if avg else 0,
-            "rating_count": ratings.count(),
+            "rating_count": len(valid_ratings),
             "rating_distribution": distribution
         }
 
