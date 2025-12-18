@@ -9,4 +9,12 @@ dist/
 npm-debug.log
 yarn-error.log
 
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
 # End of https://www.toptal.com/developers/gitignore/api/vuejs

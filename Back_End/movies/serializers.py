@@ -3,7 +3,7 @@ from django.db.models import Avg
 from rest_framework import serializers
 from django.db.models import Avg
 from users.models import FavoriteMovie
-from .models import Movie, Genre, FeaturedMovie, MovieRating
+from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,6 +55,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
         model = Movie
         fields = [
             "id",
+            "tmdb_id",
             "title",
             "original_title",
             "poster_path",
@@ -110,3 +111,11 @@ class FeaturedMovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeaturedMovie
         fields = ("id", "priority", "movie")
+
+
+class HeroMovieSerializer(serializers.ModelSerializer):
+    movie = MovieResponseSerializer(read_only=True)
+
+    class Meta:
+        model = HeroMovie
+        fields = ("id", "priority", "keyword", "movie")

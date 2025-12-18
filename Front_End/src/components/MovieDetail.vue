@@ -53,7 +53,7 @@
           <div class="flex flex-wrap items-center gap-4 mb-4 text-gray-300">
             <div class="flex items-center gap-2">
               <Calendar class="w-4 h-4" />
-              <span>{{ new Date(movie.release_date).getFullYear() }}</span>
+              <span>{{ formatDate(movie.release_date) }}</span>
             </div>
             <div class="flex items-center gap-2">
               <Clock class="w-4 h-4" />
@@ -210,9 +210,8 @@ interface Comment {
   rating?: number;
   comment: string;
   created_at: string;
-  // Optional fields not provided by all serializers
   profile_image?: string;
-  review_content?: string; // This is the same as comment
+  review_content?: string;
   spoiler?: boolean;
   likes_count?: number;
   isLiked?: boolean;
@@ -244,7 +243,7 @@ const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
 const currentUser = inject<Ref<User | null>>('currentUser', ref(null));
 
 // --- Data Fetching ---
-onMounted(async () => {
+const fetchMovieData = async () => {
   try {
     const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`);
     movie.value = response.data;
@@ -255,19 +254,16 @@ onMounted(async () => {
       commentText.value = movie.value.user_data.comment || '';
       isMovieLiked.value = movie.value.user_data.is_liked;
     }
-    
-    // The likes count should also come from the backend, ideally in stats.
-    // Let's assume it's part of the main movie object for now, if not we need another fix.
-    // movieLikesCount.value = movie.value?.likes_count || 0; 
-    // This is a placeholder, as the field does not exist. The optimistic update will have to do for now.
-
-
   } catch (err) {
     console.error(`Failed to fetch movie ${props.id}:`, err);
     error.value = '영화 정보를 불러오는 데 실패했습니다.';
   } finally {
     loading.value = false;
   }
+};
+
+onMounted(async () => {
+  await fetchMovieData();
 });
 
 // --- Computed Properties ---
@@ -297,34 +293,21 @@ const saveActivity = async () => {
 
   try {
     const payload = {
-      rating: userRating.value,
+      rating: userRating.value || null,
       comment: commentText.value,
     };
-    const response = await axios.post(`http://127.0.0.1:8000/movies/${props.id}/rating/`, payload);
+    
+    await axios.post(`http://127.0.0.1:8000/movies/${props.id}/rating/`, payload);
     
     alert('리뷰가 저장되었습니다.');
 
-    // Update the comments list in the UI
-    if (movie.value && movie.value.comments) {
-      const newComment = response.data;
-      const index = movie.value.comments.findIndex(c => c.user_id === newComment.user_id);
-
-      if (index !== -1) {
-        // Update existing comment
-        movie.value.comments[index] = { ...movie.value.comments[index], ...newComment };
-      } else {
-        // Add new comment to the top
-        movie.value.comments.unshift({
-            ...newComment,
-            // Add missing fields the frontend expects, with default values
-            profile_image: currentUser.value?.profile_image || '',
-            review_content: newComment.comment,
-            spoiler: false,
-            likes_count: 0,
-            isLiked: false,
-        });
-      }
-    }
+    // 영화 데이터 전체를 새로고침하여 댓글 목록 업데이트
+    await fetchMovieData();
+    
+    // 입력 필드 초기화
+    commentText.value = '';
+    userRating.value = 0;
+    
     emit('activity-updated');
   } catch (err) {
     console.error('Failed to save activity:', err);
@@ -348,10 +331,8 @@ const handleLikeMovie = async () => {
 
   try {
     if (originalLikedStatus) {
-      // If it was liked, now unlike it
       await axios.delete(`http://127.0.0.1:8000/users/favorites/${props.id}/`);
     } else {
-      // If it was not liked, now like it
       await axios.post(`http://127.0.0.1:8000/users/favorites/${props.id}/`);
     }
     emit('activity-updated');
@@ -366,7 +347,6 @@ const handleLikeMovie = async () => {
 
 const handleSubmitComment = (content: string, spoiler: boolean) => {
   commentText.value = content;
-  // spoiler is ignored for now as backend does not support it
   saveActivity();
 };
 
@@ -377,4 +357,16 @@ const handleLikeComment = (commentId: number) => {
 const handleNavigateToUser = (userId: number) => {
   router.push({ name: 'UserProfile', params: { userId } });
 };
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+
+  const date = new Date(dateStr);
+
+  const yy = String(date.getFullYear()); // year
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); // month
+  const dd = String(date.getDate()).padStart(2, '0'); // day
+
+  return `${yy}.${mm}.${dd}`;
+};
+
 </script>

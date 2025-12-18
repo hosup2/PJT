@@ -7,9 +7,9 @@ from django.db.models import Q
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework import status
 
-from .models import Movie, Genre, FeaturedMovie, MovieRating
+from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
 from .serializers import MovieResponseSerializer, FeaturedMovieSerializer
-from .serializers import MovieRatingSerializer
+from .serializers import MovieRatingSerializer, HeroMovieSerializer
 
 
 # TMDB 날짜 안전 파서
@@ -19,11 +19,40 @@ def safe_date(value):
 
 # TMDB 장르 처리 함수
 def get_or_create_genres(genre_ids):
-    genres = []
-    for gid in genre_ids:
-        g, _ = Genre.objects.get_or_create(id=gid, defaults={"name": f"Genre {gid}"})
-        genres.append(g)
-    return genres
+    return Genre.objects.filter(id__in=genre_ids)
+
+class TMDBGenreSyncView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        url = "https://api.themoviedb.org/3/genre/movie/list"
+        params = {
+            "api_key": settings.TMDB_API_KEY,
+            "language": "ko-KR",
+        }
+
+        res = requests.get(url, params=params)
+        data = res.json()
+
+        genres = data.get("genres", [])
+        created, updated = 0, 0
+
+        for g in genres:
+            genre, is_created = Genre.objects.update_or_create(
+                id=g["id"],
+                defaults={"name": g["name"]}
+            )
+            if is_created:
+                created += 1
+            else:
+                updated += 1
+
+        return Response({
+            "total": len(genres),
+            "created": created,
+            "updated": updated,
+        })
+
 
 
 class TMDBImportView(APIView):
@@ -78,17 +107,6 @@ class MovieListView(APIView):
         qs = Movie.objects.all().order_by("-release_date")[:20]
         serializer = MovieResponseSerializer(qs, many=True)
         return Response(serializer.data)
-
-
-# 영화 상세
-class MovieDetailView(APIView):
-    permission_classes = [AllowAny]
-
-    def get(self, request, movie_id):
-        movie = get_object_or_404(Movie, id=movie_id)
-        serializer = MovieResponseSerializer(movie, context={'request': request})
-        return Response(serializer.data)
-
 
 # 영화 검색
 class MovieSearchView(APIView):
@@ -192,6 +210,10 @@ class TMDBPopularImportView(APIView):
             "pages_loaded": pages,
         })
 
+<<<<<<< HEAD:Django_test/movies/views.py
+=======
+
+>>>>>>> b3e1e3f419b084da2827d3a6cf3b31ec08e94e1a:Back_End/movies/views.py
 class TMDBPopularPageImportView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -214,8 +236,6 @@ class TMDBPopularPageImportView(APIView):
         skipped = 0
 
         for item in movies:
-            genre_ids = item.get("genre_ids", [])
-
             movie, created = Movie.objects.get_or_create(
                 tmdb_id=item["id"],
                 defaults={
@@ -229,10 +249,7 @@ class TMDBPopularPageImportView(APIView):
                 }
             )
 
-            # ⭐ 장르 처리
             if created:
-                genres = Genre.objects.filter(id__in=genre_ids)
-                movie.genres.set(genres)
                 imported += 1
             else:
                 skipped += 1
@@ -286,6 +303,27 @@ class MovieRatingView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# ⭐ 새로운 뷰: 개별 리뷰 수정
+class MovieRatingDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def put(self, request, movie_id, rating_id):
+        """특정 리뷰 수정"""
+        rating = get_object_or_404(
+            MovieRating,
+            id=rating_id,
+            movie_id=movie_id,
+            user=request.user
+        )
+        
+        rating.rating = request.data.get('rating', rating.rating)
+        rating.comment = request.data.get('comment', rating.comment)
+        rating.save()
+        
+        serializer = MovieRatingSerializer(rating)
+        return Response(serializer.data)
+
+
 class MovieRatingListView(APIView):
     permission_classes = [AllowAny]
 
@@ -295,60 +333,60 @@ class MovieRatingListView(APIView):
 
         serializer = MovieRatingSerializer(ratings, many=True)
         return Response(serializer.data)
+    
 
-
-class TMDBMovieDetailView(APIView):
-    """
-    영화 상세 페이지용
-    - TMDB 상세 API를 호출해서
-    - 프론트에서 바로 쓸 수 있게 가공해서 반환
-    """
+class HeroMovieListView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request, movie_id):
-        # 1️⃣ 우리 DB에서 Movie 찾기
-        movie = get_object_or_404(Movie, id=movie_id)
+    def get(self, request):
+        heroes = HeroMovie.objects.filter(is_active=True).order_by("priority")[:5]
+        serializer = HeroMovieSerializer(heroes, many=True)
+        return Response(serializer.data)
 
-        # 2️⃣ TMDB 상세 API 호출
-        url = f"https://api.themoviedb.org/3/movie/{movie.tmdb_id}"
+def fetch_tmdb_movie_detail(tmdb_id):
+        url = f"https://api.themoviedb.org/3/movie/{tmdb_id}"
         params = {
             "api_key": settings.TMDB_API_KEY,
             "language": "ko-KR",
         }
-
         res = requests.get(url, params=params)
-        tmdb_data = res.json()
+        return res.json()
 
-        if res.status_code != 200:
-            return Response(
-                {"error": "Failed to fetch TMDB movie detail"},
-                status=500
-            )
+# 영화 디테일 요청
+class MovieDetailView(APIView):
+    permission_classes = [AllowAny]
 
-        # 3️⃣ 프론트에 내려줄 데이터 정리
-        detail = {
-            "id": movie.id,
-            "tmdb_id": movie.tmdb_id,
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, id=movie_id)
 
-            # 기본 정보 (DB)
-            "title": movie.title,
-            "original_title": movie.original_title,
-            "overview": movie.overview,
-            "poster_path": movie.poster_path,
-            "backdrops": movie.backdrops,
-            "release_date": movie.release_date,
-            "tmdb_rating": movie.tmdb_rating,
+        # 🔑 디테일 정보가 충분한지 판단
+        need_tmdb_fetch = (
+            movie.runtime is None or
+            movie.overview == "" or
+            movie.genres.count() == 0
+        )
 
-            # TMDB 상세 정보
-            "runtime": tmdb_data.get("runtime"),
-            "genres": [g["name"] for g in tmdb_data.get("genres", [])],
-            "tagline": tmdb_data.get("tagline"),
-            "status": tmdb_data.get("status"),
-            "budget": tmdb_data.get("budget"),
-            "revenue": tmdb_data.get("revenue"),
-            "production_countries": [
-                c["name"] for c in tmdb_data.get("production_countries", [])
-            ],
-        }
+        if need_tmdb_fetch:
+            tmdb_data = fetch_tmdb_movie_detail(movie.tmdb_id)
 
+<<<<<<< HEAD:Django_test/movies/views.py
         return Response(detail)
+=======
+            # DB 업데이트 (필요한 필드만)
+            movie.runtime = tmdb_data.get("runtime")
+            movie.overview = tmdb_data.get("overview") or movie.overview
+            movie.save()
+
+            # 장르 동기화
+            genres = []
+            for g in tmdb_data.get("genres", []):
+                genre, _ = Genre.objects.get_or_create(
+                    id=g["id"],
+                    defaults={"name": g["name"]}
+                )
+                genres.append(genre)
+            movie.genres.set(genres)
+
+        serializer = MovieResponseSerializer(movie)
+        return Response(serializer.data)
+>>>>>>> b3e1e3f419b084da2827d3a6cf3b31ec08e94e1a:Back_End/movies/views.py
