@@ -192,10 +192,6 @@ class TMDBPopularImportView(APIView):
             "pages_loaded": pages,
         })
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 78651ced0dc233bc322026a9f2d77f2a366a1df4
 class TMDBPopularPageImportView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -250,12 +246,7 @@ class TMDBPopularPageImportView(APIView):
         })
 
 
-<<<<<<< HEAD
 # ⭐ 수정: 여러 댓글을 작성할 수 있도록 변경
-=======
-
-
->>>>>>> 78651ced0dc233bc322026a9f2d77f2a366a1df4
 class MovieRatingView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -303,9 +294,6 @@ class MovieRatingListView(APIView):
         ratings = MovieRating.objects.filter(movie=movie).select_related("user")
 
         serializer = MovieRatingSerializer(ratings, many=True)
-<<<<<<< HEAD
-        return Response(serializer.data)
-=======
         return Response(serializer.data)
 
 
@@ -364,4 +352,3 @@ class TMDBMovieDetailView(APIView):
         }
 
         return Response(detail)
->>>>>>> 78651ced0dc233bc322026a9f2d77f2a366a1df4
