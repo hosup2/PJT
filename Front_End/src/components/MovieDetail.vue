@@ -245,7 +245,12 @@ const currentUser = inject<Ref<User | null>>('currentUser', ref(null));
 // --- Data Fetching ---
 const fetchMovieData = async () => {
   try {
-    const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`);
+    const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`, {
+      params: {
+        // Add a cache-busting parameter
+        _: new Date().getTime(),
+      },
+    });
     movie.value = response.data;
 
     // Set initial user-specific state

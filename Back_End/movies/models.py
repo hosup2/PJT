@@ -63,7 +63,7 @@ class MovieRating(models.Model):
 
     class Meta:
         # ⭐ unique_together 제거! 이제 같은 영화에 여러 리뷰 작성 가능
-        # unique_together = ("user", "movie")  # 이 줄 삭제 또는 주석처리
+        unique_together = ("user", "movie")  # 이 줄 삭제 또는 주석처리
         ordering = ["-created_at"]  # 최신순 정렬
 
 
