@@ -55,6 +55,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
         model = Movie
         fields = [
             "id",
+            "tmdb_id",
             "title",
             "original_title",
             "poster_path",

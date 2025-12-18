@@ -70,7 +70,7 @@
                 style="color: rgb(147, 51, 234); font-size: 0.9rem; font-weight: 500;
                 background: none; border: none; cursor: pointer; margin-bottom: 2rem;"
               >
-                {{ isExpanded(movie.id) ? '접기' : '줄거리' }}
+                {{ isExpanded(movie.id) ? '접기' : '더보기' }}
               </button>
 
 
@@ -143,6 +143,50 @@
           }"
         ></button>
       </div>
+    
+      <!-- 🎬 Trailer Modal -->
+      <div
+        v-if="showTrailerModal"
+        style="
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.85);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        "
+        @click.self="closeTrailer"
+      >
+        <div style="position: relative; width: 80%; max-width: 960px; aspect-ratio: 16 / 9;">
+          <iframe
+            v-if="trailerKey"
+            :src="`https://www.youtube.com/embed/${trailerKey}?autoplay=1`"
+            frameborder="0"
+            allow="autoplay; encrypted-media"
+            allowfullscreen
+            style="width: 100%; height: 100%; border-radius: 12px;"
+          ></iframe>
+
+          <!-- 닫기 버튼 -->
+          <button
+            @click="closeTrailer"
+            style="
+              position: absolute;
+              top: -3rem;
+              right: 0;
+              color: white;
+              font-size: 1.25rem;
+              background: none;
+              border: none;
+              cursor: pointer;
+            "
+          >
+            ✕ 닫기
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 </template>
@@ -155,6 +199,7 @@ import axios from 'axios';
 
 interface HeroMovie {
   id: number;
+  tmdb_id: number;
   title: string;
   description: string;
   backdrop: string;
@@ -176,6 +221,7 @@ const fetchHeroMovies = async () => {
 
       return {
         id: movie.id,
+        tmdb_id: movie.tmdb_id,
         title: movie.title,
         description: movie.overview,
         backdrop: movie.backdrops?.startsWith('http')
@@ -271,6 +317,12 @@ const stopAutoSlide = () => {
   }
 };
 
+// 아직 미구현 => 재생하기 버튼 클릭시 새로운 모달창에 트레일러 영상 재생
+
+const showTrailerModal = ref(false);
+const trailerKey = ref<string | null>(null);
+
+
 const playMovie = async (movie: HeroMovie) => {
   try {
     const res = await axios.get(
@@ -285,19 +337,17 @@ const playMovie = async (movie: HeroMovie) => {
 
     const videos = res.data.results || [];
 
-    // 유튜브 트레일러 우선
+    // 🎯 YouTube 트레일러 우선
     const trailer = videos.find(
       (v: any) => v.site === 'YouTube' && v.type === 'Trailer'
     );
 
     if (trailer) {
-      window.open(
-        `https://www.youtube.com/watch?v=${trailer.key}`,
-        '_blank'
-      );
+      trailerKey.value = trailer.key;
+      showTrailerModal.value = true;
+      stopAutoSlide();
     } else {
-      // 트레일러 없으면 상세 페이지로
-      showDetails(movie);
+      showDetails(movie); // fallback
     }
   } catch (e) {
     console.error('트레일러 로드 실패', e);
@@ -305,12 +355,21 @@ const playMovie = async (movie: HeroMovie) => {
   }
 };
 
+
 const showDetails = (movie: HeroMovie) => {
   router.push({
     name: 'MovieDetail',
     params: { id: movie.id }
   });
 };
+
+
+const closeTrailer = () => {
+  showTrailerModal.value = false;
+  trailerKey.value = null;
+  startAutoSlide();
+};
+
 
 
 onMounted(async () => {
@@ -327,7 +386,7 @@ onUnmounted(() => {
   stopAutoSlide();
 });
 
-const MAX_DESC_LENGTH = 120;
+const MAX_DESC_LENGTH = 100;
 
 const expandedSet = ref<Set<number>>(new Set());
 
