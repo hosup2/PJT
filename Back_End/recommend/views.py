@@ -1,65 +1,90 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-
-from .logic import recommend_movies_for_user
-from .ai_client import ai_rank_movies, parse_ai_json
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
 
 from django.contrib.auth import get_user_model
+from .services.logic import run_ai_recommendation
+
+from .models import ChatSession, ChatMessage
+from .serializers import ChatRequestSerializer, ChatResponseSerializer, ChatSessionSerializer
+
 User = get_user_model()
 
+class ChatRecommendView(APIView):
+    permission_classes = [IsAuthenticated]
 
-def get_test_user():
-    return User.objects.first()
+    def post(self, request):
+        serializer = ChatRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        message = serializer.validated_data["message"]
+        session_id = serializer.validated_data.get("session_id")
 
+        # 1️⃣ 세션 가져오거나 생성
+        if session_id:
+            session = ChatSession.objects.filter(
+                id=session_id,
+                user=request.user
+            ).first()
+            if not session:
+                return Response(
+                    {"detail": "Invalid session_id"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            session = ChatSession.objects.create(
+                user=request.user,
+                title="MIA Chat"
+            )
 
-class AIRecommendView(APIView):
-    def get(self, request):
-        user = request.user if request.user.is_authenticated else get_test_user()
+        # 2️⃣ 사용자 메시지 저장
+        ChatMessage.objects.create(
+            session=session,
+            role="user",
+            content=message
+        )
 
-        # 1️⃣ rule-based 추천 (fallback용)
-        candidates = recommend_movies_for_user(user, limit=10)
+        # 3️⃣ 추천 로직 실행
+        result = run_ai_recommendation(request.user, message)
 
-        # 후보가 없으면 바로 반환
-        if not candidates.exists():
-            return Response({"recommendations": []})
+        # 4️⃣ AI 메시지 저장
+        ChatMessage.objects.create(
+            session=session,
+            role="assistant",
+            content=result["answer"]
+        )
 
-        movie_candidates = [
-            {
-                "id": m.id,
-                "title": m.title,
-                "genres": [g.name for g in m.genres.all()],
-            }
-            for m in candidates
-        ]
-
-        user_profile = {
-            "genres": list(
-                user.userpreference.favorite_genres.values_list("name", flat=True)
-            ) if hasattr(user, "userpreference") else [],
-            "recent_genres": [],
+        response_data = {
+            "session_id": session.id,
+            "answer": result["answer"],
+            "movies": result["movies"]
         }
 
-        # 2️⃣ AI 호출
-        try:
-            ai_raw = ai_rank_movies(user_profile, movie_candidates)
-            content = ai_raw["choices"][0]["message"]["content"]
-            parsed = parse_ai_json(content)
+        return Response(response_data, status=status.HTTP_200_OK)
 
-            # ✅ 파싱 성공
-            if parsed:
-                return Response({
-                    "recommendations": parsed,
-                    "source": "ai",
-                    "token_usage": ai_raw.get("usage"),
-                })
+class ChatSessionDetailView(APIView):
+    permission_classes = [IsAuthenticated]
 
-        except Exception:
-            pass
+    def get(self, request, session_id):
+        session = ChatSession.objects.filter(
+            id=session_id,
+            user=request.user
+        ).first()
 
-        # 3️⃣ Fallback (AI 실패 시)
-        return Response({
-            "recommendations": movie_candidates[:5],
-            "source": "rule-based",
-        })
+        if not session:
+            return Response(status=404)
 
+        serializer = ChatSessionSerializer(session)
+        return Response(serializer.data)
+
+class ChatSessionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sessions = ChatSession.objects.filter(
+            user=request.user
+        ).order_by("-created_at")
+
+        serializer = ChatSessionSerializer(sessions, many=True)
+        return Response(serializer.data)

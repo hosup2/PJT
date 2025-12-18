@@ -210,10 +210,6 @@ class TMDBPopularImportView(APIView):
             "pages_loaded": pages,
         })
 
-<<<<<<< HEAD:Django_test/movies/views.py
-=======
-
->>>>>>> b3e1e3f419b084da2827d3a6cf3b31ec08e94e1a:Back_End/movies/views.py
 class TMDBPopularPageImportView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -369,9 +365,6 @@ class MovieDetailView(APIView):
         if need_tmdb_fetch:
             tmdb_data = fetch_tmdb_movie_detail(movie.tmdb_id)
 
-<<<<<<< HEAD:Django_test/movies/views.py
-        return Response(detail)
-=======
             # DB 업데이트 (필요한 필드만)
             movie.runtime = tmdb_data.get("runtime")
             movie.overview = tmdb_data.get("overview") or movie.overview
@@ -389,4 +382,3 @@ class MovieDetailView(APIView):
 
         serializer = MovieResponseSerializer(movie)
         return Response(serializer.data)
->>>>>>> b3e1e3f419b084da2827d3a6cf3b31ec08e94e1a:Back_End/movies/views.py
