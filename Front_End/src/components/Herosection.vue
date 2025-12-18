@@ -76,7 +76,7 @@
 
               <!-- 메타 정보 -->
               <div style="display: flex; align-items: center; gap: 1rem; color: rgb(156, 163, 175); margin-bottom: 2rem;">
-                <span>{{ movie.year }}</span>
+                <span>{{ formatDate(movie.release_date) }}</span>
                 <span>•</span>
                 <span>{{ movie.genre }}</span>
                 <span>•</span>
@@ -205,7 +205,7 @@ interface HeroMovie {
   backdrop: string;
   badge: string;
   rating: string;
-  year: string;
+  release_date: string;
   genre: string;
   duration: string;
 }
@@ -229,7 +229,7 @@ const fetchHeroMovies = async () => {
           : `https://image.tmdb.org/t/p/original${movie.backdrops}`,
         badge: item.keyword || '',
         rating: movie.tmdb_rating?.toFixed(1) ?? '0.0',
-        year: movie.release_date?.slice(0, 4) ?? '',
+        release_date: movie.release_date ?? '',
         genre: movie.genres.join(', '),
         duration: movie.runtime ? `${movie.runtime}분` : ''
       };
@@ -317,8 +317,19 @@ const stopAutoSlide = () => {
   }
 };
 
-// 아직 미구현 => 재생하기 버튼 클릭시 새로운 모달창에 트레일러 영상 재생
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
 
+  const date = new Date(dateStr);
+
+  const yy = String(date.getFullYear()); // year
+  const mm = String(date.getMonth() + 1).padStart(2, '0'); // month
+  const dd = String(date.getDate()).padStart(2, '0'); // day
+
+  return `${yy}.${mm}.${dd}`;
+};
+
+// 영화 트레일러 실행 
 const showTrailerModal = ref(false);
 const trailerKey = ref<string | null>(null);
 
