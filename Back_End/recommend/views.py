@@ -4,17 +4,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 
 from django.contrib.auth import get_user_model
-from .services.logic import run_ai_recommendation
+User = get_user_model()
+
+from .services.logic import run_chatbot
 
 from .models import ChatSession, ChatMessage
-from .serializers import ChatRequestSerializer, ChatResponseSerializer, ChatSessionSerializer
+from .serializers import ChatRequestSerializer, ChatSessionSerializer
 
-User = get_user_model()
 
 class ChatRecommendView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+
         serializer = ChatRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -45,8 +47,8 @@ class ChatRecommendView(APIView):
             content=message
         )
 
-        # 3️⃣ 추천 로직 실행
-        result = run_ai_recommendation(request.user, message)
+        # 3️⃣ 챗봇 로직 실행 (대화 or 추천)
+        result = run_chatbot(request.user, message)
 
         # 4️⃣ AI 메시지 저장
         ChatMessage.objects.create(
@@ -55,13 +57,12 @@ class ChatRecommendView(APIView):
             content=result["answer"]
         )
 
-        response_data = {
+        return Response({
             "session_id": session.id,
             "answer": result["answer"],
-            "movies": result["movies"]
-        }
+            "movies": result["movies"],
+        }, status=status.HTTP_200_OK)
 
-        return Response(response_data, status=status.HTTP_200_OK)
 
 class ChatSessionDetailView(APIView):
     permission_classes = [IsAuthenticated]
@@ -77,6 +78,13 @@ class ChatSessionDetailView(APIView):
 
         serializer = ChatSessionSerializer(session)
         return Response(serializer.data)
+    
+    def delete(self, request, session_id):
+        ChatSession.objects.filter(
+            id=session_id,
+            user=request.user
+        ).delete()
+        return Response(status=204)
 
 class ChatSessionListView(APIView):
     permission_classes = [IsAuthenticated]

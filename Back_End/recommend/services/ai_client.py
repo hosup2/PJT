@@ -1,4 +1,3 @@
-# recommend/services/ai_client.py
 import requests
 import json
 import re
@@ -6,30 +5,54 @@ from django.conf import settings
 
 
 class AIClient:
-    def rank_movies(self, prompt: str) -> list[dict]:
-        payload = {
-            "model": settings.GMS_MODEL,
-            "messages": [
-                {"role": "system", "content": "너는 영화 추천 전문가 AI다."},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.3,
-        }
-
+    def _request(self, messages):
         response = requests.post(
             settings.GMS_API_URL,
             headers={
                 "Authorization": f"Bearer {settings.GMS_API_KEY}",
                 "Content-Type": "application/json",
             },
-            json=payload,
-            timeout=10,
+            json={
+                "model": settings.GMS_MODEL,
+                "messages": messages,
+                "temperature": 0.3,
+            },
+            timeout=15,
         )
 
         response.raise_for_status()
-        content = response.json()["choices"][0]["message"]["content"]
-        return self._parse_json(content)
+        return response.json()
 
     def _parse_json(self, content: str):
-        cleaned = re.sub(r"```json|```", "", content).strip()
-        return json.loads(cleaned)
+        """
+        ```json ... ``` 제거 + json.loads
+        """
+        try:
+            cleaned = re.sub(r"```json|```", "", content).strip()
+            return json.loads(cleaned)
+        except Exception:
+            return None
+
+    def chat(self, prompt: str) -> str:
+        res = self._request([
+            {"role": "system", "content": "너는 친절한 영화 서비스 챗봇이다."},
+            {"role": "user", "content": prompt},
+        ])
+
+        return res["choices"][0]["message"]["content"]
+
+    def rank_movies(self, prompt: str):
+        res = self._request([
+            {"role": "system", "content": "너는 영화 추천 전문가다."},
+            {"role": "user", "content": prompt},
+        ])
+
+        content = res["choices"][0]["message"]["content"]
+
+        parsed = self._parse_json(content)
+
+        # ✅ 파싱 실패 시 빈 리스트 반환 (절대 서버 터지지 않게)
+        if not isinstance(parsed, list):
+            return []
+
+        return parsed

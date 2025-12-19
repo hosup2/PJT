@@ -1,21 +1,29 @@
-def build_rank_prompt(user_profile, movie_candidates):
+# services/prompt.py
+
+def build_recommend_prompt(movie_candidates, user_message):
     movie_text = "\n".join([
         f"{m['id']}. {m['title']} ({', '.join(m['genres'])})"
         for m in movie_candidates
     ])
 
     return f"""
-사용자 선호 장르: {', '.join(user_profile['genres'])}
-최근 시청 장르: {', '.join(user_profile['recent_genres'])}
+너는 영화 추천 전문가 AI다.
+
+사용자 요청:
+"{user_message}"
+
+아래 영화 후보 중에서
+사용자 요청에 가장 잘 맞는 영화 5개를 골라라.
 
 후보 영화 목록:
 {movie_text}
 
-위 사용자에게 가장 잘 맞는 영화 5개를
-중요도 순으로 JSON 배열만 반환하세요.
+아래 형식의 JSON 배열만 반환해라.
+설명이나 다른 텍스트는 절대 포함하지 마라.
 
 출력 예시:
 [
-  {{ "movie_id": 1, "reason": "이유" }}
+  {{ "id": 1, "reason": "이유" }},
+  {{ "id": 3, "reason": "이유" }}
 ]
 """
