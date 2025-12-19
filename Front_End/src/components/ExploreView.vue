@@ -3,83 +3,89 @@
     <div class="pt-20 pb-12 relative">
       <div class="absolute left-12 top-20 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/50 via-purple-500/50 to-transparent"></div>
       
-      <div class="space-y-16 pl-8">
+      <div class="space-y-24 pl-8">
         <div v-for="(group, index) in movieGroups" :key="index" class="relative">
           <div class="absolute left-4 top-0 w-5 h-5 rounded-full bg-blue-500 border-4 border-[#0f1419] z-10"></div>
           
-          <div class="ml-16 mb-6">
-            <span class="text-blue-400 font-semibold text-lg">{{ group.date }}</span>
-          </div>
-          
-          <div class="ml-16 space-y-8">
-            <div v-for="(platform, pIndex) in group.platforms" :key="pIndex">
-              <div class="flex items-center gap-3 mb-6">
-                <h2 class="text-xl font-semibold">
-                  <span class="text-white">{{ platform.count }}편</span>
-                  <span class="text-gray-400 ml-2">공개예정</span>
-                </h2>
-              </div>
-              
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                <div 
-                  v-for="movie in platform.movies" 
-                  :key="movie.id"
-                  @click="onMovieClick(movie.id)"
-                  class="cursor-pointer group"
-                >
-                  <div class="relative overflow-hidden rounded-xl mb-3 bg-gray-900 shadow-lg">
-                    <img 
-                      :src="movie.poster_path" 
-                      :alt="movie.title"
-                      class="w-full aspect-[2/3] object-cover transition-transform duration-300 group-hover:scale-110"
-                    />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  </div>
-                  
-                  <div class="space-y-2 px-1">
-                    <div class="flex items-center justify-between gap-2">
-                      <h3 class="font-medium text-sm line-clamp-2 leading-tight flex-1 group-hover:text-blue-400 transition-colors">
-                        {{ movie.title }}
-                      </h3>
+          <div class="ml-16 rounded-2xl p-8">
+            <div class="mb-5">
+              <span class="text-blue-400 font-semibold text-lg">{{ group.date }}</span>
+            </div>
+            
+            <div class="space-y-8">
+              <div v-for="(platform, pIndex) in group.platforms" :key="pIndex">
+                <div class="flex items-center gap-3 mb-6">
+                  <h2 class="text-xl font-semibold">
+                    <span class="text-white">{{ platform.count }}편  </span>
+                    <span class="text-gray-400 ml-2">공개예정</span>
+                  </h2>
+                </div>
+                
+                <!-- 전체 배경 박스 -->
+                <div class="p-6 rounded-xl" style="background-color: rgb(17, 24, 39);">
+                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <!-- 각 영화별 개별 카드 -->
+                    <div 
+                      v-for="movie in platform.movies" 
+                      :key="movie.id"
+                      @click="onMovieClick(movie.id)"
+                      class="cursor-pointer group p-3 rounded-lg bg-gray-700/70 hover:bg-gray-600/90 transition-all shadow-md"
+                    >
+                      <div class="relative overflow-hidden rounded-xl mb-3 bg-gray-900 shadow-lg">
+                        <img 
+                          :src="movie.poster_path" 
+                          :alt="movie.title"
+                          class="w-full aspect-[2/3] object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      </div>
                       
-                      <button 
-                        v-if="isLoggedIn"
-                        class="flex-shrink-0 w-13 h-13 rounded-full flex items-center justify-center transition-colors group/btn"
-                        :class="movie.is_liked 
-                          ? 'bg-red-600/20 text-red-400' 
-                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'"
-                        @click.stop="handleAddToLikes(movie)"
-                        :title="movie.is_liked ? '좋아요 취소' : '좋아요 추가'"
-                      >
-                        <svg 
-                          xmlns="http://www.w3.org/2000/svg"
-                          class="w-8 h-8 transition-transform duration-200 group-hover/btn:scale-110" 
-                          viewBox="0 0 24 24"
-                          stroke-width="2"
-                        >
-                          <path 
-                            stroke-linecap="round" 
-                            stroke-linejoin="round" 
-                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                            :stroke="movie.is_liked ? '#ef4444' : 'currentColor'"
-                            :fill="movie.is_liked ? '#ef4444' : 'none'"
-                          />
-                        </svg>
-                      </button>
-                      
-                      <button 
-                        v-else
-                        class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-800/70 flex items-center justify-center hover:bg-gray-700 transition-all"
-                        @click.stop="handleLoginRequired"
-                        title="로그인이 필요합니다"
-                      >
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                        </svg>
-                      </button>
+                      <div class="space-y-2 px-1">
+                        <div class="flex items-center justify-between gap-2">
+                          <h3 class="font-medium text-sm line-clamp-2 leading-tight flex-1 group-hover:text-blue-400 transition-colors">
+                            {{ movie.title }}
+                          </h3>
+                          
+                          <button 
+                            v-if="isLoggedIn"
+                            class="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors group/btn"
+                            :class="movie.is_liked 
+                              ? 'bg-red-600/20 text-red-400' 
+                              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'"
+                            @click.stop="handleAddToLikes(movie)"
+                            :title="movie.is_liked ? '좋아요 취소' : '좋아요 추가'"
+                          >
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg"
+                              class="w-6 h-6 transition-transform duration-200 group-hover/btn:scale-110" 
+                              viewBox="0 0 24 24"
+                              stroke-width="2"
+                            >
+                              <path 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round" 
+                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                :stroke="movie.is_liked ? '#ef4444' : 'currentColor'"
+                                :fill="movie.is_liked ? '#ef4444' : 'none'"
+                              />
+                            </svg>
+                          </button>
+                          
+                          <button 
+                            v-else
+                            class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-gray-600 transition-all"
+                            @click.stop="handleLoginRequired"
+                            title="로그인이 필요합니다"
+                          >
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                          </button>
+                        </div>
+                        
+                        <div class="text-xs text-gray-500">{{ movie.year }}</div>
+                      </div>
                     </div>
-                    
-                    <div class="text-xs text-gray-500">{{ movie.year }}</div>
                   </div>
                 </div>
               </div>
