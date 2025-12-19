@@ -174,31 +174,68 @@ class FollowToggleView(APIView):
         return Response({"followed": True})
 
 class FollowerListView(APIView):
+    permission_classes = [AllowAny]
+    
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         followers = user.followers.select_related("follower")
 
-        data = [
-            {
-                "id": f.follower.id,
-                "username": f.follower.username
-            }
-            for f in followers
-        ]
+        data = []
+        for f in followers:
+            follower_user = f.follower
+            is_following = False
+            if request.user.is_authenticated:
+                is_following = UserFollow.objects.filter(
+                    follower=request.user,
+                    following=follower_user
+                ).exists()
+            
+            # getattr로 안전하게 가져오기
+            profile_image = getattr(follower_user, 'profile_image', None)
+            profile_image_url = None
+            if profile_image and hasattr(profile_image, 'url'):
+                profile_image_url = profile_image.url
+            
+            data.append({
+                "id": follower_user.id,
+                "username": follower_user.username,
+                "email": follower_user.email,
+                "profile_image": profile_image_url,
+                "is_following": is_following
+            })
 
         return Response(data)
 
+
 class FollowingListView(APIView):
+    permission_classes = [AllowAny]
+    
     def get(self, request, user_id):
         user = get_object_or_404(User, id=user_id)
         following = user.following.select_related("following")
 
-        data = [
-            {
-                "id": f.following.id,
-                "username": f.following.username
-            }
-            for f in following
-        ]
+        data = []
+        for f in following:
+            following_user = f.following
+            is_following = False
+            if request.user.is_authenticated:
+                is_following = UserFollow.objects.filter(
+                    follower=request.user,
+                    following=following_user
+                ).exists()
+            
+            # getattr로 안전하게 가져오기
+            profile_image = getattr(following_user, 'profile_image', None)
+            profile_image_url = None
+            if profile_image and hasattr(profile_image, 'url'):
+                profile_image_url = profile_image.url
+            
+            data.append({
+                "id": following_user.id,
+                "username": following_user.username,
+                "email": following_user.email,
+                "profile_image": profile_image_url,
+                "is_following": is_following
+            })
 
         return Response(data)

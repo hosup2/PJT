@@ -19,54 +19,56 @@
       <!-- Profile Header -->
       <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 mb-8 border border-gray-700/50">
         <!-- Profile Info Section -->
-        <!-- Profile Info Section -->
-      <div class="mb-8">
-        <!-- Profile Image & Username - Horizontal Layout -->
-        <div class="flex items-center justify-center gap-6 mb-6">
-          <!-- Profile Image -->
-          <div class="relative flex-shrink-0">
-            <img
-              :src="user.profile_image"
-              :alt="user.username"
-              class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-800 object-cover ring-4 ring-purple-500/20"
-            />
-            <div class="absolute -bottom-2 -right-2 bg-purple-600 rounded-full p-2">
-        
+        <div class="mb-8">
+          <!-- Profile Image & Username - Horizontal Layout -->
+          <div class="flex items-center justify-center gap-6 mb-6">
+            <!-- Profile Image -->
+            <div class="relative flex-shrink-0">
+              <img
+                :src="user.profile_image"
+                :alt="user.username"
+                class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-800 object-cover ring-4 ring-purple-500/20"
+              />
+              <div class="absolute -bottom-2 -right-2 bg-purple-600 rounded-full p-2">
+                <Star class="w-4 h-4 md:w-5 md:h-5 text-white fill-white" />
+              </div>
+            </div>
+            
+            <!-- Username -->
+            <div class="text-left">
+              <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                {{ user.username }}
+              </h1>
+              <p class="text-gray-400">{{ user.email }}</p>
             </div>
           </div>
-          
-          <!-- Username -->
-          <div class="text-left">
-            <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-              {{ user.username }}
-            </h1>
-            <p class="text-gray-400">{{ user.email }}</p>
+    
+          <!-- Follow Button - Centered -->
+          <div class="flex justify-center">
+            <button
+              v-if="!isOwnProfile"
+              @click="toggleFollow"
+              :class="[
+                'px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg',
+                user.follow_info.is_following
+                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:shadow-gray-600/50'
+                  : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/50'
+              ]"
+            >
+              <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
+              <UserPlus v-else class="w-4 h-4" />
+              <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
+            </button>
           </div>
         </div>
-  
-  <!-- Follow Button - Centered -->
-  <div class="flex justify-center">
-    <button
-      v-if="!isOwnProfile"
-      @click="toggleFollow"
-      :class="[
-        'px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg',
-        user.follow_info.is_following
-          ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:shadow-gray-600/50'
-          : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/50'
-      ]"
-    >
-      <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
-      <UserPlus v-else class="w-4 h-4" />
-      <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
-    </button>
-  </div>
-</div>
         
         <!-- Stats Grid -->
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 max-w-5xl mx-auto">
           <!-- Followers -->
-          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105">
+          <button
+            @click="openFollowModal('followers')"
+            class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105 w-full"
+          >
             <div class="flex flex-col items-center gap-2">
               <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20">
                 <Users class="w-5 h-5 text-emerald-400" />
@@ -74,10 +76,13 @@
               <span class="text-2xl font-bold text-emerald-400">{{ user.follow_info.followers_count }}</span>
               <p class="text-xs text-gray-400">팔로워</p>
             </div>
-          </div>
+          </button>
           
           <!-- Following -->
-          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105">
+          <button
+            @click="openFollowModal('following')"
+            class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105 w-full"
+          >
             <div class="flex flex-col items-center gap-2">
               <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20">
                 <UserCheck class="w-5 h-5 text-emerald-400" />
@@ -85,7 +90,7 @@
               <span class="text-2xl font-bold text-emerald-400">{{ user.follow_info.following_count }}</span>
               <p class="text-xs text-gray-400">팔로잉</p>
             </div>
-          </div>
+          </button>
 
           <!-- Rated Movies -->
           <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-purple-500/50 transition-all duration-200 hover:scale-105">
@@ -225,7 +230,7 @@
         </div>
 
         <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          <div v-for="rating in filteredRatings" :key="rating.id" class="group">
+          <div v-for="rating in filteredRatings" :key="rating.movie_id" class="group">
             <button
               @click="handleMovieClick(rating.movie_id)"
               class="w-full text-left"
@@ -306,7 +311,7 @@
                 <button
                   v-if="comment.movie_id"
                   @click="handleMovieClick(comment.movie_id)"
-                 class="text- font-bold text-purple-400 hover:text-purple-300 transition-colors mb-2 text-left block underline decoration-transparent hover:decoration-purple-400 underline-offset-2"
+                  class="text-lg font-semibold text-purple-400 hover:text-purple-300 transition-all mb-2 text-left block border-b-2 border-purple-400 hover:border-purple-300 pb-0.5"
                 >
                   {{ comment.movie_title || '영화 제목' }}
                 </button>
@@ -323,7 +328,6 @@
                     :readonly="true"
                     size="sm"
                   />
-                  <!-- <span class="text-sm text-yellow-400 font-semibold">{{ comment.rating.toFixed(1) }}점</span> -->
                 </div>
               </div>
               
@@ -382,6 +386,17 @@
       @close="showEditModal = false"
       @save="handleSaveProfile"
     />
+
+    <!-- Follow List Modal -->
+    <FollowListModal
+      v-if="user"
+      :is-open="showFollowModal"
+      :user-id="Number(userId)"
+      :type="followModalType"
+      :current-user-id="currentUserId"
+      @close="showFollowModal = false"
+      @navigate-to-user="handleNavigateToUser"
+    />
   </div>
 </template>
 
@@ -392,6 +407,7 @@ import axios from 'axios';
 import { Star, Film, Heart, MessageSquare, UserPlus, UserCheck, Users, Trash2 } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 import ProfileEditModal from './ProfileEditModal.vue';
+import FollowListModal from './FollowListModal.vue';
 
 const router = useRouter();
 
@@ -408,9 +424,9 @@ interface FollowInfo {
 interface UserProfile {
   id: number;
   username: string;
-  email: string; // Note: email might not be public
+  email: string;
   profile_image?: string;
-  stats: any; // Define stats structure later
+  stats: any;
   follow_info: FollowInfo;
   rated_movies: UserRating[];
   liked_movies: LikedMovie[];
@@ -442,7 +458,6 @@ interface UserComment {
   created_at: string;
   likes_count: number;
   is_liked: boolean;
-  // These fields should come from backend but might be missing
   movie_id?: number;
   movie_title?: string;
   movie?: {
@@ -479,32 +494,38 @@ const activeTab = ref<'ratings' | 'likes' | 'comments'>('ratings');
 const ratingFilter = ref<'all' | 'high' | 'low'>('all');
 const showEditModal = ref(false);
 
+// 팔로우 리스트 모달 상태
+const showFollowModal = ref(false);
+const followModalType = ref<'followers' | 'following'>('followers');
+
+const openFollowModal = (type: 'followers' | 'following') => {
+  followModalType.value = type;
+  showFollowModal.value = true;
+};
+
 const isOwnProfile = computed(() => Number(props.userId) === props.currentUserId);
 
 // Helper function to get full image URL
 const getFullImageUrl = (path: string | null | undefined): string => {
   if (!path) {
-    return '/placeholder-movie.png'; // Fallback image
+    return '/placeholder-movie.png';
   }
   
-  // If path already starts with http, return as is
   if (path.startsWith('http')) {
     return path;
   }
   
-  // If path starts with /, it's already a TMDB path
   if (path.startsWith('/')) {
     return `${TMDB_IMAGE_BASE_URL}${path}`;
   }
   
-  // Otherwise, assume it needs the base URL
   return `${TMDB_IMAGE_BASE_URL}/${path}`;
 };
 
 // Handle image loading errors
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
-  target.src = '/placeholder-movie.png'; // Set fallback image
+  target.src = '/placeholder-movie.png';
 };
 
 const fetchUserProfile = async () => {
@@ -519,30 +540,10 @@ const fetchUserProfile = async () => {
     if (user.value && !user.value.profile_image) {
       user.value.profile_image = '/mia5.png';  
     }
-    // Debug logging
-    console.log('User profile data:', response.data);
-    console.log('Reviews data:', response.data.reviews);
-    console.log('Number of reviews:', response.data.reviews?.length || 0);
-    
-    // Debug each review to see structure
-    if (response.data.reviews && response.data.reviews.length > 0) {
-      const firstReview = response.data.reviews[0];
-      console.log('First review structure:', firstReview);
-      console.log('First review keys:', Object.keys(firstReview));
-      console.log('Movie title attempt 1 (movie?.title):', firstReview.movie?.title);
-      console.log('Movie title attempt 2 (movie_title):', firstReview.movie_title);
-      console.log('Movie title attempt 3 (title):', firstReview.title);
-      console.log('Content attempt 1 (content):', firstReview.content);
-      console.log('Content attempt 2 (comment):', firstReview.comment);
-      console.log('Content attempt 3 (review_content):', firstReview.review_content);
-    }
   } catch (e: any) {
     console.error('Failed to fetch user profile:', e);
     error.value = '사용자 정보를 불러오는 데 실패했습니다.';
     user.value = null;
-    if (e.response?.data) {
-      console.log('Error response:', e.response.data);
-    }
   } finally {
     isLoading.value = false;
   }
@@ -578,7 +579,6 @@ watch(() => props.userId, () => {
   fetchUserProfile();
 });
 
-
 const handleSaveProfile = (username: string, profileImage: string) => {
   emit('updateProfile', username, profileImage);
   showEditModal.value = false;
@@ -594,14 +594,11 @@ const handleDeleteReview = async (reviewId: number, movieId?: number) => {
   }
 
   try {
-    // rating_id를 body에 포함해서 전송
     await axios.delete(`http://127.0.0.1:8000/movies/${movieId}/rating/`, {
       data: { rating_id: reviewId }
     });
     
-    // Refresh user profile data
     await fetchUserProfile();
-    
     alert('리뷰가 삭제되었습니다.');
   } catch (error) {
     console.error('Failed to delete review:', error);
@@ -609,37 +606,46 @@ const handleDeleteReview = async (reviewId: number, movieId?: number) => {
   }
 };
 
-// This computed property will now be empty as we are not using mock data
 const stats = computed(() => {
-    if (user.value && user.value.stats) {
-        return {
-            total_ratings: user.value.stats.total_ratings || 0,
-            avg_rating: user.value.stats.avg_rating || 0,
-            liked_movies: user.value.stats.liked_movies || 0,
-            total_comments: user.value.stats.total_comments || 0,
-        };
-    }
+  if (user.value && user.value.stats) {
     return {
-        total_ratings: 0,
-        avg_rating: 0,
-        liked_movies: 0,
-        total_comments: 0,
+      total_ratings: user.value.stats.total_ratings || 0,
+      avg_rating: user.value.stats.avg_rating || 0,
+      liked_movies: user.value.stats.liked_movies || 0,
+      total_comments: user.value.stats.total_comments || 0,
     };
+  }
+  return {
+    total_ratings: 0,
+    avg_rating: 0,
+    liked_movies: 0,
+    total_comments: 0,
+  };
 });
 
-// Filtered ratings based on selected filter
+// Filtered ratings based on selected filter - 중복 제거 추가
 const filteredRatings = computed(() => {
-  if (ratingFilter.value === 'all') return userRatings.value;
-  if (ratingFilter.value === 'high') return userRatings.value.filter(r => r.rating >= 4.0);
-  if (ratingFilter.value === 'low') return userRatings.value.filter(r => r.rating <= 2.0);
-  return userRatings.value;
+  const ratingsMap = new Map<number, UserRating>();
+  
+  userRatings.value.forEach(rating => {
+    const existing = ratingsMap.get(rating.movie_id);
+    if (!existing || rating.id > existing.id) {
+      ratingsMap.set(rating.movie_id, rating);
+    }
+  });
+  
+  const uniqueRatings = Array.from(ratingsMap.values());
+
+  if (ratingFilter.value === 'all') return uniqueRatings;
+  if (ratingFilter.value === 'high') return uniqueRatings.filter(r => r.rating >= 4.0);
+  if (ratingFilter.value === 'low') return uniqueRatings.filter(r => r.rating <= 2.0);
+  return uniqueRatings;
 });
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ko-KR');
 };
 
-// Helper function to get review content - backend sends 'comment' and 'review_content' (they're the same)
 const getReviewContent = (comment: UserComment): string => {
   return comment.comment || comment.review_content || '';
 };
