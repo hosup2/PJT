@@ -14,7 +14,6 @@ from .serializers import ChatRequestSerializer, ChatSessionSerializer
 
 class ChatRecommendView(APIView):
     permission_classes = [IsAuthenticated]
-
     def post(self, request):
 
         serializer = ChatRequestSerializer(data=request.data)
@@ -37,7 +36,7 @@ class ChatRecommendView(APIView):
         else:
             session = ChatSession.objects.create(
                 user=request.user,
-                title="MIA Chat"
+                title="새 대화"
             )
 
         # 2️⃣ 사용자 메시지 저장
@@ -46,6 +45,12 @@ class ChatRecommendView(APIView):
             role="user",
             content=message
         )
+
+        # ⭐️⭐️ 핵심 추가 부분 ⭐️⭐️
+        # 첫 번째 user 메시지면 세션 제목으로 설정
+        if session.title == "새 대화":
+            session.title = message[:30]  # 너무 길면 잘라줌
+            session.save(update_fields=["title"])
 
         # 3️⃣ 챗봇 로직 실행 (대화 or 추천)
         result = run_chatbot(request.user, message)

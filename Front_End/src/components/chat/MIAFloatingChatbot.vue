@@ -44,9 +44,129 @@
           />
 
           <!-- 헤더 -->
-          <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-            <strong style="color:#c084fc;">MIA</strong>
-            <button @click="open = false" style="color:#9ca3af;">✕</button>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 2px 8px;
+              margin-bottom: 4px;
+            "
+          >
+            <!-- 타이틀 -->
+            <strong
+              style="
+                color: #c084fc;
+                font-size: 14px;
+                letter-spacing: 0.5px;
+              "
+            >
+              MIA
+            </strong>
+
+            <!-- 버튼 영역 -->
+            <div style="display:flex; gap:8px;">
+              <!-- 새 대화 -->
+              <button
+                @click="startNewChat"
+                title="새 대화"
+                style="
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 8px;
+                  background: #1f2937;
+                  color: #22c55e;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 16px;
+                  cursor: pointer;
+                "
+              >
+                ＋
+              </button>
+
+              <!-- 세션 목록 -->
+              <button
+                @click="() => {
+                  showSessions = !showSessions
+                  if (showSessions) fetchSessions()
+                }"
+                title="대화 목록"
+                style="
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 8px;
+                  background: #1f2937;
+                  color: #e5e7eb;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 14px;
+                  cursor: pointer;
+                "
+              >
+                ☰
+              </button>
+
+              <!-- 세션 삭제 -->
+              <button
+                v-if="sessionId"
+                @click="deleteSession"
+                title="대화 삭제"
+                style="
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 8px;
+                  background: #1f2937;
+                  color: #ef4444;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 14px;
+                  cursor: pointer;
+                "
+              >
+                🗑
+              </button>
+            </div>
+          </div>
+
+
+          <!-- ✅ 세션 목록 패널 (여기!!) -->
+          <div
+            v-if="showSessions"
+            style="
+              position: absolute;
+              top: 40px;
+              left: -180px;
+              width: 170px;
+              height: calc(100% - 50px);
+              background: #020617;
+              border: 1px solid rgba(147,51,234,0.3);
+              border-radius: 12px;
+              padding: 6px;
+              overflow-y: auto;
+              z-index: 20;
+            "
+          >
+            <div
+              v-for="s in sessions"
+              :key="s.id"
+              @click="loadSession(s.id)"
+              style="
+                padding: 6px;
+                font-size: 11px;
+                cursor: pointer;
+                border-radius: 6px;
+                margin-bottom: 4px;
+                color: #e5e7eb;
+              "
+              @mouseover="($event.currentTarget as HTMLElement).style.background='#1f2937'"
+              @mouseleave="($event.currentTarget as HTMLElement).style.background='transparent'"
+            >
+              {{ s.title || '대화 ' + s.id }}
+            </div>
           </div>
 
           <!-- 메시지 영역 -->
@@ -247,7 +367,6 @@ interface Message {
   movies?: MovieRecommendation[];
 }
 
-
 const messages = ref<Message[]>([
   {
     role: 'assistant',
@@ -311,11 +430,16 @@ const send = async () => {
     const res = await axios.post(
       'http://127.0.0.1:8000/recommend/chat/',
       {
-        message: userMessage,
-        session_id: sessionId.value,
+        message: userMessage.trim(),
+        session_id: sessionId.value ?? null,
       },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      }
     );
-
 
     const data = res.data;
 
@@ -339,6 +463,82 @@ const send = async () => {
     loading.value = false;
   }
 };
+
+const sessions = ref<any[]>([]);
+const showSessions = ref(false);
+
+const fetchSessions = async () => {
+  const res = await axios.get(
+    'http://127.0.0.1:8000/recommend/sessions/',
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+    }
+  );
+  sessions.value = res.data;
+};
+
+const loadSession = async (id: number) => {
+  const res = await axios.get(
+    `http://127.0.0.1:8000/recommend/sessions/${id}/`,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+    }
+  );
+
+  sessionId.value = id;
+  messages.value = res.data.messages.map((m: any) => ({
+    role: m.role,
+    content: m.content,
+  }));
+
+  // showSessions.value = false;
+};
+
+const deleteSession = async () => {
+  if (!sessionId.value) return;
+
+  await axios.delete(
+    `http://127.0.0.1:8000/recommend/sessions/${sessionId.value}/`,
+    {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+      },
+    }
+  );
+
+  sessionId.value = null;
+  messages.value = [
+    { role: 'assistant', content: '새 대화를 시작해볼까요? 😊' },
+  ];
+
+  fetchSessions();
+};
+
+watch(open, (v) => {
+  if (v) fetchSessions();
+});
+
+const startNewChat = () => {
+  // 현재 세션 초기화
+  sessionId.value = null;
+  localStorage.removeItem(SESSION_KEY);
+
+  // 메시지 초기화
+  messages.value = [
+    {
+      role: 'assistant',
+      content: '새 대화를 시작했어요 😊 무엇을 도와드릴까요?',
+    },
+  ];
+
+  showSessions.value = false;
+};
+
+
 </script>
 
 <style scoped>

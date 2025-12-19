@@ -1,5 +1,8 @@
 ## Back_End Test
 
+## 12.19
+- 챗봇 시스템 구현 + 세션 구현 (TEST 통과 가끔 session id생성 전 session을 불러오려해서 오류 발생)
+
 ## 12.18
 - 챗봇 시스템 구현 (Test 전)
 
