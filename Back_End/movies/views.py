@@ -105,7 +105,8 @@ class MovieListView(APIView):
 
     def get(self, request):
         qs = Movie.objects.all().order_by("-release_date")[:20]
-        serializer = MovieResponseSerializer(qs, many=True)
+        # ⭐ context에 request 전달 (is_liked 계산을 위해)
+        serializer = MovieResponseSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
 # 영화 검색
@@ -122,7 +123,7 @@ class MovieSearchView(APIView):
             Q(title__icontains=q) | Q(original_title__icontains=q)
         ).distinct()
 
-        serializer = MovieResponseSerializer(qs, many=True)
+        serializer = MovieResponseSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -132,7 +133,7 @@ class FeaturedMovieView(APIView):
 
     def get(self, request):
         qs = FeaturedMovie.objects.select_related("movie").order_by("priority")[:20]
-        serializer = FeaturedMovieSerializer(qs, many=True)
+        serializer = FeaturedMovieSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -345,7 +346,7 @@ class HeroMovieListView(APIView):
 
     def get(self, request):
         heroes = HeroMovie.objects.filter(is_active=True).order_by("priority")[:5]
-        serializer = HeroMovieSerializer(heroes, many=True)
+        serializer = HeroMovieSerializer(heroes, many=True, context={'request': request})
         return Response(serializer.data)
 
 def fetch_tmdb_movie_detail(tmdb_id):
@@ -389,5 +390,6 @@ class MovieDetailView(APIView):
                 genres.append(genre)
             movie.genres.set(genres)
 
-        serializer = MovieResponseSerializer(movie)
+        # ⭐ context에 request 전달 (is_liked 계산을 위해)
+        serializer = MovieResponseSerializer(movie, context={'request': request})
         return Response(serializer.data)

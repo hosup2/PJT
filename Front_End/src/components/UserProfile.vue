@@ -394,8 +394,7 @@
       :user-id="Number(userId)"
       :type="followModalType"
       :current-user-id="currentUserId"
-      @close="showFollowModal = false"
-      @navigate-to-user="handleNavigateToUser"
+      @close="handleFollowModalClose"  @navigate-to-user="handleNavigateToUser"
     />
   </div>
 </template>
@@ -479,8 +478,19 @@ const emit = defineEmits<{
   navigateToUser: [userId: number];
 }>();
 
+// UserProfile.vue의 <script setup> 내 handleNavigateToUser 함수 수정
+
 const handleNavigateToUser = (userId: number) => {
-  emit('navigateToUser', userId);
+  showFollowModal.value = false; // 모달 닫기
+  // 라우터를 통해 해당 사용자의 프로필로 이동
+  // 라우트 이름('UserProfile')은 실제 설정하신 이름과 맞춰주세요.
+  router.push({ name: 'UserProfile', params: { userId: userId.toString() } });
+};
+
+// 팔로우 모달이 닫힐 때 부모 페이지의 숫자를 최신화하기 위해 watch 추가 또는 close 핸들러 수정
+const handleFollowModalClose = () => {
+  showFollowModal.value = false;
+  fetchUserProfile(); // 모달에서 팔로우/언팔로우를 했을 수 있으므로 프로필 정보(카운트) 다시 불러오기
 };
 
 const user = ref<UserProfile | null>(null);

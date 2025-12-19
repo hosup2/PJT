@@ -50,6 +50,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
     stats = serializers.SerializerMethodField()
     user_data = serializers.SerializerMethodField()
     comments = MovieRatingSerializer(source='ratings', many=True, read_only=True)
+    is_liked = serializers.SerializerMethodField()  # ← 추가
 
     class Meta:
         model = Movie
@@ -68,6 +69,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
             "stats",
             "user_data",
             "comments",
+            "is_liked",  # ← 추가
         ]
 
     def get_genres(self, obj):
@@ -101,6 +103,14 @@ class MovieResponseSerializer(serializers.ModelSerializer):
             "rating_distribution": distribution
         }
 
+    def get_is_liked(self, obj):
+        """영화 목록에서도 is_liked 표시"""
+        request = self.context.get('request', None)
+        if not request or not request.user.is_authenticated:
+            return False
+        
+        return FavoriteMovie.objects.filter(movie=obj, user=request.user).exists()
+
     def get_user_data(self, obj):
         request = self.context.get('request', None)
         if not request or not request.user.is_authenticated:
@@ -108,7 +118,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
 
         user = request.user
         user_rating = MovieRating.objects.filter(movie=obj, user=user).first()
-        is_liked = FavoriteMovie.objects.filter(movie=obj, user=user).exists()
+        is_liked = FavoriteMovie.objects.filter(movie=obj, user=request.user).exists()
 
         return {
             'rating': user_rating.rating if user_rating else 0,

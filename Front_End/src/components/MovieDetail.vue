@@ -38,12 +38,28 @@
               @click="handleLikeMovie"
               :disabled="!isLoggedIn"
               :class="[
-                'p-2 rounded-full transition-colors',
-                isMovieLiked ? 'bg-red-500/20 text-red-400' : 'bg-gray-800 text-gray-400',
-                isLoggedIn ? 'hover:bg-red-500/30 cursor-pointer' : 'cursor-not-allowed opacity-50'
+                'p-3 rounded-full transition-all',
+                isMovieLiked 
+                  ? 'bg-red-500/20 hover:bg-red-500/30' 
+                  : 'bg-gray-800/80 hover:bg-red-500/20',
+                isLoggedIn ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
               ]"
+              :title="isMovieLiked ? '찜 취소' : '찜하기'"
             >
-              <Heart :class="['w-8 h-8', isMovieLiked && 'fill-current']" />
+              <svg 
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="w-8 h-8 transition-all"
+                stroke-width="2"
+              >
+                <path 
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  stroke-linecap="round" 
+                  stroke-linejoin="round"
+                  :stroke="isMovieLiked ? '#ef4444' : '#ffffff'"
+                  :fill="isMovieLiked ? '#ef4444' : 'none'"
+                />
+              </svg>
             </button>
           </div>
           <p v-if="movie.original_title !== movie.title" class="text-xl text-gray-300 mb-4">
@@ -172,7 +188,7 @@
 import { ref, onMounted, computed, inject } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import { ArrowLeft, Calendar, Clock, Star, Heart } from 'lucide-vue-next';
+import { ArrowLeft, Calendar, Clock, Star } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 import RatingDistributionChart from './RatingDistributionChart.vue';
 import CommentSection from './CommentSection.vue';
