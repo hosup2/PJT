@@ -2,6 +2,9 @@
 
 ### [Notion](https://www.notion.so/2aae9e31af908065b2c3e27638e1a98e?source=copy_link)
 
+## 12.19
+- 챗봇 만들기
+
 ## 12.18
 - 재생하기 버튼 활성화 (트레일러 영상 재생) ✅
 

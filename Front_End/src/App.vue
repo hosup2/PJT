@@ -18,40 +18,42 @@
         @edit-profile="showProfileEditModal = true"
       />
 
-      <div class="animate-float" style="position: fixed; bottom: 32px; right: 32px; z-index: 50;">
-        <img src="/mia.png" alt="MIA 로봇" style="height: 100px; width: auto;" class="drop-shadow-2xl cursor-pointer hover:scale-110 transition-transform" />
-      </div>
-
+      
+      
       <main :class="mainClass">
         <router-view v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
             <component 
-              :is="Component" 
-              :key="route.path"
-              :current-user-id="currentUser?.id"
-              @open-auth="showAuthModal = true"
-              @activity-updated="fetchCurrentUser"
+            :is="Component" 
+            :key="route.path"
+            :current-user-id="currentUser?.id"
+            @open-auth="showAuthModal = true"
+            @activity-updated="fetchCurrentUser"
             />
           </transition>
         </router-view>
       </main>
-
+      
+      
       <!-- 로그인 모달 -->
       <AuthModal
-        :is-open="showAuthModal"
-        :is-loading="isLoading"
-        @close="showAuthModal = false"
-        @login="handleLogin"
-        @signup="handleSignup"
+      :is-open="showAuthModal"
+      :is-loading="isLoading"
+      @close="showAuthModal = false"
+      @login="handleLogin"
+      @signup="handleSignup"
       />
-
+      
       <!-- 프로필 편집 모달 -->
       <ProfileEditModal
-        :is-open="showProfileEditModal"
-        :user="currentUser || { username: '', email: '', profile_image: '' }"
-        @close="showProfileEditModal = false"
-        @save="handleProfileEdit"
+      :is-open="showProfileEditModal"
+      :user="currentUser || { username: '', email: '', profile_image: '' }"
+      @close="showProfileEditModal = false"
+      @save="handleProfileEdit"
       />
+      
+      <MIAFloatingChatbot />
+      
     </template>
   </div>
 </template>
@@ -64,6 +66,7 @@ import Navigation from './components/Navigation.vue';
 import AuthModal from './components/AuthModal.vue';
 import ProfileEditModal from './components/ProfileEditModal.vue';
 import PreferenceOnboarding from './components/onboarding/PreferenceOnboarding.vue';
+import MIAFloatingChatbot from './components/chat/MIAFloatingChatbot.vue';
 
 interface User {
   id: number;
