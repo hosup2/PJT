@@ -9,6 +9,7 @@ class ChatSession(models.Model):
         related_name="chat_sessions"
     )
     title = models.CharField(max_length=120, blank=True)
+    summary = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

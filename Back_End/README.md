@@ -1,5 +1,8 @@
 ## Back_End Test
 
+## 12.20
+- 챗봇 시스템 개선 ( 장르 텍스트 매칭해서 해당 장르에 candidate하기)
+
 ## 12.19
 - 챗봇 시스템 구현 + 세션 구현 (TEST 통과 가끔 session id생성 전 session을 불러오려해서 오류 발생)
 

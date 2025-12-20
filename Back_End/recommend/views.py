@@ -10,6 +10,7 @@ from .services.logic import run_chatbot
 
 from .models import ChatSession, ChatMessage
 from .serializers import ChatRequestSerializer, ChatSessionSerializer
+from .services.logic import update_session_summary
 
 
 class ChatRecommendView(APIView):
@@ -53,14 +54,19 @@ class ChatRecommendView(APIView):
             session.save(update_fields=["title"])
 
         # 3️⃣ 챗봇 로직 실행 (대화 or 추천)
-        result = run_chatbot(request.user, message)
+        result = run_chatbot(request.user, message, session)
 
         # 4️⃣ AI 메시지 저장
+
+        # AI 응답 저장 후
         ChatMessage.objects.create(
             session=session,
             role="assistant",
             content=result["answer"]
         )
+
+        update_session_summary(session)
+
 
         return Response({
             "session_id": session.id,

@@ -1,22 +1,18 @@
 # services/candidate.py
 
 from movies.models import Movie
-from django.db.models import Q
+from .genre_parser import extract_genres_from_text
 
-def get_candidate_movies(user, query, limit=10):
+def get_candidate_movies(user, query, limit=50):
     qs = Movie.objects.all()
 
-    # 🔍 자연어 query 기반 필터
-    if query:
-        qs = qs.filter(
-            Q(title__icontains=query) |
-            Q(overview__icontains=query)
-        )
+    genres = extract_genres_from_text(query)
+    print("🎯 extracted genres:", genres)  # ✅ 디버깅
 
-    # ⭐ 온보딩 있으면 보너스로 장르 반영
-    if hasattr(user, "userpreference"):
-        genres = user.userpreference.favorite_genres.all()
-        if genres.exists():
-            qs = qs.filter(genres__in=genres)
+    if genres:
+        qs = qs.filter(genres__name__in=genres)
 
-    return qs.distinct()[:limit]
+    qs = qs.order_by("-tmdb_rating").distinct()
+
+    print("🎬 candidate count:", qs.count())  # ✅ 디버깅
+    return qs[:limit]
