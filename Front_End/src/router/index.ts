@@ -3,6 +3,7 @@ import HomeView from '../components/HomeView.vue';
 import ExploreView from '../components/ExploreView.vue';
 import MovieDetail from '../components/MovieDetail.vue';
 import UserProfile from '../components/UserProfile.vue';
+import ExploreFullView from '../components/ExploreFullView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -14,6 +15,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/explore',
     name: 'Explore',
     component: ExploreView,
+  },
+  {
+    path: '/explore/full',
+    name: 'ExploreFull',
+    component: ExploreFullView,
+
   },
   {
     path: '/movie/:id',

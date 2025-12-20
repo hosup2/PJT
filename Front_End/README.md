@@ -1,5 +1,15 @@
 ## FrontEnd
 
+## 12.20
+- ExploreView 페이지 재구성
+  - 기존 타임라인 뷰를 3개의 카드형 섹션으로 변경 (공개 예정 영화, 인생작 영화, 커뮤니티)
+- ExploreFullView.vue 신규 생성
+  - 이전 exploreview.vue 에서 이전
+  - 뒤로가기 버튼 추가
+- 영화 카드 UI/UX 개선
+  - 영화 포스터 모서리 둥글게 처리 (border-radius 적용)
+
+
 ## 12.18 
 - .env 파일생성 후 tmdb_api_key 저장해서 서버 구동
 - 평점과 댓글 기능 수정
