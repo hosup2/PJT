@@ -63,11 +63,14 @@ def run_chatbot(user, message, session):
         return run_general_chat(message, session)
 
 
-
-def run_general_chat(session):
+def run_general_chat(message, session):
     ai = AIClient()
 
     messages = build_chat_messages(session)
+    messages.append({
+        "role": "user",
+        "content": message
+    })
 
     answer = ai.chat(messages)
 

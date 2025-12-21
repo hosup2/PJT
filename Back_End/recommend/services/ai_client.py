@@ -33,13 +33,10 @@ class AIClient:
         except Exception:
             return None
 
-    def chat(self, prompt: str) -> str:
-        res = self._request([
-            {"role": "system", "content": "너는 친절한 영화 서비스 챗봇이다."},
-            {"role": "user", "content": prompt},
-        ])
-
+    def chat(self, messages: list[dict]) -> str:
+        res = self._request(messages)
         return res["choices"][0]["message"]["content"]
+
 
     def rank_movies(self, prompt: str):
         res = self._request([

@@ -11,6 +11,9 @@ from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
 from .serializers import MovieResponseSerializer, FeaturedMovieSerializer
 from .serializers import MovieRatingSerializer, HeroMovieSerializer
 
+from .models import Actor, Director
+from .serializers import MovieDetailSerializer
+from .tmdb import fetch_movie_credits
 
 # TMDB 날짜 안전 파서
 def safe_date(value):
@@ -358,38 +361,107 @@ def fetch_tmdb_movie_detail(tmdb_id):
         res = requests.get(url, params=params)
         return res.json()
 
-# 영화 디테일 요청
+
+
+
 class MovieDetailView(APIView):
     permission_classes = [AllowAny]
+    """
+    GET /api/v1/movies/<movie_id>/
+    - DB에 director/actors가 있으면 DB에서 반환
+    - 없으면 TMDB credits 호출해서 저장 후 반환
+    """
 
     def get(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
 
-        # 🔑 디테일 정보가 충분한지 판단
-        need_tmdb_fetch = (
-            movie.runtime is None or
-            movie.overview == "" or
-            movie.genres.count() == 0
-        )
+        # ✅ 이미 DB에 있으면 DB 데이터로 바로 반환
+        if movie.director is not None and movie.actors.exists():
+            serializer = MovieDetailSerializer(movie)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-        if need_tmdb_fetch:
-            tmdb_data = fetch_tmdb_movie_detail(movie.tmdb_id)
+        # ❌ 없으면 TMDB에서 가져와서 DB에 저장
+        try:
+            credits = fetch_movie_credits(movie.tmdb_id, language="ko-KR")
+        except Exception as e:
+            # TMDB 실패 시에도 영화 기본정보는 반환하고 싶으면 이렇게 처리 가능
+            serializer = MovieDetailSerializer(movie)
+            return Response(
+                {
+                    "movie": serializer.data,
+                    "credits_error": str(e),
+                },
+                status=status.HTTP_200_OK,
+            )
 
-            # DB 업데이트 (필요한 필드만)
-            movie.runtime = tmdb_data.get("runtime")
-            movie.overview = tmdb_data.get("overview") or movie.overview
-            movie.save()
+        crew = credits.get("crew", [])
+        cast = credits.get("cast", [])
 
-            # 장르 동기화
-            genres = []
-            for g in tmdb_data.get("genres", []):
-                genre, _ = Genre.objects.get_or_create(
-                    id=g["id"],
-                    defaults={"name": g["name"]}
-                )
-                genres.append(genre)
-            movie.genres.set(genres)
+        # 감독 찾기 (job == "Director")
+        director_item = next((c for c in crew if c.get("job") == "Director"), None)
 
-        # ⭐ context에 request 전달 (is_liked 계산을 위해)
-        serializer = MovieResponseSerializer(movie, context={'request': request})
-        return Response(serializer.data)
+        if director_item:
+            director, _ = Director.objects.get_or_create(
+                tmdb_id=director_item["id"],
+                defaults={
+                    "name": director_item.get("name", ""),
+                    "profile_path": director_item.get("profile_path"),
+                },
+            )
+            movie.director = director
+
+        # 출연진 상위 5명만 저장 (원하면 숫자 조절)
+        actor_objs = []
+        for item in cast[:5]:
+            actor, _ = Actor.objects.get_or_create(
+                tmdb_id=item["id"],
+                defaults={
+                    "name": item.get("name", ""),
+                    "profile_path": item.get("profile_path"),
+                },
+            )
+            actor_objs.append(actor)
+
+        movie.save()
+        if actor_objs:
+            movie.actors.set(actor_objs)
+
+        serializer = MovieDetailSerializer(movie)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# # 영화 디테일 요청
+# class MovieDetailView(APIView):
+#     permission_classes = [AllowAny]
+
+#     def get(self, request, movie_id):
+#         movie = get_object_or_404(Movie, id=movie_id)
+
+#         # 🔑 디테일 정보가 충분한지 판단
+#         need_tmdb_fetch = (
+#             movie.runtime is None or
+#             movie.overview == "" or
+#             movie.genres.count() == 0
+#         )
+
+#         if need_tmdb_fetch:
+#             tmdb_data = fetch_tmdb_movie_detail(movie.tmdb_id)
+
+#             # DB 업데이트 (필요한 필드만)
+#             movie.runtime = tmdb_data.get("runtime")
+#             movie.overview = tmdb_data.get("overview") or movie.overview
+#             movie.save()
+
+#             # 장르 동기화
+#             genres = []
+#             for g in tmdb_data.get("genres", []):
+#                 genre, _ = Genre.objects.get_or_create(
+#                     id=g["id"],
+#                     defaults={"name": g["name"]}
+#                 )
+#                 genres.append(genre)
+#             movie.genres.set(genres)
+
+#         # ⭐ context에 request 전달 (is_liked 계산을 위해)
+#         serializer = MovieResponseSerializer(movie, context={'request': request})
+#         return Response(serializer.data)

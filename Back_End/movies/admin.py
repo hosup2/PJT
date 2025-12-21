@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Movie, FeaturedMovie, Genre, HeroMovie
+from .models import Movie, FeaturedMovie, Genre, HeroMovie, Actor, Director
 
 
 @admin.register(FeaturedMovie)
@@ -28,3 +28,6 @@ class HeroMovieAdmin(admin.ModelAdmin):
 @admin.register(Genre)
 class GenreAdmin(admin.ModelAdmin):
     search_fields = ("name",)
+
+admin.site.register(Actor)
+admin.site.register(Director)

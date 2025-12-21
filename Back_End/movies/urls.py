@@ -18,5 +18,4 @@ urlpatterns = [
     path("<int:movie_id>/rating/<int:rating_id>/", MovieRatingDetailView.as_view()),
     path("hero/", HeroMovieListView.as_view()),
     path("genres/sync/", TMDBGenreSyncView.as_view()),
-
 ]

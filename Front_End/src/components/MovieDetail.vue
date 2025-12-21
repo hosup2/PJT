@@ -91,7 +91,7 @@
           <div class="flex items-center gap-6 text-white">
             <div class="flex items-center gap-2">
               <Star class="w-8 h-8 text-yellow-400 fill-yellow-400" />
-              <span class="text-4xl font-bold">{{ movie.stats.avg_rating.toFixed(1) }}</span>
+              <span class="text-4xl font-bold">{{ movieStats.avg_rating.toFixed(1) }}</span>
             </div>
             
             <div v-if="movie.tmdb_rating" class="border-l border-white/30 pl-6">
@@ -121,18 +121,71 @@
     <div class="grid md:grid-cols-[2fr,1fr] gap-8 max-w-7xl mx-auto px-4">
       <!-- Left Column -->
       <div>
-        <!-- Overview -->
-        <div class="mb-8">
-          <h2 class="text-2xl font-bold mb-3">줄거리</h2>
-          <p class="text-gray-300 leading-relaxed">{{ movie.overview }}</p>
+        <!-- Overview Card -->
+        <div class="mb-8 bg-gray-900 rounded-lg p-6">
+          <h2 class="text-xl font-semibold mb-3">줄거리</h2>
+          <p class="text-gray-300 leading-relaxed text-sm">
+            {{ movie.overview }}
+          </p>
+        </div>
+
+
+        <!-- Director & Cast Card -->
+        <div class="mb-8 bg-gray-900 rounded-lg p-6">
+
+          <h2 class="text-2xl font-bold mb-4">감독 · 출연</h2>
+
+          <!-- Director -->
+          <div v-if="movie.director" class="mb-6">
+            <h3 class="text-lg font-semibold mb-3 text-gray-200">감독</h3>
+            <div class="flex items-center gap-4">
+              <img
+                :src="getProfileUrl(movie.director.profile_path)"
+                class="w-12 h-12 rounded-full object-cover bg-gray-800"
+              />
+              <p class="text-sm text-gray-200">
+                {{ movie.director.name }}
+              </p>
+
+            </div>
+          </div>
+
+          <!-- Cast -->
+          <div v-if="movie.actors && movie.actors.length">
+            <h3 class="text-sm font-medium mb-3 text-gray-400">출연진</h3>
+
+            <div class="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
+              <div
+                v-for="actor in movie.actors"
+                :key="actor.tmdb_id"
+                class="flex-shrink-0 w-24 flex flex-col items-center"
+              >
+                <!-- 프로필 이미지 -->
+                <img
+                  :src="getProfileUrl(actor.profile_path)"
+                  :alt="actor.name"
+                  class="w-16 h-16 rounded-full object-cover bg-gray-800"
+                />
+
+                <!-- 이름 (이미지 아래, 중앙, 2줄 허용) -->
+                <p
+                  class="mt-2 w-full text-center text-sm text-gray-200
+                        leading-snug line-clamp-2"
+                >
+                  {{ actor.name }}
+                </p>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Rating Distribution -->
         <div class="mb-8">
           <RatingDistributionChart 
             :movie-id="parseInt(id)"
-            :distribution="movie.stats.rating_distribution"
-            :total-count="movie.stats.rating_count"
+            :distribution="movieStats.rating_distribution"
+            :total-count="movieStats.rating_count"
           />
         </div>
 
@@ -159,10 +212,10 @@
           <div class="mb-6 pb-6 border-b border-gray-800">
             <div class="flex items-center gap-3 mb-2">
               <Star class="w-6 h-6 text-yellow-400 fill-yellow-400" />
-              <span class="text-3xl font-bold">{{ movie.stats.avg_rating.toFixed(1) }}</span>
+              <span class="text-3xl font-bold">{{ movieStats.avg_rating.toFixed(1) }}</span>
             </div>
             <p class="text-sm text-gray-400">
-              {{ movie.stats.rating_count.toLocaleString() }}명 평가
+              {{ movieStats.rating_count.toLocaleString() }}명 평가
             </p>
           </div>
 
@@ -194,6 +247,12 @@ import RatingDistributionChart from './RatingDistributionChart.vue';
 import CommentSection from './CommentSection.vue';
 
 // --- Interfaces ---
+interface Person {
+  tmdb_id: number;
+  name: string;
+  profile_path?: string | null;
+}
+
 interface Movie {
   id: number;
   title: string;
@@ -212,6 +271,8 @@ interface Movie {
   tmdb_rating: number;
   imdb_rating: number;
   comments: Comment[];
+  director?: Person | null;
+  actors?: Person[];
   user_data?: {
     rating: number;
     comment: string;
@@ -237,6 +298,8 @@ interface User {
   id: number;
   username: string;
 }
+
+
 
 // --- Props & Emits ---
 const props = defineProps<{
@@ -389,5 +452,22 @@ const formatDate = (dateStr: string) => {
 
   return `${yy}.${mm}.${dd}`;
 };
+
+const getProfileUrl = (path?: string | null) => {
+  if (!path) {
+    return 'https://via.placeholder.com/185x278?text=No+Image';
+  }
+  if (path.startsWith('http')) return path;
+  return `https://image.tmdb.org/t/p/w185${path}`;
+};
+
+const movieStats = computed(() => {
+  return movie.value?.stats ?? {
+    avg_rating: 0,
+    rating_count: 0,
+    rating_distribution: {},
+  };
+});
+
 
 </script>

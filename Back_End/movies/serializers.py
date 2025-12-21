@@ -1,9 +1,43 @@
 from rest_framework import serializers
 from django.db.models import Avg
-from rest_framework import serializers
-from django.db.models import Avg
 from users.models import FavoriteMovie
 from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
+from .models import Actor, Director
+
+
+class ActorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Actor
+        fields = ("tmdb_id", "name", "profile_path")
+
+
+class DirectorSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Director
+        fields = ("tmdb_id", "name", "profile_path")
+
+
+class MovieDetailSerializer(serializers.ModelSerializer):
+    director = DirectorSerializer(read_only=True)
+    actors = ActorSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = Movie
+        fields = (
+            "id",
+            "tmdb_id",
+            "title",
+            "original_title",
+            "overview",
+            "poster_path",
+            "backdrops",
+            "release_date",
+            "runtime",
+            "tmdb_rating",
+            "director",
+            "actors",
+        )
+
 
 class GenreSerializer(serializers.ModelSerializer):
     class Meta:

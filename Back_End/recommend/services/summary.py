@@ -1,32 +1,32 @@
 from .ai_client import AIClient
 
-def summarize_messages(messages, prev_summary=""):
-    """
-    기존 요약 + 최근 대화를 합쳐 새로운 요약 생성
-    """
+def summarize_messages(messages, prev_summary=None):
     ai = AIClient()
 
-    chat_text = "\n".join([
-        f"{m.role}: {m.content}"
-        for m in messages
-    ])
+    summary_prompt = f"""
+이전 요약:
+{prev_summary or "없음"}
 
-    prompt = f"""
-너는 대화 요약 전문가다.
-아래는 사용자와 AI의 대화 기록이다.
-
-기존 요약:
-{prev_summary}
-
-새 대화:
-{chat_text}
-
-위 내용을 바탕으로
-✔ 사용자 취향
-✔ 선호 장르
-✔ 싫어하는 요소
-✔ 대화 맥락
-을 중심으로 5~6줄 이내로 요약해라.
+아래 대화를 간결하게 요약해라.
+중요한 사용자 취향과 맥락을 유지해라.
 """
 
-    return ai.chat(prompt)
+    chat_messages = [
+        {
+            "role": "system",
+            "content": "너는 대화를 요약하는 AI다."
+        },
+        {
+            "role": "user",
+            "content": summary_prompt
+        }
+    ]
+
+    for msg in messages:
+        chat_messages.append({
+            "role": msg.role,
+            "content": msg.content
+        })
+
+    return ai.chat(chat_messages)
+

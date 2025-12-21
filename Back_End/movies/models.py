@@ -9,6 +9,23 @@ class Genre(models.Model):
         return self.name
 
 
+class Actor(models.Model):
+    tmdb_id = models.IntegerField(unique=True)
+    name = models.CharField(max_length=100)
+    profile_path = models.CharField(max_length=200, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Director(models.Model):
+    tmdb_id = models.IntegerField(unique=True)
+    name = models.CharField(max_length=100)
+    profile_path = models.CharField(max_length=200, null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
 
 class Movie(models.Model):
     tmdb_id = models.IntegerField(unique=True)
@@ -28,6 +45,19 @@ class Movie(models.Model):
 
     genres = models.ManyToManyField(Genre)
 
+        # ✅ 추가
+    director = models.ForeignKey(
+        Director,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="movies",
+    )
+    actors = models.ManyToManyField(
+        Actor,
+        blank=True,
+        related_name="movies",
+    )
 
 class FeaturedMovie(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="featured_items")
