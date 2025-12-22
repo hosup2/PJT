@@ -2,7 +2,6 @@
   <div class="explore-view min-h-screen bg-[#0f1419] text-white">
     <div class="pt-20 pb-12 relative">
 
-        <!-- 뒤로가기 버튼 추가 -->
       <div class="px-8 mb-6">
         <button 
           @click="goBack"
@@ -35,76 +34,90 @@
                   </h2>
                 </div>
                 
-                <!-- 전체 배경 박스 -->
-                <div class="p-6 rounded-3xl" style="background-color: rgb(17, 24, 39); border-radius: 2rem;">
-                  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    <!-- 각 영화별 개별 카드 -->
-                    <div 
-                      v-for="movie in platform.movies" 
-                      :key="movie.id"
-                      @click="onMovieClick(movie.id)"
-                      class="cursor-pointer group p-3 rounded-lg bg-gray-700/70 hover:bg-gray-600/90 transition-all shadow-md"
-                      style="outline: 2px solid transparent; outline-offset: 11px; transition: outline 0.3s ease;"
-                      @mouseenter="$event.currentTarget.style.outline = '2px solid white'"
-                      @mouseleave="$event.currentTarget.style.outline = '2px solid transparent'"
-                    >
-                      <div class="relative rounded-2xl mb-3 bg-gray-900 shadow-lg" style="overflow: hidden;">
-                        <img 
-                          :src="movie.poster_path" 
-                          :alt="movie.title"
-                          class="w-full aspect-[2/3] object-cover transition-transform duration-300 group-hover:scale-110"
-                          style= "border-radius: 1rem;"
-                        />
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      </div>
-                      
-                      <div class="space-y-2 px-1">
-                        <div class="flex items-center justify-between gap-2">
-                          <h3 class="font-medium text-sm line-clamp-2 leading-tight flex-1 group-hover:text-blue-400 transition-colors">
-                            {{ movie.title }}
-                          </h3>
-                          
-                          <button 
-                            v-if="isLoggedIn"
-                            class="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors group/btn"
-                            :class="movie.is_liked 
-                              ? 'bg-red-600/20 text-red-400' 
-                              : 'bg-gray-700 text-gray-400 hover:bg-gray-600'"
-                            @click.stop="handleAddToLikes(movie)"
-                            :title="movie.is_liked ? '좋아요 취소' : '좋아요 추가'"
-                          >
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="w-6 h-6 transition-transform duration-200 group-hover/btn:scale-110" 
-                              viewBox="0 0 24 24"
-                              stroke-width="2"
-                            >
-                              <path 
-                                stroke-linecap="round" 
-                                stroke-linejoin="round" 
-                                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                :stroke="movie.is_liked ? '#ef4444' : 'currentColor'"
-                                :fill="movie.is_liked ? '#ef4444' : 'none'"
-                              />
-                            </svg>
-                          </button>
-                          
-                          <button 
-                            v-else
-                            class="flex-shrink-0 w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center hover:bg-gray-600 transition-all"
-                            @click.stop="handleLoginRequired"
-                            title="로그인이 필요합니다"
-                          >
-                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                            </svg>
-                          </button>
+                <div class="relative group/carousel">
+                  
+                  <!-- 이전 버튼 -->
+                  <button 
+                    v-if="platform.movies.length > 5"
+                    @click="prevPage(group)"
+                    :disabled="group.currentPage === 0"
+                    class="w-12 h-12 rounded-full flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-gray-700/80"
+                    style="position: absolute; top: 50%; transform: translateY(-50%); left: -2.5rem; z-index: 20; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+                  >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+
+                  <div class="p-6 rounded-3xl" style="background-color: rgb(17, 24, 39); border-radius: 2rem;">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      <!-- 각 영화별 개별 카드 (페이지네이션 적용) -->
+                      <div 
+                        v-for="movie in platform.movies.slice(group.currentPage * 5, (group.currentPage * 5) + 5)"
+                        :key="movie.id"
+                        @click="onMovieClick(movie.id)"
+                        class="cursor-pointer group p-3 rounded-lg bg-gray-700/70 hover:bg-gray-600/90 transition-all shadow-md"
+                        style="outline: 2px solid transparent; outline-offset: 11px; transition: outline 0.3s ease;"
+                        @mouseenter="$event.currentTarget.style.outline = '2px solid white'"
+                        @mouseleave="$event.currentTarget.style.outline = '2px solid transparent'"
+                      >
+                        <div class="relative rounded-2xl mb-3 bg-gray-900 shadow-lg" style="overflow: hidden;">
+                          <img 
+                            :src="movie.poster_path" 
+                            :alt="movie.title"
+                            class="w-full aspect-[2/3] object-cover transition-transform duration-300 group-hover:scale-110"
+                            style= "border-radius: 1rem;"
+                          />
+                          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         </div>
                         
-                        <div class="text-xs text-gray-500">{{ movie.year }}</div>
+                        <div class="space-y-2 px-1">
+                          <div class="flex items-center justify-between gap-2">
+                            <h3 class="font-medium text-sm line-clamp-2 leading-tight flex-1 group-hover:text-blue-400 transition-colors">
+                              {{ movie.title }}
+                            </h3>
+                            
+                            <button 
+                              v-if="isLoggedIn"
+                              class="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors group/btn"
+                              :class="movie.is_liked 
+                                ? 'bg-red-600/20 text-red-400' 
+                                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'"
+                              @click.stop="handleAddToLikes(movie)"
+                              :title="movie.is_liked ? '좋아요 취소' : '좋아요 추가'"
+                            >
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg"
+                                class="w-6 h-6 transition-transform duration-200 group-hover/btn:scale-110" 
+                                viewBox="0 0 24 24"
+                                stroke-width="2"
+                              >
+                                <path 
+                                  stroke-linecap="round" 
+                                  stroke-linejoin="round" 
+                                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                                  :stroke="movie.is_liked ? '#ef4444' : 'currentColor'"
+                                  :fill="movie.is_liked ? '#ef4444' : 'none'"
+                                />
+                              </svg>
+                            </button>
+                          </div>
+                          
+                          <div class="text-xs text-gray-500">{{ movie.year }}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
+
+                  <!-- 다음 버튼 -->
+                  <button
+                    v-if="platform.movies.length > 5"
+                    @click="nextPage(group)"
+                    :disabled="group.currentPage >= Math.ceil(platform.movies.length / 5) - 1"
+                    class="w-12 h-12 rounded-full flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-gray-700/80"
+                    style="position: absolute; top: 50%; transform: translateY(-50%); right: -2.5rem; z-index: 20; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+                  >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                  </button>
+                  
                 </div>
               </div>
             </div>
@@ -125,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, inject, Ref } from 'vue';
+import { ref, onMounted, watch, inject, Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
@@ -139,11 +152,15 @@ interface Movie {
   is_liked?: boolean;
 }
 
-interface Props {
-  currentUserId?: number;
+interface MovieGroup {
+  yearMonth: string;
+  date: string;
+  currentPage: number;
+  platforms: {
+    count: number;
+    movies: Movie[];
+  }[];
 }
-
-const props = defineProps<Props>();
 
 const emit = defineEmits<{
   (e: 'movie-click', movieId: number): void;
@@ -152,11 +169,13 @@ const emit = defineEmits<{
 
 // --- 변수 및 주입 ---
 const router = useRouter();
-const movies = ref<Movie[]>([]);
+const allMovies = ref<Movie[]>([]);
+const movieGroups = ref<MovieGroup[]>([]);
 const error = ref<string | null>(null);
 
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
 const currentUser = inject<Ref<any>>('currentUser', ref(null));
+
 
 // --- 함수 ---
 
@@ -166,7 +185,7 @@ onMounted(async () => {
     const response = await axios.get('http://127.0.0.1:8000/movies/');
     const results = response.data.results || response.data;
     
-    movies.value = results.map((movie: any) => ({
+    allMovies.value = results.map((movie: any) => ({
       ...movie,
       year: new Date(movie.release_date).getFullYear(),
       poster_path: movie.poster_path 
@@ -180,21 +199,26 @@ onMounted(async () => {
   }
 });
 
-// 2. 그룹화 로직
-const movieGroups = computed(() => {
-  if (!movies.value.length) return [];
+// 2. 그룹화 로직 (데이터가 변경될 때마다 실행)
+watch(allMovies, (newMovies) => {
+  if (!newMovies.length) {
+    movieGroups.value = [];
+    return;
+  }
 
-  const groups: { [key: string]: Movie[] } = movies.value.reduce((acc, movie) => {
-    const date = movie.release_date;
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(movie);
+  const groups: { [key: string]: Movie[] } = newMovies.reduce((acc, movie) => {
+    const yearMonth = movie.release_date.substring(0, 7); // "YYYY-MM"
+    if (!acc[yearMonth]) acc[yearMonth] = [];
+    acc[yearMonth].push(movie);
     return acc;
   }, {} as { [key: string]: Movie[] });
 
-  return Object.entries(groups)
-    .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
-    .map(([date, movieList]) => ({
-      date: new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' }),
+  movieGroups.value = Object.entries(groups)
+    .sort(([yearMonthA], [yearMonthB]) => yearMonthA.localeCompare(yearMonthB)) // 오름차순 정렬
+    .map(([yearMonth, movieList]) => ({
+      yearMonth: yearMonth,
+      date: new Date(yearMonth).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' }),
+      currentPage: 0,
       platforms: [{
         count: movieList.length,
         movies: movieList,
@@ -202,7 +226,22 @@ const movieGroups = computed(() => {
     }));
 });
 
-// 3. 이동
+
+// 3. 캐러셀 페이지네이션
+const prevPage = (group: MovieGroup) => {
+  if (group.currentPage > 0) {
+    group.currentPage--;
+  }
+};
+
+const nextPage = (group: MovieGroup) => {
+  const totalPages = Math.ceil(group.platforms[0].movies.length / 5);
+  if (group.currentPage < totalPages - 1) {
+    group.currentPage++;
+  }
+};
+
+// 4. 이동
 const onMovieClick = (movieId: number) => {
   router.push({ 
     name: 'MovieDetail', 
@@ -211,7 +250,7 @@ const onMovieClick = (movieId: number) => {
   emit('movie-click', movieId);
 };
 
-// 4. 좋아요 처리
+// 5. 좋아요 처리
 const handleAddToLikes = async (movie: Movie) => {
   if (!isLoggedIn.value) {
     handleLoginRequired();
@@ -234,18 +273,17 @@ const handleAddToLikes = async (movie: Movie) => {
   }
 };
 
-
 const handleLoginRequired = () => {
   alert('🔒 로그인을 하면 영화를 찜할 수 있습니다!');
   emit('open-auth');
 };
 
+
+// 6. 기타 함수
 const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-
-// 뒤로가기 함수 추가
 const goBack = () => {
   router.back();
 };

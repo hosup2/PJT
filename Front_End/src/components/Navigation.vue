@@ -1,5 +1,5 @@
 <template>
-  <nav class="border-b border-gray-800/30 bg-gray-900 backdrop-blur-md fixed top-0 w-full z-50 shadow-lg">
+  <nav class="border-b border-gray-800/30 bg-gray-960 backdrop-blur-md fixed top-0 w-full z-50 shadow-lg">
     <div class="container mx-auto px-6 max-w-7xl">
       <div class="flex items-center justify-between h-20">
         <!-- 작은 로고 -->

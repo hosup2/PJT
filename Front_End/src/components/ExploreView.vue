@@ -20,54 +20,55 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
 
         <div 
-          class="md:col-span-8 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
+          @click="goToFullExplore"
+          class="md:col-span-8 mx-4 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] px-8 py-5 overflow-hidden hover:border-white/20 transition-all duration-500 cursor-pointer"
         >
           <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div class="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-gray-900/80 to-transparent z-20 pointer-events-none rounded-l-[32px]"></div>
           <div class="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-gray-900/80 to-transparent z-20 pointer-events-none rounded-r-[32px]"></div>
 
           <div class="relative z-10 h-full flex flex-col justify-between">
-            <div class="flex justify-between items-start mb-6">
-              <div>
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold mb-3">
+            
+            <div class="flex justify-between items-start mb-1">
+              <div class="pl-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold mb-2">
                   <span class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                   </span>
                   UPCOMING
                 </div>
-                <h2 class="text-3xl font-bold mb-2">공개 예정작</h2>
+                <h2 class="text-3xl font-bold mb-1">공개 예정작</h2>
                 <p class="text-gray-400 text-sm">
                   {{ movieGroups.length > 0 ? movieGroups[0].date : '곧 공개될' }} 
                   새로운 영화 <span class="text-white font-bold">{{ totalMovieCount }}편</span>을 가장 먼저 만나보세요.
                 </p>
               </div>
               
-              <button 
-                @click="goToFullExplore"
-                class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-colors group/btn"
+              <div
+                class="w-10 h-10 rounded-full bg-white/5 group-hover:bg-white/20 flex items-center justify-center transition-colors"
               >
-                <svg class="w-5 h-5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
+              </div>
             </div>
 
-            <div class="relative w-full overflow-hidden pb-4">
-              <div class="flex w-max gap-6 animate-marquee hover:[animation-play-state:paused]">
+            <div class="relative w-full overflow-hidden py-2">
+              <div class="flex w-max gap-6 animate-marquee">
                 
                 <div class="flex gap-6">
                   <div 
                     v-for="(movie, idx) in previewMovies" 
                     :key="`org-${movie.id}`" 
-                    @click="onMovieClick(movie.id)"
-                    class="cursor-pointer group/poster flex-shrink-0"
+                    @click.stop="onMovieClick(movie.id)"
+                    class="cursor-pointer group/poster flex-shrink-0 transition-transform duration-300 hover:scale-110 hover:z-50 origin-center"
                     style="width: 190px;"
                   >
-                    <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg transform transition-transform duration-500 hover:scale-105">
+                    <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg transform transition-transform duration-500">
                       <div class="absolute inset-0 bg-black/20 group-hover/poster:bg-transparent transition-colors z-10"></div>
                       <img 
                         :src="movie.poster_path" 
@@ -84,11 +85,11 @@
                   <div 
                     v-for="(movie, idx) in previewMovies" 
                     :key="`clone-${movie.id}`" 
-                    @click="onMovieClick(movie.id)"
-                    class="cursor-pointer group/poster flex-shrink-0"
+                    @click.stop="onMovieClick(movie.id)"
+                    class="cursor-pointer group/poster flex-shrink-0 transition-transform duration-300 hover:scale-110 hover:z-50 origin-center"
                     style="width: 190px;"
                   >
-                    <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg transform transition-transform duration-500 hover:scale-105">
+                    <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg transform transition-transform duration-500">
                       <div class="absolute inset-0 bg-black/20 group-hover/poster:bg-transparent transition-colors z-10"></div>
                       <img 
                         :src="movie.poster_path" 
@@ -107,7 +108,7 @@
         </div>
 
         <div 
-          class="md:col-span-4 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
+          class="md:col-span-4 md:col-start-9 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
         >
            <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 blur-[80px] -mr-16 -mt-16 rounded-full group-hover:bg-purple-500/30 transition-all"></div>
 
@@ -218,7 +219,6 @@ const router = useRouter();
 const movies = ref<Movie[]>([]);
 const error = ref<string | null>(null);
 
-// 상위 컴포넌트(App.vue)에서 제공(provide)된 값들 주입
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
 const currentUser = inject<Ref<any>>('currentUser', ref(null));
 
@@ -267,7 +267,6 @@ const totalMovieCount = computed(() => {
 });
 
 const previewMovies = computed(() => {
-  // 슬라이더가 끊김 없이 보이려면 충분한 개수 확보 필요
   return movies.value.slice(0, 25); 
 });
 
@@ -287,17 +286,16 @@ const goToFullExplore = () => {
 <style scoped>
 @keyframes marquee {
   0% { transform: translateX(0); }
-  /* 정확히 50%를 이동합니다. 
-    구조: [세트1][세트2] (세트1과 세트2는 동일)
-    50% 이동 시점 = 세트1이 완전히 사라지고 세트2의 시작점이 세트1의 원래 위치에 도달하는 시점
-    이때 0%로 리셋(transform: translateX(0))되면 사용자 눈에는 똑같은 화면이 유지되므로 끊김이 없습니다.
-  */
-  100% { transform: translateX(-50%); } 
+  /* 자연스러운 무한 스크롤을 위해 -50%로 설정 (원본+복제본 구조) */
+  100% { transform: translateX(-800%); } 
 }
 
 .animate-marquee {
-  /* 60초: 충분히 천천히 흘러가게 하여 시각적 편안함 제공 및 끊김 현상 완화 */
-  animation: marquee 10s linear infinite;
+  animation: marquee 100s linear infinite;
   will-change: transform;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
 }
 </style>
