@@ -28,7 +28,7 @@
           
           <button
             type="submit"
-            :disabled="!newComment.trim()"
+            :disabled="!newComment.trim() || currentRating === 0"
             class="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
           >
             등록
@@ -90,7 +90,7 @@
               </span>
             </div>
 
-            <div v-if="comment.review_content">
+            <div v-if="comment.comment">
               <button
                 v-if="comment.spoiler && !showSpoilers.has(comment.id)"
                 @click="toggleSpoiler(comment.id)"
@@ -106,7 +106,7 @@
                   <span>스포일러 포함</span>
                 </div>
                 <p class="text-gray-300 leading-relaxed">
-                  {{ comment.review_content }}
+                  {{ comment.comment }}
                 </p>
               </div>
             </div>
@@ -133,22 +133,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Heart, AlertCircle } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 
 interface Comment {
   id: number;
   user_id: number;
-  movie_id: number;
+  movie_id?: number;
   rating?: number;
-  review_content: string;
-  spoiler: boolean;
+  comment: string;
+  spoiler?: boolean;
   created_at: string;
   username: string;
-  profile_image: string;
-  likes_count: number;
-  isLiked: boolean;
+  profile_image?: string;
+  likes_count?: number;
+  isLiked?: boolean;
 }
 
 interface Props {
@@ -170,43 +170,54 @@ const emit = defineEmits<{
 const newComment = ref('');
 const includeSpoiler = ref(false);
 const showSpoilers = ref(new Set<number>());
+const currentRating = ref(props.rating); // 현재 평점 추적
 
-// 👇 프로필 이미지 처리 함수 추가
+// rating prop 변경 감지
+watch(() => props.rating, (newVal) => {
+  currentRating.value = newVal;
+});
+
 const getProfileImage = (profileImage: string | null | undefined): string => {
   if (!profileImage) {
-    return '/mia5.png'; // 기본 프로필 이미지
+    return '/mia5.png';
   }
   
-  // 이미 전체 URL인 경우
   if (profileImage.startsWith('http')) {
     return profileImage;
   }
   
-  // 상대 경로인 경우 (/)
   if (profileImage.startsWith('/')) {
     return profileImage;
   }
   
-  // 그 외의 경우 (혹시 모를 상황 대비)
   return `/mia5.png`;
 };
 
-// 👇 이미지 로딩 에러 처리 함수 추가
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
-  target.src = '/mia5.png'; // 에러 발생 시 기본 이미지로 대체
+  target.src = '/mia5.png';
 };
 
 const handleRatingChange = (rating: number) => {
+  console.log('Rating changed in CommentSection:', rating);
+  currentRating.value = rating;
   emit('ratingChange', rating);
 };
 
 const handleSubmitComment = () => {
-  if (newComment.value.trim()) {
-    emit('submitComment', newComment.value, includeSpoiler.value);
-    newComment.value = '';
-    includeSpoiler.value = false;
+  if (!newComment.value.trim()) {
+    alert('리뷰 내용을 입력해주세요!');
+    return;
   }
+  
+  if (currentRating.value === 0) {
+    alert('평점을 선택해주세요!');
+    return;
+  }
+  
+  emit('submitComment', newComment.value, includeSpoiler.value);
+  newComment.value = '';
+  includeSpoiler.value = false;
 };
 
 const handleLike = (commentId: number) => {

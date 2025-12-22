@@ -1,175 +1,169 @@
 <template>
-  <div class="explore-view min-h-screen bg-[#0f1419] text-white">
-    <div class="pt-20 pb-12 px-8">
+  <div class="explore-view min-h-screen bg-black text-white selection:bg-blue-500/30">
+    <div class="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+      <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px]"></div>
+      <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px]"></div>
+    </div>
+
+    <div class="relative z-10 pt-24 pb-12 px-6 max-w-7xl mx-auto">
       
-      <h1 class="text-3xl font-bold mb-8">둘러보기 키키</h1>
+      <div class="mb-12 flex items-end justify-between">
+        <div>
+          <h1 class="text-5xl md:text-6xl font-black mb-4 tracking-tight">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400">
+              Discover
+            </span>
+            <br />
+            New Worlds.
+          </h1>
+          <p class="text-gray-400 text-lg">MIA가 엄선한 영화, 컬렉션, 그리고 이야기.</p>
+        </div>
+      </div>
 
-      <!-- 섹션 1: 공개 예정 영화 카드 -->
-      <div class="mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+
         <div 
-          class="relative bg-gradient-to-r from-gray-800/80 to-gray-900/80 rounded-3xl p-8 cursor-pointer hover:scale-[1.02] transition-all duration-300 overflow-hidden group"
+          class="md:col-span-8 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
         >
-          <!-- 배경 장식 -->
-          <div class="absolute right-0 top-0 w-1/2 h-full opacity-20">
-            <div class="grid grid-cols-3 gap-2 p-4">
-              <div v-for="i in 6" :key="i" class="aspect-[2/3] bg-blue-500/20 rounded-lg"></div>
-            </div>
-          </div>
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-          <!-- 콘텐츠 -->
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+          <div class="relative z-10 h-full flex flex-col justify-between">
+            <div class="flex justify-between items-start mb-6">
+              <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold mb-3">
+                  <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                  </span>
+                  UPCOMING
                 </div>
-                <span class="text-sm text-gray-400">영화</span>
+                <h2 class="text-3xl font-bold mb-2">공개 예정작</h2>
+                <p class="text-gray-400 text-sm">
+                  {{ movieGroups.length > 0 ? movieGroups[0].date : '곧 공개될' }} 
+                  새로운 영화 <span class="text-white font-bold">{{ totalMovieCount }}편</span>을 가장 먼저 만나보세요.
+                </p>
               </div>
+              
               <button 
                 @click="goToFullExplore"
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-full transition-colors flex items-center gap-2"
+                class="w-10 h-10 rounded-full bg-white/5 hover:bg-white/20 flex items-center justify-center transition-colors group/btn"
               >
-                더보기
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-5 h-5 group-hover/btn:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
               </button>
             </div>
 
-            <h2 class="text-2xl font-bold mb-3">
-              {{ movieGroups.length > 0 ? movieGroups[0].date : '' }} <br/>
-              공개 예정 영화 {{ totalMovieCount }}편을 확인하세요
-            </h2>
-
-            <div class="flex flex-wrap gap-2 mb-4">
-              <span class="text-sm px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full">#공개예정</span>
-              <span class="text-sm px-3 py-1 bg-purple-600/20 text-purple-400 rounded-full">#신작</span>
-              <span class="text-sm px-3 py-1 bg-pink-600/20 text-pink-400 rounded-full">#개봉일정</span>
-            </div>
-
-            <!-- 미니 프리뷰 -->
-            <div class="flex gap-3 overflow-x-auto pb-2">
-              <div v-for="(movie, idx) in previewMovies.slice(0, 6)" :key="idx" 
-                   @click="onMovieClick(movie.id)"
-                   class="flex-shrink-0 w-32 cursor-pointer group">
-                <div class="aspect-[2/3] rounded-lg overflow-hidden mb-2">
-                  <img :src="movie.poster_path" :alt="movie.title" 
-                       class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+            <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
+              <div 
+                v-for="(movie, idx) in previewMovies.slice(0, 5)" 
+                :key="idx" 
+                @click="onMovieClick(movie.id)"
+                class="flex-shrink-0 w-36 snap-start cursor-pointer group/poster"
+              >
+                <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg">
+                  <div class="absolute inset-0 bg-black/20 group-hover/poster:bg-transparent transition-colors z-10"></div>
+                  <img 
+                    :src="movie.poster_path" 
+                    :alt="movie.title" 
+                    class="w-full h-full object-cover transform group-hover/poster:scale-110 transition-transform duration-500" 
+                  />
                 </div>
-                <p class="text-xs line-clamp-2 group-hover:text-blue-400 transition-colors">{{ movie.title }}</p>
+                <p class="text-sm font-medium text-gray-300 group-hover/poster:text-white truncate transition-colors">{{ movie.title }}</p>
+                <p class="text-xs text-gray-500">{{ movie.year }}</p>
               </div>
-              <div v-if="totalMovieCount > 6" 
-                   @click="goToFullExplore"
-                   class="flex-shrink-0 w-32 aspect-[2/3] rounded-lg bg-gray-700 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-600 transition-colors">
-                <span class="text-3xl font-bold mb-2">+{{ totalMovieCount - 6 }}</span>
-                <span class="text-xs text-gray-400">더보기</span>
+              
+              <div 
+                v-if="totalMovieCount > 5"
+                @click="goToFullExplore"
+                class="flex-shrink-0 w-36 aspect-[2/3] rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-white/30 hover:bg-white/5 transition-all"
+              >
+                <span class="text-2xl font-bold text-gray-500">+{{ totalMovieCount - 5 }}</span>
+                <span class="text-xs text-gray-600 mt-1">더보기</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 섹션 2: 인증회원의 인생작 영화보기 카드 -->
-      <div class="mb-8">
         <div 
-          class="relative bg-gradient-to-r from-purple-900/40 to-pink-900/40 rounded-3xl p-8 cursor-pointer hover:scale-[1.02] transition-all duration-300 overflow-hidden group"
+          class="md:col-span-4 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
         >
-          <!-- 배경 장식 -->
-          <div class="absolute right-0 top-0 w-1/2 h-full opacity-20">
-            <div class="grid grid-cols-3 gap-2 p-4">
-              <div v-for="i in 6" :key="i" class="aspect-[2/3] bg-purple-500/20 rounded-lg"></div>
-            </div>
-          </div>
+           <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 blur-[80px] -mr-16 -mt-16 rounded-full group-hover:bg-purple-500/30 transition-all"></div>
 
-          <!-- 콘텐츠 -->
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                  </svg>
-                </div>
-                <span class="text-sm text-gray-400">큐레이션</span>
+           <div class="relative z-10 h-full flex flex-col">
+            <div class="mb-auto">
+              <div class="inline-block px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-bold mb-4">
+                CURATION
               </div>
-              <button class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-full transition-colors flex items-center gap-2">
-                더보기
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+              <h2 class="text-3xl font-bold mb-3 leading-tight">
+                인증회원들의<br/>
+                <span class="text-purple-400">인생 영화</span>
+              </h2>
+              <p class="text-gray-400 text-sm mb-6">
+                검증된 시네필들이 선택한<br/>
+                절대 실패 없는 명작 컬렉션.
+              </p>
             </div>
 
-            <h2 class="text-2xl font-bold mb-3">
-              인증회원들의 인생작 영화<br/>
-              엄선된 명작을 만나보세요
-            </h2>
-
-            <div class="flex flex-wrap gap-2 mb-4">
-              <span class="text-sm px-3 py-1 bg-purple-600/20 text-purple-400 rounded-full">#인생영화</span>
-              <span class="text-sm px-3 py-1 bg-pink-600/20 text-pink-400 rounded-full">#명작</span>
-              <span class="text-sm px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full">#추천</span>
+            <div class="relative h-40 mt-4 flex items-center justify-center">
+              <div class="absolute w-24 h-32 bg-gray-800 rounded-lg transform -rotate-12 translate-x-[-40px] border border-white/10 shadow-xl z-10 group-hover:-rotate-[15deg] group-hover:translate-x-[-50px] transition-all duration-500"></div>
+              <div class="absolute w-24 h-32 bg-gray-700 rounded-lg transform rotate-0 scale-110 border border-white/10 shadow-2xl z-20"></div>
+              <div class="absolute w-24 h-32 bg-gray-800 rounded-lg transform rotate-12 translate-x-[40px] border border-white/10 shadow-xl z-10 group-hover:rotate-[15deg] group-hover:translate-x-[50px] transition-all duration-500"></div>
             </div>
 
-            <div class="text-gray-300">
-              💎 인증회원들이 추천하는 베스트 컬렉션
-            </div>
-          </div>
+            <button class="mt-8 w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+              컬렉션 구경하기
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </button>
+           </div>
         </div>
-      </div>
 
-      <!-- 섹션 3: 영화 커뮤니티 카드 -->
-      <div class="mb-8">
         <div 
-          class="relative bg-gradient-to-r from-green-900/40 to-teal-900/40 rounded-3xl p-8 cursor-pointer hover:scale-[1.02] transition-all duration-300 overflow-hidden group"
+          class="md:col-span-12 group relative bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
         >
-          <!-- 배경 장식 -->
-          <div class="absolute right-0 top-0 w-1/2 h-full opacity-20">
-            <div class="grid grid-cols-2 gap-2 p-4">
-              <div v-for="i in 4" :key="i" class="aspect-video bg-green-500/20 rounded-lg"></div>
-            </div>
-          </div>
+          <div class="absolute inset-0 bg-gradient-to-r from-green-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-          <!-- 콘텐츠 -->
-          <div class="relative z-10">
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
-                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-                  </svg>
-                </div>
-                <span class="text-sm text-gray-400">커뮤니티</span>
+          <div class="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="flex-1">
+              <div class="inline-block px-3 py-1 rounded-full bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold mb-4">
+                COMMUNITY
               </div>
-              <button class="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-full transition-colors flex items-center gap-2">
-                더보기
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
+              <h2 class="text-3xl font-bold mb-2">영화 수다</h2>
+              <p class="text-gray-400 text-sm max-w-md">
+                영화를 보고 난 뒤의 여운, 이곳에서 함께 나누세요. <br class="hidden md:block"/>
+                최신작 리뷰부터 심도 깊은 토론까지.
+              </p>
             </div>
 
-            <h2 class="text-2xl font-bold mb-3">
-              영화 커뮤니티<br/>
-              최신 리뷰와 토론에 참여하세요
-            </h2>
-
-            <div class="flex flex-wrap gap-2 mb-4">
-              <span class="text-sm px-3 py-1 bg-green-600/20 text-green-400 rounded-full">#리뷰</span>
-              <span class="text-sm px-3 py-1 bg-teal-600/20 text-teal-400 rounded-full">#토론</span>
-              <span class="text-sm px-3 py-1 bg-blue-600/20 text-blue-400 rounded-full">#한줄평</span>
+            <div class="flex-1 w-full md:w-auto">
+              <div class="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-md">
+                <div class="flex items-center gap-3 mb-3">
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white">HOT</span>
+                  <span class="text-sm font-medium text-gray-200">"대홍수 - 과연 명작인가?"</span>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-gray-700"></div>
+                    <div class="h-2 w-3/4 bg-gray-700 rounded full"></div>
+                  </div>
+                   <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-full bg-gray-700"></div>
+                    <div class="h-2 w-1/2 bg-gray-700 rounded full"></div>
+                  </div>
+                </div>
+                <div class="mt-3 text-right">
+                  <span class="text-xs text-green-400 font-medium cursor-pointer hover:underline">참여하기 &rarr;</span>
+                </div>
+              </div>
             </div>
 
-            <div class="space-y-2">
-              <div class="text-sm text-gray-300">🔥 오늘의 HOT 토픽: "대흥수 - 과연 명작인가?"</div>
-              <div class="text-sm text-gray-400">💬 활발한 토론이 진행 중입니다</div>
-            </div>
+            <button class="shrink-0 px-8 py-3 bg-green-600 hover:bg-green-500 rounded-full text-white font-bold shadow-lg shadow-green-900/50 transition-all transform group-hover:scale-105">
+              커뮤니티 입장
+            </button>
           </div>
         </div>
-      </div>
 
+      </div>
     </div>
   </div>
 </template>
@@ -251,7 +245,7 @@ const totalMovieCount = computed(() => {
 });
 
 const previewMovies = computed(() => {
-  return movies.value.slice(0, 6);
+  return movies.value.slice(0, 10); // 슬라이더를 위해 조금 더 많이 가져옴
 });
 
 const onMovieClick = (movieId: number) => {
@@ -268,10 +262,13 @@ const goToFullExplore = () => {
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+/* 가로 스크롤바 숨기기 (크롬, 사파리, 오페라) */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+/* 가로 스크롤바 숨기기 (IE, 엣지, 파이어폭스) */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
 </style>

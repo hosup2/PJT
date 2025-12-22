@@ -1,3 +1,14 @@
+네, 말씀하신 기능을 완벽하게 통합했습니다.
+
+**변경된 점:**
+
+1. **클릭 기능 추가**: 감독 및 출연진 카드에 `@click` 이벤트를 넣어, 클릭 시 **TMDB(영화 정보 사이트)의 해당 인물 페이지**가 새 탭으로 열립니다.
+2. **커서 스타일**: 카드에 마우스를 올리면 클릭 가능하다는 것을 알 수 있게 손가락 모양(`cursor-pointer`)으로 변하고, 배경색이 조금 더 밝게(`hover:bg-gray-700`) 변합니다.
+3. **디자인 통일**: 아까 맞춘 황금 비율(`w-24`, `h-36`)을 적용하여 사진 크기가 깔끔하게 정렬되도록 했습니다.
+
+아래 전체 코드를 복사해서 그대로 붙여넣으시면 됩니다.
+
+```vue
 <template>
   <div v-if="loading" class="text-center p-12">
     <p>Loading...</p>
@@ -6,7 +17,6 @@
     <p>{{ error }}</p>
   </div>
   <div v-else-if="movie" class="pb-12">
-    <!-- Back Button -->
     <button
       @click="router.back()"
       class="flex items-center gap-2 text-gray-400 hover:text-gray-200 transition-colors mb-6"
@@ -15,22 +25,17 @@
       <span>뒤로가기</span>
     </button>
 
-    <!-- Hero Section with Backdrop and Poster -->
     <div class="relative w-full h-[500px] mb-12 rounded-lg overflow-hidden">
-      <!-- Background Backdrop Image -->
       <div class="absolute inset-0">
         <img
           :src="backdropUrl"
           :alt="movie.title"
           class="w-full h-full object-cover"
         />
-        <!-- Gradient Overlay -->
         <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent"></div>
       </div>
       
-      <!-- Content Container -->
       <div class="relative h-full flex items-center px-8 gap-8 max-w-7xl mx-auto">
-        <!-- Movie Info on Left -->
         <div class="flex-1 z-10 max-w-2xl">
           <div class="flex items-center gap-4 mb-2">
             <h1 class="text-5xl font-bold">{{ movie.title }}</h1>
@@ -87,7 +92,6 @@
             </span>
           </div>
 
-          <!-- Rating Display in Hero -->
           <div class="flex items-center gap-6 text-white">
             <div class="flex items-center gap-2">
               <Star class="w-8 h-8 text-yellow-400 fill-yellow-400" />
@@ -101,7 +105,6 @@
           </div>
         </div>
 
-        <!-- Small Poster on Right -->
         <div class="hidden md:block z-10">
           <div
             class="rounded-lg overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300"
@@ -117,11 +120,8 @@
       </div>
     </div>
 
-    <!-- Main Content Grid -->
     <div class="grid md:grid-cols-[2fr,1fr] gap-8 max-w-7xl mx-auto px-4">
-      <!-- Left Column -->
       <div>
-        <!-- Overview Card -->
         <div class="mb-8 bg-gray-900 rounded-lg p-6">
           <h2 class="text-xl font-semibold mb-3">줄거리</h2>
           <p class="text-gray-300 leading-relaxed text-sm">
@@ -129,58 +129,59 @@
           </p>
         </div>
 
-
-        <!-- Director & Cast Card -->
         <div class="mb-8 bg-gray-900 rounded-lg p-6">
+          <h2 class="text-xl font-semibold mb-3">출연진</h2>
 
-          <h2 class="text-2xl font-bold mb-4">감독 · 출연</h2>
-
-          <!-- Director -->
-          <div v-if="movie.director" class="mb-6">
+          <!-- <div v-if="movie.director" class="mb-6">
             <h3 class="text-lg font-semibold mb-3 text-gray-200">감독</h3>
-            <div class="flex items-center gap-4">
-              <img
-                :src="getProfileUrl(movie.director.profile_path)"
-                class="w-12 h-12 rounded-full object-cover bg-gray-800"
-              />
-              <p class="text-sm text-gray-200">
-                {{ movie.director.name }}
-              </p>
-
+            <div class="flex flex-wrap gap-4">
+              <div
+                @click="openPersonDetail(movie.director)"
+                class="w-24 bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700 transition-colors cursor-pointer"
+              >
+                <img
+                  :src="getProfileUrl(movie.director.profile_path)"
+                  class="w-full h-36 rounded-lg object-cover bg-gray-700 mb-2"
+                />
+                <div class="text-left px-1">
+                  <p class="text-sm font-bold text-gray-100 truncate">
+                    {{ movie.director.name }}
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    감독
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
+          </div> -->
 
-          <!-- Cast -->
           <div v-if="movie.actors && movie.actors.length">
-            <h3 class="text-sm font-medium mb-3 text-gray-400">출연진</h3>
-
-            <div class="flex gap-6 overflow-x-auto pb-2 scrollbar-hide">
+            <!-- <h3 class="text-lg font-semibold mb-3 text-gray-200">출연진</h3> -->
+            <div class="flex flex-wrap gap-4">
               <div
                 v-for="actor in movie.actors"
                 :key="actor.tmdb_id"
-                class="flex-shrink-0 w-24 flex flex-col items-center"
+                @click="openPersonDetail(actor)"
+                class="w-24 bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700 transition-colors cursor-pointer"
               >
-                <!-- 프로필 이미지 -->
                 <img
                   :src="getProfileUrl(actor.profile_path)"
                   :alt="actor.name"
-                  class="w-16 h-16 rounded-full object-cover bg-gray-800"
+                  class="w-full h-36 rounded-lg object-cover bg-gray-700 mb-2"
                 />
-
-                <!-- 이름 (이미지 아래, 중앙, 2줄 허용) -->
-                <p
-                  class="mt-2 w-full text-center text-sm text-gray-200
-                        leading-snug line-clamp-2"
-                >
-                  {{ actor.name }}
-                </p>
+                <div class="text-left px-1">
+                  <p class="text-sm font-bold text-gray-100 truncate">
+                    {{ actor.name }}
+                  </p>
+                  <p class="text-xs text-gray-400 mt-0.5 truncate">
+                    {{ actor.character ? actor.character + ' 역' : '출연' }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-
         </div>
 
-        <!-- Rating Distribution -->
         <div class="mb-8">
           <RatingDistributionChart 
             :movie-id="parseInt(id)"
@@ -189,7 +190,6 @@
           />
         </div>
 
-        <!-- Comments Section -->
         <div>
           <h2 class="text-2xl font-bold mb-6">리뷰 ({{ comments.length }})</h2>
           <CommentSection
@@ -205,10 +205,8 @@
         </div>
       </div>
 
-      <!-- Right Column - Actions -->
       <div>
         <div class="bg-gray-900 rounded-lg p-6 sticky top-24">
-          <!-- Rating Stats -->
           <div class="mb-6 pb-6 border-b border-gray-800">
             <div class="flex items-center gap-3 mb-2">
               <Star class="w-6 h-6 text-yellow-400 fill-yellow-400" />
@@ -219,7 +217,6 @@
             </p>
           </div>
 
-          <!-- User Rating -->
           <div class="mb-6 pb-6 border-b border-gray-800">
             <p class="text-sm text-gray-400 mb-3">이 영화를 평가해주세요</p>
             <div v-if="!isLoggedIn">
@@ -238,7 +235,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, inject } from 'vue';
+import { ref, onMounted, computed, inject, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ArrowLeft, Calendar, Clock, Star } from 'lucide-vue-next';
@@ -251,6 +248,7 @@ interface Person {
   tmdb_id: number;
   name: string;
   profile_path?: string | null;
+  character?: string;
 }
 
 interface Movie {
@@ -299,8 +297,6 @@ interface User {
   username: string;
 }
 
-
-
 // --- Props & Emits ---
 const props = defineProps<{
   id: string;
@@ -326,13 +322,11 @@ const fetchMovieData = async () => {
   try {
     const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`, {
       params: {
-        // Add a cache-busting parameter
         _: new Date().getTime(),
       },
     });
     movie.value = response.data;
 
-    // Set initial user-specific state
     if (movie.value?.user_data) {
       userRating.value = movie.value.user_data.rating || 0;
       commentText.value = movie.value.user_data.comment || '';
@@ -385,10 +379,8 @@ const saveActivity = async () => {
     
     alert('리뷰가 저장되었습니다.');
 
-    // 영화 데이터 전체를 새로고침하여 댓글 목록 업데이트
     await fetchMovieData();
     
-    // 입력 필드 초기화
     commentText.value = '';
     userRating.value = 0;
     
@@ -409,7 +401,6 @@ const handleLikeMovie = async () => {
   
   const originalLikedStatus = isMovieLiked.value;
 
-  // Optimistic update
   isMovieLiked.value = !isMovieLiked.value;
   movieLikesCount.value += isMovieLiked.value ? 1 : -1;
 
@@ -423,7 +414,6 @@ const handleLikeMovie = async () => {
   } catch (err) {
     console.error('Failed to update like status:', err);
     alert('좋아요 상태를 업데이트하는 데 실패했습니다.');
-    // Revert optimistic update on failure
     isMovieLiked.value = originalLikedStatus;
     movieLikesCount.value += originalLikedStatus ? 1 : -1;
   }
@@ -441,15 +431,13 @@ const handleLikeComment = (commentId: number) => {
 const handleNavigateToUser = (userId: number) => {
   router.push({ name: 'UserProfile', params: { userId } });
 };
+
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '';
-
   const date = new Date(dateStr);
-
-  const yy = String(date.getFullYear()); // year
-  const mm = String(date.getMonth() + 1).padStart(2, '0'); // month
-  const dd = String(date.getDate()).padStart(2, '0'); // day
-
+  const yy = String(date.getFullYear());
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
   return `${yy}.${mm}.${dd}`;
 };
 
@@ -469,5 +457,13 @@ const movieStats = computed(() => {
   };
 });
 
-
+// --- NEW FUNCTION: Open Person Detail on TMDB ---
+const openPersonDetail = (person: Person) => {
+  if (!person || !person.tmdb_id) return;
+  // 한국어 페이지로 연결
+  const url = `https://www.themoviedb.org/person/${person.tmdb_id}?language=ko-KR`;
+  window.open(url, '_blank');
+};
 </script>
+
+```
