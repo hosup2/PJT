@@ -1,25 +1,29 @@
-# movies/management/commands/import_upcoming_2026_movies.py
-
 import time
 import requests
+import re
+from datetime import date
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from movies.models import Movie, Genre
 
-
 TMDB_BASE = "https://api.themoviedb.org/3"
 
+def has_korean(text: str) -> bool:
+    return bool(re.search(r"[가-힣]", text))
 
 class Command(BaseCommand):
-    help = "Import upcoming movies (release date <= 2026) from TMDB"
+    help = "Import filtered upcoming movies (<= 2026) from TMDB"
+
+    MIN_VOTE_AVERAGE = 5.5
+    MIN_VOTE_COUNT = 50
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS("🎬 Import upcoming movies (<= 2026) started"))
+        self.stdout.write(self.style.SUCCESS("🎬 Import filtered upcoming movies started"))
 
         total_saved = 0
+        skipped = 0
 
-        # 2025~2026 범위 (미래 개봉작은 미리 등록되는 경우가 많음)
-        for page in range(67, 501):
+        for page in range(501, 1000):
             self.stdout.write(f"📄 Discover page {page}")
 
             data = self.fetch_discover(page)
@@ -32,6 +36,10 @@ class Command(BaseCommand):
                 if Movie.objects.filter(tmdb_id=tmdb_id).exists():
                     continue
 
+                if not self.is_valid_movie(item):
+                    skipped += 1
+                    continue
+
                 saved = self.save_movie(item)
                 if saved:
                     total_saved += 1
@@ -39,18 +47,17 @@ class Command(BaseCommand):
                         f"  ✔ Saved: {item.get('title')}"
                     ))
 
-                time.sleep(0.05)  # discover만 쓰니 더 빠르게 가능
-
+                time.sleep(0.05)
 
             if page >= data.get("total_pages", 1):
                 break
 
         self.stdout.write(self.style.SUCCESS(
-            f"✅ Import finished. Total saved: {total_saved}"
+            f"✅ Finished | saved={total_saved}, skipped={skipped}"
         ))
 
     # --------------------
-    # TMDB API FUNCTIONS
+    # TMDB API
     # --------------------
 
     def fetch_discover(self, page):
@@ -69,46 +76,60 @@ class Command(BaseCommand):
             return None
         return r.json()
 
-    def fetch_movie_detail(self, tmdb_id):
-        params = {
-            "api_key": settings.TMDB_API_KEY,
-            "language": "ko-KR",
-        }
-        r = requests.get(f"{TMDB_BASE}/movie/{tmdb_id}", params=params)
-        if r.status_code != 200:
-            return None
-        return r.json()
+    # --------------------
+    # FILTER LOGIC
+    # --------------------
+    
+    def is_valid_movie(self, item):
+        title = item.get("title")
+        release_date = item.get("release_date")
+        poster = item.get("poster_path")
+        vote_avg = item.get("vote_average", 0)
+        vote_cnt = item.get("vote_count", 0)
+
+        # 제목 없음
+        if not title:
+            return False
+
+        # 포스터 없음
+        if not poster:
+            return False
+        
+        if not has_korean(title):
+            return False
+        
+        # # 개봉일 없음 or 이미 개봉
+        # if not release_date:
+        #     return False
+        # if date.fromisoformat(release_date) < date.today():
+        #     return False
+
+        # 저품질 필터
+        if vote_avg < self.MIN_VOTE_AVERAGE:
+            return False
+        if vote_cnt < self.MIN_VOTE_COUNT:
+            return False
+
+        return True
 
     # --------------------
     # SAVE LOGIC
     # --------------------
 
     def save_movie(self, item):
-        # discover 결과에는 이미 개봉된 영화도 섞일 수 있음
-        if item.get("release_date"):
-            from datetime import date
-            if date.fromisoformat(item["release_date"]) < date.today():
-                return False
-
-        # overview 없는 건 저장 안 할 수도 있음 (선택)
-        # 추천만 목적이면 없어도 OK
-        # if not item.get("overview"):
-        #     return False
-
         movie = Movie.objects.create(
             tmdb_id=item["id"],
             title=item.get("title"),
             original_title=item.get("original_title"),
-            overview=item.get("overview", ""),  # 비워도 됨
-            release_date=item.get("release_date") or None,
+            overview=item.get("overview", ""),
+            release_date=item.get("release_date"),
             tmdb_rating=item.get("vote_average"),
             poster_path=item.get("poster_path"),
             backdrops=item.get("backdrop_path"),
         )
 
-        for g in item.get("genre_ids", []):
-            genre, _ = Genre.objects.get_or_create(id=g)
+        for gid in item.get("genre_ids", []):
+            genre, _ = Genre.objects.get_or_create(id=gid)
             movie.genres.add(genre)
 
         return True
-
