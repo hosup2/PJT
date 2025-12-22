@@ -26,6 +26,8 @@
           class="md:col-span-8 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
         >
           <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          <div class="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-gray-900/80 to-transparent z-20 pointer-events-none rounded-l-[32px]"></div>
+          <div class="absolute top-0 right-0 h-full w-16 bg-gradient-to-l from-gray-900/80 to-transparent z-20 pointer-events-none rounded-r-[32px]"></div>
 
           <div class="relative z-10 h-full flex flex-col justify-between">
             <div class="flex justify-between items-start mb-6">
@@ -54,32 +56,51 @@
               </button>
             </div>
 
-            <div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x">
-              <div 
-                v-for="(movie, idx) in previewMovies.slice(0, 5)" 
-                :key="idx" 
-                @click="onMovieClick(movie.id)"
-                class="flex-shrink-0 w-36 snap-start cursor-pointer group/poster"
-              >
-                <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg">
-                  <div class="absolute inset-0 bg-black/20 group-hover/poster:bg-transparent transition-colors z-10"></div>
-                  <img 
-                    :src="movie.poster_path" 
-                    :alt="movie.title" 
-                    class="w-full h-full object-cover transform group-hover/poster:scale-110 transition-transform duration-500" 
-                  />
+            <div class="relative w-full overflow-hidden pb-4">
+              <div class="flex w-max gap-6 animate-marquee hover:[animation-play-state:paused]">
+                
+                <div class="flex gap-6">
+                  <div 
+                    v-for="(movie, idx) in previewMovies" 
+                    :key="`org-${movie.id}`" 
+                    @click="onMovieClick(movie.id)"
+                    class="cursor-pointer group/poster flex-shrink-0"
+                    style="width: 190px;"
+                  >
+                    <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg transform transition-transform duration-500 hover:scale-105">
+                      <div class="absolute inset-0 bg-black/20 group-hover/poster:bg-transparent transition-colors z-10"></div>
+                      <img 
+                        :src="movie.poster_path" 
+                        :alt="movie.title" 
+                        class="w-full h-full object-cover" 
+                      />
+                    </div>
+                    <p class="text-sm font-medium text-gray-300 group-hover/poster:text-white truncate transition-colors">{{ movie.title }}</p>
+                    <p class="text-xs text-gray-500">{{ movie.year }}</p>
+                  </div>
                 </div>
-                <p class="text-sm font-medium text-gray-300 group-hover/poster:text-white truncate transition-colors">{{ movie.title }}</p>
-                <p class="text-xs text-gray-500">{{ movie.year }}</p>
-              </div>
-              
-              <div 
-                v-if="totalMovieCount > 5"
-                @click="goToFullExplore"
-                class="flex-shrink-0 w-36 aspect-[2/3] rounded-2xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center cursor-pointer hover:border-white/30 hover:bg-white/5 transition-all"
-              >
-                <span class="text-2xl font-bold text-gray-500">+{{ totalMovieCount - 5 }}</span>
-                <span class="text-xs text-gray-600 mt-1">더보기</span>
+
+                <div class="flex gap-6" aria-hidden="true">
+                  <div 
+                    v-for="(movie, idx) in previewMovies" 
+                    :key="`clone-${movie.id}`" 
+                    @click="onMovieClick(movie.id)"
+                    class="cursor-pointer group/poster flex-shrink-0"
+                    style="width: 190px;"
+                  >
+                    <div class="aspect-[2/3] rounded-2xl overflow-hidden mb-3 relative shadow-lg transform transition-transform duration-500 hover:scale-105">
+                      <div class="absolute inset-0 bg-black/20 group-hover/poster:bg-transparent transition-colors z-10"></div>
+                      <img 
+                        :src="movie.poster_path" 
+                        :alt="movie.title" 
+                        class="w-full h-full object-cover" 
+                      />
+                    </div>
+                    <p class="text-sm font-medium text-gray-300 group-hover/poster:text-white truncate transition-colors">{{ movie.title }}</p>
+                    <p class="text-xs text-gray-500">{{ movie.year }}</p>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -197,6 +218,7 @@ const router = useRouter();
 const movies = ref<Movie[]>([]);
 const error = ref<string | null>(null);
 
+// 상위 컴포넌트(App.vue)에서 제공(provide)된 값들 주입
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
 const currentUser = inject<Ref<any>>('currentUser', ref(null));
 
@@ -245,7 +267,8 @@ const totalMovieCount = computed(() => {
 });
 
 const previewMovies = computed(() => {
-  return movies.value.slice(0, 10); // 슬라이더를 위해 조금 더 많이 가져옴
+  // 슬라이더가 끊김 없이 보이려면 충분한 개수 확보 필요
+  return movies.value.slice(0, 25); 
 });
 
 const onMovieClick = (movieId: number) => {
@@ -262,13 +285,19 @@ const goToFullExplore = () => {
 </script>
 
 <style scoped>
-/* 가로 스크롤바 숨기기 (크롬, 사파리, 오페라) */
-.scrollbar-hide::-webkit-scrollbar {
-    display: none;
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  /* 정확히 50%를 이동합니다. 
+    구조: [세트1][세트2] (세트1과 세트2는 동일)
+    50% 이동 시점 = 세트1이 완전히 사라지고 세트2의 시작점이 세트1의 원래 위치에 도달하는 시점
+    이때 0%로 리셋(transform: translateX(0))되면 사용자 눈에는 똑같은 화면이 유지되므로 끊김이 없습니다.
+  */
+  100% { transform: translateX(-50%); } 
 }
-/* 가로 스크롤바 숨기기 (IE, 엣지, 파이어폭스) */
-.scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+
+.animate-marquee {
+  /* 60초: 충분히 천천히 흘러가게 하여 시각적 편안함 제공 및 끊김 현상 완화 */
+  animation: marquee 10s linear infinite;
+  will-change: transform;
 }
 </style>

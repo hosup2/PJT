@@ -263,17 +263,83 @@ class TMDBPopularPageImportView(APIView):
         })
 
 
+# class MovieRatingView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def post(self, request, movie_id):
+#         movie = get_object_or_404(Movie, id=movie_id)
+        
+#         # 받은 데이터 검증
+#         rating_value = request.data.get("rating")
+#         comment_value = request.data.get("comment", "")
+        
+#         # rating이 없으면 에러 반환 (별점은 필수)
+#         if rating_value is None:
+#             return Response(
+#                 {"error": "Rating is required"},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+
+#         rating_obj, created = MovieRating.objects.update_or_create(
+#             user=request.user,
+#             movie=movie,
+#             defaults={
+#                 'rating': rating_value,
+#                 'comment': comment_value,
+#             }
+#         )
+
+#         serializer = MovieRatingSerializer(rating_obj)
+#         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
+#         return Response(serializer.data, status=status_code)
+
+#     def delete(self, request, movie_id):
+#         rating_id = request.data.get('rating_id')
+        
+#         if not rating_id:
+#             return Response(
+#                 {"error": "rating_id is required"}, 
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
+        
+#         rating = get_object_or_404(
+#             MovieRating, 
+#             id=rating_id,
+#             movie_id=movie_id,
+#             user=request.user
+#         )
+#         rating.delete()
+#         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# # ⭐ 새로운 뷰: 개별 리뷰 수정
+# class MovieRatingDetailView(APIView):
+#     permission_classes = [IsAuthenticated]
+    
+#     def put(self, request, movie_id, rating_id):
+#         """특정 리뷰 수정"""
+#         rating = get_object_or_404(
+#             MovieRating,
+#             id=rating_id,
+#             movie_id=movie_id,
+#             user=request.user
+#         )
+        
+#         rating.rating = request.data.get('rating', rating.rating)
+#         rating.comment = request.data.get('comment', rating.comment)
+#         rating.save()
+        
+#         serializer = MovieRatingSerializer(rating)
+#         return Response(serializer.data)
 class MovieRatingView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
         
-        # 받은 데이터 검증
         rating_value = request.data.get("rating")
         comment_value = request.data.get("comment", "")
         
-        # rating이 없으면 에러 반환 (별점은 필수)
         if rating_value is None:
             return Response(
                 {"error": "Rating is required"},
@@ -293,26 +359,7 @@ class MovieRatingView(APIView):
         status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         return Response(serializer.data, status=status_code)
 
-    def delete(self, request, movie_id):
-        rating_id = request.data.get('rating_id')
-        
-        if not rating_id:
-            return Response(
-                {"error": "rating_id is required"}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        rating = get_object_or_404(
-            MovieRating, 
-            id=rating_id,
-            movie_id=movie_id,
-            user=request.user
-        )
-        rating.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-# ⭐ 새로운 뷰: 개별 리뷰 수정
 class MovieRatingDetailView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -325,13 +372,32 @@ class MovieRatingDetailView(APIView):
             user=request.user
         )
         
-        rating.rating = request.data.get('rating', rating.rating)
-        rating.comment = request.data.get('comment', rating.comment)
+        rating_value = request.data.get('rating')
+        comment_value = request.data.get('comment')
+        
+        # 별점이 제공되면 업데이트
+        if rating_value is not None:
+            rating.rating = rating_value
+        
+        # 댓글이 제공되면 업데이트
+        if comment_value is not None:
+            rating.comment = comment_value
+            
         rating.save()
         
         serializer = MovieRatingSerializer(rating)
         return Response(serializer.data)
-
+    
+    def delete(self, request, movie_id, rating_id):
+        """특정 리뷰 삭제"""
+        rating = get_object_or_404(
+            MovieRating,
+            id=rating_id,
+            movie_id=movie_id,
+            user=request.user
+        )
+        rating.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class MovieRatingListView(APIView):
     permission_classes = [AllowAny]
@@ -363,71 +429,119 @@ def fetch_tmdb_movie_detail(tmdb_id):
 
 
 
-
 class MovieDetailView(APIView):
     permission_classes = [AllowAny]
-    """
-    GET /api/v1/movies/<movie_id>/
-    - DB에 director/actors가 있으면 DB에서 반환
-    - 없으면 TMDB credits 호출해서 저장 후 반환
-    """
 
     def get(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
 
-        # ✅ 이미 DB에 있으면 DB 데이터로 바로 반환
-        if movie.director is not None and movie.actors.exists():
-            serializer = MovieDetailSerializer(movie)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        # DB에 director/actors 없으면 TMDB에서 가져오기
+        if movie.director is None or not movie.actors.exists():
+            try:
+                credits = fetch_movie_credits(movie.tmdb_id, language="ko-KR")
+                
+                crew = credits.get("crew", [])
+                cast = credits.get("cast", [])
 
-        # ❌ 없으면 TMDB에서 가져와서 DB에 저장
-        try:
-            credits = fetch_movie_credits(movie.tmdb_id, language="ko-KR")
-        except Exception as e:
-            # TMDB 실패 시에도 영화 기본정보는 반환하고 싶으면 이렇게 처리 가능
-            serializer = MovieDetailSerializer(movie)
-            return Response(
-                {
-                    "movie": serializer.data,
-                    "credits_error": str(e),
-                },
-                status=status.HTTP_200_OK,
-            )
+                director_item = next((c for c in crew if c.get("job") == "Director"), None)
+                if director_item:
+                    director, _ = Director.objects.get_or_create(
+                        tmdb_id=director_item["id"],
+                        defaults={
+                            "name": director_item.get("name", ""),
+                            "profile_path": director_item.get("profile_path"),
+                        },
+                    )
+                    movie.director = director
 
-        crew = credits.get("crew", [])
-        cast = credits.get("cast", [])
+                actor_objs = []
+                for item in cast[:5]:
+                    actor, _ = Actor.objects.get_or_create(
+                        tmdb_id=item["id"],
+                        defaults={
+                            "name": item.get("name", ""),
+                            "profile_path": item.get("profile_path"),
+                        },
+                    )
+                    actor_objs.append(actor)
 
-        # 감독 찾기 (job == "Director")
-        director_item = next((c for c in crew if c.get("job") == "Director"), None)
+                movie.save()
+                if actor_objs:
+                    movie.actors.set(actor_objs)
+                    
+            except Exception as e:
+                print(f"TMDB credits fetch failed: {e}")
 
-        if director_item:
-            director, _ = Director.objects.get_or_create(
-                tmdb_id=director_item["id"],
-                defaults={
-                    "name": director_item.get("name", ""),
-                    "profile_path": director_item.get("profile_path"),
-                },
-            )
-            movie.director = director
-
-        # 출연진 상위 5명만 저장 (원하면 숫자 조절)
-        actor_objs = []
-        for item in cast[:5]:
-            actor, _ = Actor.objects.get_or_create(
-                tmdb_id=item["id"],
-                defaults={
-                    "name": item.get("name", ""),
-                    "profile_path": item.get("profile_path"),
-                },
-            )
-            actor_objs.append(actor)
-
-        movie.save()
-        if actor_objs:
-            movie.actors.set(actor_objs)
-
-        serializer = MovieDetailSerializer(movie)
+        # ⭐ 중요: MovieResponseSerializer 사용 (comments 포함)
+        movie = Movie.objects.prefetch_related('ratings__user', 'actors', 'genres').get(id=movie_id)
+        serializer = MovieResponseSerializer(movie, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+# class MovieDetailView(APIView):
+#     permission_classes = [AllowAny]
+#     """
+#     GET /api/v1/movies/<movie_id>/
+#     - DB에 director/actors가 있으면 DB에서 반환
+#     - 없으면 TMDB credits 호출해서 저장 후 반환
+#     """
+
+#     def get(self, request, movie_id):
+#         movie = get_object_or_404(Movie, id=movie_id)
+
+#         # ✅ 이미 DB에 있으면 DB 데이터로 바로 반환
+#         if movie.director is not None and movie.actors.exists():
+#             serializer = MovieDetailSerializer(movie)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+
+#         # ❌ 없으면 TMDB에서 가져와서 DB에 저장
+#         try:
+#             credits = fetch_movie_credits(movie.tmdb_id, language="ko-KR")
+#         except Exception as e:
+#             # TMDB 실패 시에도 영화 기본정보는 반환하고 싶으면 이렇게 처리 가능
+#             serializer = MovieDetailSerializer(movie)
+#             return Response(
+#                 {
+#                     "movie": serializer.data,
+#                     "credits_error": str(e),
+#                 },
+#                 status=status.HTTP_200_OK,
+#             )
+
+#         crew = credits.get("crew", [])
+#         cast = credits.get("cast", [])
+
+#         # 감독 찾기 (job == "Director")
+#         director_item = next((c for c in crew if c.get("job") == "Director"), None)
+
+#         if director_item:
+#             director, _ = Director.objects.get_or_create(
+#                 tmdb_id=director_item["id"],
+#                 defaults={
+#                     "name": director_item.get("name", ""),
+#                     "profile_path": director_item.get("profile_path"),
+#                 },
+#             )
+#             movie.director = director
+
+#         # 출연진 상위 5명만 저장 (원하면 숫자 조절)
+#         actor_objs = []
+#         for item in cast[:5]:
+#             actor, _ = Actor.objects.get_or_create(
+#                 tmdb_id=item["id"],
+#                 defaults={
+#                     "name": item.get("name", ""),
+#                     "profile_path": item.get("profile_path"),
+#                 },
+#             )
+#             actor_objs.append(actor)
+
+#         movie.save()
+#         if actor_objs:
+#             movie.actors.set(actor_objs)
+
+#         serializer = MovieDetailSerializer(movie)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # # 영화 디테일 요청

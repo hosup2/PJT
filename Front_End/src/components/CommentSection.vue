@@ -1,12 +1,12 @@
 <template>
   <div>
-    <!-- Comment Input (only for logged in users) -->
+    <!-- Comment Input -->
     <div v-if="isLoggedIn" class="bg-gray-900 rounded-lg p-6 mb-6">
-      <h3 class="text-lg mb-4">리뷰 작성</h3>
+      <h3 class="text-lg mb-4">{{ editingCommentId ? '리뷰 수정' : '리뷰 작성' }}</h3>
       
       <form @submit.prevent="handleSubmitComment">
         <div class="mb-4">
-          <StarRating :initial-rating="rating" @change="handleRatingChange" />
+          <StarRating :initial-rating="currentRating" @change="handleRatingChange" />
         </div>
         <textarea
           v-model="newComment"
@@ -26,13 +26,23 @@
             <span>스포일러 포함</span>
           </label>
           
-          <button
-            type="submit"
-            :disabled="!newComment.trim() || currentRating === 0"
-            class="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
-          >
-            등록
-          </button>
+          <div class="flex gap-2">
+            <button
+              v-if="editingCommentId"
+              @click="cancelEdit"
+              type="button"
+              class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+            >
+              취소
+            </button>
+            <button
+              type="submit"
+              :disabled="!newComment.trim() || currentRating === 0"
+              class="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
+            >
+              {{ editingCommentId ? '수정' : '등록' }}
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -124,6 +134,22 @@
                 <Heart :class="['w-4 h-4', comment.isLiked && 'fill-current']" />
                 <span class="text-sm">{{ comment.likes_count || 0 }}</span>
               </button>
+              
+              <!-- 수정/삭제 버튼 (본인 댓글만) -->
+              <div v-if="isOwner(comment.user_id)" class="flex gap-3 ml-auto">
+                <button
+                  @click="startEdit(comment)"
+                  class="text-sm text-gray-400 hover:text-purple-400 transition-colors"
+                >
+                  수정
+                </button>
+                <button
+                  @click="handleDelete(comment.id)"
+                  class="text-sm text-gray-400 hover:text-red-400 transition-colors"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -133,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, inject, type Ref } from 'vue';
 import { Heart, AlertCircle } from 'lucide-vue-next';
 import StarRating from './StarRating.vue';
 
@@ -157,25 +183,41 @@ interface Props {
   rating: number;
 }
 
+interface User {
+  id: number;
+  username: string;
+}
+
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
   submitComment: [content: string, spoiler: boolean];
+  editComment: [commentId: number, content: string, rating: number, spoiler: boolean];
+  deleteComment: [commentId: number];
   likeComment: [commentId: number];
   navigateToUser: [userId: number];
   openAuth: [];
   ratingChange: [rating: number];
 }>();
 
+const currentUser = inject<Ref<User | null>>('currentUser', ref(null));
+
 const newComment = ref('');
 const includeSpoiler = ref(false);
 const showSpoilers = ref(new Set<number>());
-const currentRating = ref(props.rating); // 현재 평점 추적
+const currentRating = ref(props.rating);
+const editingCommentId = ref<number | null>(null);
 
 // rating prop 변경 감지
 watch(() => props.rating, (newVal) => {
-  currentRating.value = newVal;
+  if (!editingCommentId.value) {
+    currentRating.value = newVal;
+  }
 });
+
+const isOwner = (commentUserId: number) => {
+  return currentUser.value && currentUser.value.id === commentUserId;
+};
 
 const getProfileImage = (profileImage: string | null | undefined): string => {
   if (!profileImage) {
@@ -215,9 +257,38 @@ const handleSubmitComment = () => {
     return;
   }
   
-  emit('submitComment', newComment.value, includeSpoiler.value);
+  if (editingCommentId.value) {
+    // 수정 모드
+    emit('editComment', editingCommentId.value, newComment.value, currentRating.value, includeSpoiler.value);
+  } else {
+    // 새 댓글
+    emit('submitComment', newComment.value, includeSpoiler.value);
+  }
+  
   newComment.value = '';
   includeSpoiler.value = false;
+  editingCommentId.value = null;
+  currentRating.value = props.rating;
+};
+
+const startEdit = (comment: Comment) => {
+  editingCommentId.value = comment.id;
+  newComment.value = comment.comment;
+  currentRating.value = comment.rating || 0;
+  includeSpoiler.value = comment.spoiler || false;
+};
+
+const cancelEdit = () => {
+  editingCommentId.value = null;
+  newComment.value = '';
+  currentRating.value = props.rating;
+  includeSpoiler.value = false;
+};
+
+const handleDelete = (commentId: number) => {
+  if (confirm('정말 이 리뷰를 삭제하시겠습니까?')) {
+    emit('deleteComment', commentId);
+  }
 };
 
 const handleLike = (commentId: number) => {

@@ -55,7 +55,6 @@ class MovieRatingSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     profile_image = serializers.ImageField(source='user.profile_image', read_only=True)
-    review_content = serializers.CharField(source='comment', read_only=True)
     movie_id = serializers.IntegerField(source='movie.id', read_only=True)
     movie_title = serializers.CharField(source='movie.title', read_only=True)
     likes_count = serializers.SerializerMethodField()
@@ -67,7 +66,7 @@ class MovieRatingSerializer(serializers.ModelSerializer):
             "id",
             "user_id", "username", "profile_image",
             "movie_id","movie_title",
-            "rating", "comment", "review_content",
+            "rating", "comment",
             "created_at", "likes_count", "is_liked",
         )
 
@@ -84,7 +83,9 @@ class MovieResponseSerializer(serializers.ModelSerializer):
     stats = serializers.SerializerMethodField()
     user_data = serializers.SerializerMethodField()
     comments = MovieRatingSerializer(source='ratings', many=True, read_only=True)
-    is_liked = serializers.SerializerMethodField()  # ← 추가
+    is_liked = serializers.SerializerMethodField()
+    director = DirectorSerializer(read_only=True)  # ← 추가
+    actors = ActorSerializer(read_only=True, many=True)  # ← 추가
 
     class Meta:
         model = Movie
@@ -103,7 +104,9 @@ class MovieResponseSerializer(serializers.ModelSerializer):
             "stats",
             "user_data",
             "comments",
-            "is_liked",  # ← 추가
+            "is_liked",
+            "director",  # ← 추가
+            "actors",  # ← 추가
         ]
 
     def get_genres(self, obj):

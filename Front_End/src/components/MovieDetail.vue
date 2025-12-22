@@ -1,14 +1,3 @@
-네, 말씀하신 기능을 완벽하게 통합했습니다.
-
-**변경된 점:**
-
-1. **클릭 기능 추가**: 감독 및 출연진 카드에 `@click` 이벤트를 넣어, 클릭 시 **TMDB(영화 정보 사이트)의 해당 인물 페이지**가 새 탭으로 열립니다.
-2. **커서 스타일**: 카드에 마우스를 올리면 클릭 가능하다는 것을 알 수 있게 손가락 모양(`cursor-pointer`)으로 변하고, 배경색이 조금 더 밝게(`hover:bg-gray-700`) 변합니다.
-3. **디자인 통일**: 아까 맞춘 황금 비율(`w-24`, `h-36`)을 적용하여 사진 크기가 깔끔하게 정렬되도록 했습니다.
-
-아래 전체 코드를 복사해서 그대로 붙여넣으시면 됩니다.
-
-```vue
 <template>
   <div v-if="loading" class="text-center p-12">
     <p>Loading...</p>
@@ -132,31 +121,7 @@
         <div class="mb-8 bg-gray-900 rounded-lg p-6">
           <h2 class="text-xl font-semibold mb-3">출연진</h2>
 
-          <!-- <div v-if="movie.director" class="mb-6">
-            <h3 class="text-lg font-semibold mb-3 text-gray-200">감독</h3>
-            <div class="flex flex-wrap gap-4">
-              <div
-                @click="openPersonDetail(movie.director)"
-                class="w-24 bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700 transition-colors cursor-pointer"
-              >
-                <img
-                  :src="getProfileUrl(movie.director.profile_path)"
-                  class="w-full h-36 rounded-lg object-cover bg-gray-700 mb-2"
-                />
-                <div class="text-left px-1">
-                  <p class="text-sm font-bold text-gray-100 truncate">
-                    {{ movie.director.name }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    감독
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div> -->
-
           <div v-if="movie.actors && movie.actors.length">
-            <!-- <h3 class="text-lg font-semibold mb-3 text-gray-200">출연진</h3> -->
             <div class="flex flex-wrap gap-4">
               <div
                 v-for="actor in movie.actors"
@@ -193,10 +158,13 @@
         <div>
           <h2 class="text-2xl font-bold mb-6">리뷰 ({{ comments.length }})</h2>
           <CommentSection
+            :key="refreshKey"
             :comments="comments"
             :is-logged-in="isLoggedIn"
             :rating="userRating"
             @submit-comment="handleSubmitComment"
+            @edit-comment="handleEditComment"
+            @delete-comment="handleDeleteComment"
             @like-comment="handleLikeComment"
             @navigate-to-user="handleNavigateToUser"
             @open-auth="emit('openAuth')"
@@ -286,7 +254,6 @@ interface Comment {
   comment: string;
   created_at: string;
   profile_image?: string;
-  review_content?: string;
   spoiler?: boolean;
   likes_count?: number;
   isLiked?: boolean;
@@ -312,6 +279,7 @@ const router = useRouter();
 const movie = ref<Movie | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
+const refreshKey = ref(0); // 강제 리렌더링용
 
 // Injected global state
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
@@ -325,13 +293,19 @@ const fetchMovieData = async () => {
         _: new Date().getTime(),
       },
     });
-    movie.value = response.data;
+    
+    // 완전히 새로운 객체로 할당
+    movie.value = JSON.parse(JSON.stringify(response.data));
 
     if (movie.value?.user_data) {
       userRating.value = movie.value.user_data.rating || 0;
       commentText.value = movie.value.user_data.comment || '';
       isMovieLiked.value = movie.value.user_data.is_liked;
     }
+    
+    // 강제 리렌더링
+    refreshKey.value++;
+    
   } catch (err) {
     console.error(`Failed to fetch movie ${props.id}:`, err);
     error.value = '영화 정보를 불러오는 데 실패했습니다.';
@@ -345,7 +319,11 @@ onMounted(async () => {
 });
 
 // --- Computed Properties ---
-const comments = computed(() => movie.value?.comments || []);
+const comments = computed(() => {
+  const _ = refreshKey.value;
+  return movie.value?.comments || [];
+});
+
 const posterUrl = computed(() => {
   if (movie.value?.poster_path && !movie.value.poster_path.startsWith('http')) {
     return `https://image.tmdb.org/t/p/w500${movie.value.poster_path}`;
@@ -424,6 +402,45 @@ const handleSubmitComment = (content: string, spoiler: boolean) => {
   saveActivity();
 };
 
+const handleEditComment = async (commentId: number, content: string, rating: number, spoiler: boolean) => {
+  if (!isLoggedIn.value) return;
+
+  try {
+    const payload = {
+      rating: rating,
+      comment: content,
+      spoiler: spoiler,
+    };
+    
+    await axios.put(
+      `http://127.0.0.1:8000/movies/${props.id}/ratings/${commentId}/`,
+      payload
+    );
+    
+    alert('리뷰가 수정되었습니다.');
+    await fetchMovieData();
+    emit('activity-updated');
+  } catch (err) {
+    console.error('Failed to edit comment:', err);
+    alert('리뷰 수정에 실패했습니다.');
+  }
+};
+
+const handleDeleteComment = async (commentId: number) => {
+  if (!isLoggedIn.value) return;
+
+  try {
+    await axios.delete(`http://127.0.0.1:8000/movies/${props.id}/ratings/${commentId}/`);
+    
+    alert('리뷰가 삭제되었습니다.');
+    await fetchMovieData();
+    emit('activity-updated');
+  } catch (err) {
+    console.error('Failed to delete comment:', err);
+    alert('리뷰 삭제에 실패했습니다.');
+  }
+};
+
 const handleLikeComment = (commentId: number) => {
   console.log(`Liking comment ${commentId}. TODO: Implement API call.`);
 };
@@ -450,6 +467,7 @@ const getProfileUrl = (path?: string | null) => {
 };
 
 const movieStats = computed(() => {
+  const _ = refreshKey.value;
   return movie.value?.stats ?? {
     avg_rating: 0,
     rating_count: 0,
@@ -457,13 +475,9 @@ const movieStats = computed(() => {
   };
 });
 
-// --- NEW FUNCTION: Open Person Detail on TMDB ---
 const openPersonDetail = (person: Person) => {
   if (!person || !person.tmdb_id) return;
-  // 한국어 페이지로 연결
   const url = `https://www.themoviedb.org/person/${person.tmdb_id}?language=ko-KR`;
   window.open(url, '_blank');
 };
 </script>
-
-```
