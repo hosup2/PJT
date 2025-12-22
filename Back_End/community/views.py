@@ -1,57 +1,96 @@
-from rest_framework import generics, permissions
+from rest_framework import viewsets, status, permissions
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.db.models import Q
 from .models import Post, Comment
-from .serializers import PostSerializer, PostListSerializer, CommentSerializer
+from .serializers import (
+    PostListSerializer, PostDetailSerializer, PostCreateUpdateSerializer,
+    CommentSerializer
+)
 
-# Custom permission to only allow authors of an object to edit it.
+
 class IsAuthorOrReadOnly(permissions.BasePermission):
+    """
+    작성자만 수정/삭제 가능, 읽기는 모두 가능
+    """
     def has_object_permission(self, request, view, obj):
-        # Read permissions are allowed to any request,
-        # so we'll always allow GET, HEAD or OPTIONS requests.
+        # 읽기 권한은 모든 요청에 허용
         if request.method in permissions.SAFE_METHODS:
             return True
-
-        # Write permissions are only allowed to the author of the post.
+        
+        # 쓰기 권한은 작성자에게만 허용
         return obj.author == request.user
 
 
-# Post Views
-class PostListCreateView(generics.ListCreateAPIView):
-    queryset = Post.objects.all().order_by('-created_at')
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
+class PostViewSet(viewsets.ModelViewSet):
+    """게시글 ViewSet"""
+    queryset = Post.objects.select_related('author').prefetch_related('comments__author').all()
+    
     def get_serializer_class(self):
-        if self.request.method == 'GET':
+        if self.action == 'list':
             return PostListSerializer
-        return PostSerializer
-
+        elif self.action in ['create', 'update', 'partial_update']:
+            return PostCreateUpdateSerializer
+        return PostDetailSerializer
+    
+    def get_permissions(self):
+        """
+        - list, retrieve: 모두 가능
+        - create (Post), comments (create Comment), delete_comment: 인증 필요
+        - update, partial_update, destroy (Post): 인증 + 작성자만
+        """
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        elif self.action in ['create', 'comments', 'delete_comment']:
+            return [permissions.IsAuthenticated()]
+        elif self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), IsAuthorOrReadOnly()]
+        return super().get_permissions()
+    
     def perform_create(self, serializer):
+        """게시글 작성자 자동 설정"""
         serializer.save(author=self.request.user)
+    
+    def retrieve(self, request, *args, **kwargs):
+        """게시글 조회시 조회수 증가"""
+        instance = self.get_object()
+        instance.view_count += 1
+        instance.save(update_fields=['view_count'])
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'],
+            permission_classes=[permissions.IsAuthenticated],
+            authentication_classes=[JWTAuthentication])
+    def comments(self, request, pk=None):
+        """댓글 작성"""
+        post = self.get_object()
+        serializer = CommentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(post=post, author=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['delete'],
+            permission_classes=[permissions.IsAuthenticated],
+            authentication_classes=[JWTAuthentication],
+            url_path='comments/(?P<comment_id>[^/.]+)')
+    def delete_comment(self, request, pk=None, comment_id=None):
+        """댓글 삭제"""
+        try:
+            comment = Comment.objects.get(id=comment_id, post_id=pk)
+            if comment.author != request.user:
+                return Response(
+                    {'error': '본인의 댓글만 삭제할 수 있습니다.'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            comment.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Comment.DoesNotExist:
+            return Response(
+                {'error': '댓글을 찾을 수 없습니다.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
-class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Post.objects.all()
-    serializer_class = PostSerializer
-    permission_classes = [IsAuthorOrReadOnly]
-
-
-# Comment Views
-class CommentListCreateView(generics.ListCreateAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self):
-        # Filter comments by the post_pk in the URL
-        return super().get_queryset().filter(post_id=self.kwargs['post_pk'])
-
-    def perform_create(self, serializer):
-        post = Post.objects.get(pk=self.kwargs['post_pk'])
-        serializer.save(author=self.request.user, post=post)
-
-class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes = [IsAuthorOrReadOnly]
-
-    def get_queryset(self):
-        # Ensure we are getting a comment from the correct post
-        return super().get_queryset().filter(post_id=self.kwargs['post_pk'])

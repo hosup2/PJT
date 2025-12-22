@@ -1,11 +1,10 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import PostViewSet
 
-app_name = 'community'
+router = DefaultRouter()
+router.register(r'posts', PostViewSet, basename='post')
 
 urlpatterns = [
-    path('posts/', views.PostListCreateView.as_view(), name='post-list-create'),
-    path('posts/<int:pk>/', views.PostDetailView.as_view(), name='post-detail'),
-    path('posts/<int:post_pk>/comments/', views.CommentListCreateView.as_view(), name='comment-list-create'),
-    path('posts/<int:post_pk>/comments/<int:pk>/', views.CommentDetailView.as_view(), name='comment-detail'),
+    path('', include(router.urls)),
 ]
