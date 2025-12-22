@@ -47,14 +47,19 @@ class ChatRecommendView(APIView):
             content=message
         )
 
-        # ⭐️⭐️ 핵심 추가 부분 ⭐️⭐️
-        # 첫 번째 user 메시지면 세션 제목으로 설정
-        if session.title == "새 대화":
-            session.title = message[:30]  # 너무 길면 잘라줌
+        # user message 저장 직후
+        if session.title in ["", "새 대화", "MIA CHAT"]:
+            session.title = message.strip()[:30]
             session.save(update_fields=["title"])
 
-        # 3️⃣ 챗봇 로직 실행 (대화 or 추천)
-        result = run_chatbot(request.user, message, session)
+        # run_chatbot
+        result = run_chatbot(message, session)
+
+        # assistant 저장
+        ChatMessage.objects.create(session=session, role="assistant", content=result["answer"])
+
+        # summary 갱신
+        update_session_summary(session)
 
         # 4️⃣ AI 메시지 저장
 

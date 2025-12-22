@@ -32,3 +32,21 @@ def score_movie(movie, context):
         score += 1.0
 
     return score
+
+def score_movie_seeded(movie, seed) -> float:
+    score = 0.0
+
+    m_genres = set(movie.genres.values_list("id", flat=True))
+    s_genres = set(seed.genres.values_list("id", flat=True))
+    score += len(m_genres & s_genres) * 3.0
+
+    if movie.release_date and seed.release_date:
+        diff = abs(movie.release_date.year - seed.release_date.year)
+        score += max(0.0, 3.0 - diff * 0.3)
+
+    if movie.runtime and seed.runtime:
+        diff = abs(movie.runtime - seed.runtime)
+        score += max(0.0, 2.0 - diff / 60)
+
+    score += (movie.tmdb_rating or 0) * 0.6
+    return score

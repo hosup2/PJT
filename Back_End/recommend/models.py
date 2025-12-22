@@ -12,6 +12,7 @@ class ChatSession(models.Model):
     summary = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    last_recommended_movie_ids = models.JSONField(default=list, blank=True)
     def __str__(self):
         return f"Session {self.id} - {self.user}"
 
