@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.db.models import Avg
 from users.models import FavoriteMovie
 from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
-from .models import Actor, Director, Cast
+from .models import Actor, Director, Cast, CuratedLifeMovie
 
 class ActorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -192,3 +192,40 @@ class HeroMovieSerializer(serializers.ModelSerializer):
     class Meta:
         model = HeroMovie
         fields = ("id", "priority", "keyword", "movie")
+
+# movies/serializers.py
+class LifeMovieSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    movie = serializers.SerializerMethodField()
+    review = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CuratedLifeMovie
+        fields = ["user", "movie", "review"]
+
+    def get_user(self, obj):
+        return {
+            "id": obj.user.id,
+            "username": obj.user.username,
+        }
+
+    def get_movie(self, obj):
+        return {
+            "id": obj.movie.id,
+            "title": obj.movie.title,
+            "poster_path": obj.movie.poster_path,
+        }
+
+    def get_review(self, obj):
+        rating = MovieRating.objects.filter(
+            movie=obj.movie,
+            user=obj.user
+        ).first()
+
+        if not rating:
+            return None
+
+        return {
+            "rating": rating.rating,
+            "comment": rating.comment,
+        }

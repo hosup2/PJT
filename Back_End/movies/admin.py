@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Movie, FeaturedMovie, Genre, HeroMovie, Actor, Director
+from .models import Movie, FeaturedMovie, Genre, HeroMovie, Actor, Director, CuratedLifeMovie
 
 
 @admin.register(FeaturedMovie)
@@ -31,3 +31,4 @@ class GenreAdmin(admin.ModelAdmin):
 
 admin.site.register(Actor)
 admin.site.register(Director)
+admin.site.register(CuratedLifeMovie)

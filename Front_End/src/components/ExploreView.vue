@@ -5,7 +5,7 @@
       <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/20 rounded-full blur-[120px]"></div>
     </div>
 
-    <div class="relative z-10 pt-24 pb-12 px-6 max-w-7xl mx-auto">
+    <div class="relative z-10 pt-24 pb-12 px-6 w-full">
       
       <div class="mb-12 flex items-end justify-between">
         <div>
@@ -24,7 +24,7 @@
 
         <div 
           @click="goToFullExplore"
-          class="md:col-span-8 mx-4 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] px-8 py-5 overflow-hidden hover:border-white/20 transition-all duration-500 cursor-pointer"
+          class="md:col-span-6 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] px-8 py-5 overflow-hidden hover:border-white/20 transition-all duration-500 cursor-pointer"
         >
           <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           <div class="absolute top-0 left-0 h-full w-16 bg-gradient-to-r from-gray-900/80 to-transparent z-20 pointer-events-none rounded-l-[32px]"></div>
@@ -107,42 +107,61 @@
           </div>
         </div>
 
-        <div 
-          class="md:col-span-4 md:col-start-9 group relative bg-gray-900/40 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
-        >
-           <div class="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 blur-[80px] -mr-16 -mt-16 rounded-full group-hover:bg-purple-500/30 transition-all"></div>
+        <div class="md:col-span-12
+                    bg-gray-900/40 backdrop-blur-xl
+                    border border-white/10 rounded-[32px]
+                    p-8">
 
-           <div class="relative z-10 h-full flex flex-col">
-            <div class="mb-auto">
-              <div class="inline-block px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-bold mb-4">
+          <div class="grid grid-cols-2 gap-6 items-start">
+            
+            <!-- 카드 1 -->
+            <div
+              v-for="item in lifeMovies.slice(0,3)"
+              :key="item.user.id"
+              class="rounded-2xl bg-black/40 border border-white/10 p-4"
+            >
+              <div class="aspect-[2/3] overflow-hidden rounded-xl">
+                <img
+                  :src="`https://image.tmdb.org/t/p/w154${item.movie.poster_path}`"
+                  class="w-full h-full object-cover"
+                />
+              </div>
+
+              <div class="mt-3 text-center">
+                <p class="text-xs text-purple-400 font-bold truncate">
+                  {{ item.user.username }}
+                </p>
+                <p class="text-sm font-semibold truncate">
+                  {{ item.movie.title }}
+                </p>
+                <p v-if="item.review" class="text-xs text-yellow-400">
+                  ★ {{ item.review.rating }}/5
+                </p>
+              </div>
+            </div>
+
+            <!-- ⭐ 문구 카드 -->
+            <div class="flex flex-col justify-center">
+              <div class="inline-block px-3 py-1 rounded-full
+                          bg-purple-500/20 border border-purple-500/30
+                          text-purple-400 text-xs font-bold mb-3">
                 CURATION
               </div>
-              <h2 class="text-3xl font-bold mb-3 leading-tight">
-                인증회원들의<br/>
+              <h2 class="text-3xl font-bold leading-tight">
+                인증회원들의<br />
                 <span class="text-purple-400">인생 영화</span>
               </h2>
-              <p class="text-gray-400 text-sm mb-6">
-                검증된 시네필들이 선택한<br/>
-                절대 실패 없는 명작 컬렉션.
-              </p>
             </div>
 
-            <div class="relative h-40 mt-4 flex items-center justify-center">
-              <div class="absolute w-24 h-32 bg-gray-800 rounded-lg transform -rotate-12 translate-x-[-40px] border border-white/10 shadow-xl z-10 group-hover:-rotate-[15deg] group-hover:translate-x-[-50px] transition-all duration-500"></div>
-              <div class="absolute w-24 h-32 bg-gray-700 rounded-lg transform rotate-0 scale-110 border border-white/10 shadow-2xl z-20"></div>
-              <div class="absolute w-24 h-32 bg-gray-800 rounded-lg transform rotate-12 translate-x-[40px] border border-white/10 shadow-xl z-10 group-hover:rotate-[15deg] group-hover:translate-x-[50px] transition-all duration-500"></div>
-            </div>
-
-            <button class="mt-8 w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
-              컬렉션 구경하기
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-            </button>
-           </div>
+          </div>
         </div>
 
+
+
+        
         <router-link
-          to="/community"
-          class="md:col-span-12 group relative bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500 block"
+        to="/community"
+        class="md:col-span-12 group relative bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500 block"
         >
           <div class="absolute inset-0 bg-gradient-to-r from-green-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -238,6 +257,11 @@ onMounted(async () => {
         : 'https://via.placeholder.com/500x750?text=No+Image',
       is_liked: movie.is_liked || false 
     }));
+    // 2️⃣ 🔥 인증회원 인생영화
+    const lifeRes = await axios.get(
+      'http://127.0.0.1:8000/movies/curation/life-movies/'
+    );
+    lifeMovies.value = lifeRes.data;
   } catch (err) {
     console.error('Failed to fetch movies:', err);
     error.value = '영화 목록을 불러오는 데 실패했습니다.';
@@ -284,6 +308,25 @@ const onMovieClick = (movieId: number) => {
 const goToFullExplore = () => {
   router.push({ name: 'ExploreFull' });
 };
+
+interface LifeMovie {
+  user: {
+    id: number;
+    username: string;
+  };
+  movie: {
+    id: number;
+    title: string;
+    poster_path: string;
+  };
+  review?: {
+    rating: number;
+    comment: string;
+  };
+}
+
+const lifeMovies = ref<LifeMovie[]>([]);
+
 </script>
 
 <style scoped>

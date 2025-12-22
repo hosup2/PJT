@@ -143,3 +143,12 @@ class HeroMovie(models.Model):
     def __str__(self):
         return f"{self.priority}. {self.movie.title}"
 
+# movies/models.py
+class CuratedLifeMovie(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    priority = models.PositiveIntegerField(default=0)  # 노출 순서
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["priority"]
