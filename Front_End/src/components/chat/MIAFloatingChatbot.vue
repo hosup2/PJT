@@ -593,14 +593,19 @@ const sendFeedback = async (
       }
     );
 
-    // UX용 메시지 (선택)
+    // 🔥 여기서 바로 UI 반영
+    if (feedback === 'dislike') {
+      removeMovieFromUI(movieId);
+    }
+
     messages.value.push({
       role: 'assistant',
       content:
         feedback === 'like'
           ? '👍 반영했어요! 비슷한 취향으로 추천할게요.'
-          : '👎 알겠어요! 이런 스타일은 줄일게요.',
+          : '👎 알겠어요! 이 영화는 추천에서 제외할게요.',
     });
+
   } catch {
     messages.value.push({
       role: 'assistant',
@@ -608,6 +613,21 @@ const sendFeedback = async (
     });
   }
 };
+
+const removeMovieFromUI = (movieId: number) => {
+  // 마지막 assistant 메시지 기준으로 제거
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const msg = messages.value[i];
+
+    if (msg.role === 'assistant' && msg.movies) {
+      msg.movies = msg.movies.filter(
+        (m) => m.movie_id !== movieId
+      );
+      break;
+    }
+  }
+};
+
 
 const resetChatbot = () => {
   sessionId.value = null;

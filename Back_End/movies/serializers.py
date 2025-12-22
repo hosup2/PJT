@@ -2,13 +2,27 @@ from rest_framework import serializers
 from django.db.models import Avg
 from users.models import FavoriteMovie
 from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
-from .models import Actor, Director
-
+from .models import Actor, Director, Cast
 
 class ActorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Actor
-        fields = ("tmdb_id", "name", "profile_path")
+        fields = [
+            "tmdb_id",
+            "name",
+            "profile_path",
+        ]
+
+class CastSerializer(serializers.ModelSerializer):
+    actor = ActorSerializer(read_only=True)
+
+    class Meta:
+        model = Cast
+        fields = [
+            "actor",        # ⭐ 배우 정보
+            "character",    # ⭐ 배역
+            "order",
+        ]
 
 
 class DirectorSerializer(serializers.ModelSerializer):
@@ -85,7 +99,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
     comments = MovieRatingSerializer(source='ratings', many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
     director = DirectorSerializer(read_only=True)  # ← 추가
-    actors = ActorSerializer(read_only=True, many=True)  # ← 추가
+    casts = CastSerializer(read_only=True, many=True)
 
     class Meta:
         model = Movie
@@ -106,7 +120,7 @@ class MovieResponseSerializer(serializers.ModelSerializer):
             "comments",
             "is_liked",
             "director",  # ← 추가
-            "actors",  # ← 추가
+            "casts",
         ]
 
     def get_genres(self, obj):

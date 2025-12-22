@@ -8,7 +8,6 @@ class Genre(models.Model):
     def __str__(self):
         return self.name
 
-
 class Actor(models.Model):
     tmdb_id = models.IntegerField(unique=True)
     name = models.CharField(max_length=100)
@@ -58,6 +57,30 @@ class Movie(models.Model):
         blank=True,
         related_name="movies",
     )
+
+class Cast(models.Model):
+    movie = models.ForeignKey(
+        Movie,
+        related_name="casts",
+        on_delete=models.CASCADE
+    )
+    actor = models.ForeignKey(      # ⭐ FK
+        Actor,
+        null=True,                  # ⭐ 중요
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="cast_roles"
+    )
+    
+    character = models.CharField(max_length=100, blank=True)
+    order = models.IntegerField(default=99)
+
+    class Meta:
+        ordering = ["order"]
+
+    def __str__(self):
+        return f"{self.name} as {self.character}"
+
 
 class FeaturedMovie(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name="featured_items")

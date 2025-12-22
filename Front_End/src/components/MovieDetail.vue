@@ -24,8 +24,14 @@
         <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent"></div>
       </div>
       
-      <div class="relative h-full flex items-center px-8 gap-8 max-w-7xl mx-auto">
-        <div class="flex-1 z-10 max-w-2xl">
+      <div class="relative h-full flex items-center px-6 md:px-12 gap-10 max-w-7xl mx-auto">
+
+        <div
+          class="flex-1 z-10 max-w-2xl
+                p-6 md:p-8
+                bg-black/40 backdrop-blur-md
+                rounded-2xl"
+        >
           <div class="flex items-center gap-4 mb-2">
             <h1 class="text-5xl font-bold">{{ movie.title }}</h1>
             <button
@@ -58,6 +64,16 @@
           </div>
           <p v-if="movie.original_title !== movie.title" class="text-xl text-gray-300 mb-4">
             {{ movie.original_title }}
+          </p>
+
+          <p
+            v-if="movie.director"
+            class="text-sm text-gray-300 mb-4"
+          >
+            <span class="text-gray-400"></span>
+            <span class="text-xl text-gray-300 mb-4">
+              {{ movie.director.name }}
+            </span>
           </p>
 
           <div class="flex flex-wrap items-center gap-4 mb-4 text-gray-300">
@@ -121,25 +137,25 @@
         <div class="mb-8 bg-gray-900 rounded-lg p-6">
           <h2 class="text-xl font-semibold mb-3">출연진</h2>
 
-          <div v-if="movie.actors && movie.actors.length">
+          <div v-if="movie.casts && movie.casts.length">
             <div class="flex flex-wrap gap-4">
               <div
-                v-for="actor in movie.actors"
-                :key="actor.tmdb_id"
-                @click="openPersonDetail(actor)"
+                v-for="cast in movie.casts"
+                :key="cast.actor.tmdb_id"
+                @click="openPersonDetail(cast.actor)"
                 class="w-24 bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700 transition-colors cursor-pointer"
               >
                 <img
-                  :src="getProfileUrl(actor.profile_path)"
-                  :alt="actor.name"
+                  :src="getProfileUrl(cast.actor.profile_path)"
+                  :alt="cast.actor.name"
                   class="w-full h-36 rounded-lg object-cover bg-gray-700 mb-2"
                 />
                 <div class="text-left px-1">
                   <p class="text-sm font-bold text-gray-100 truncate">
-                    {{ actor.name }}
+                    {{ cast.actor.name }}
                   </p>
                   <p class="text-xs text-gray-400 mt-0.5 truncate">
-                    {{ actor.character ? actor.character + ' 역' : '출연' }}
+                    {{ cast.character ? cast.character + ' 역' : '출연' }}
                   </p>
                 </div>
               </div>
@@ -212,11 +228,16 @@ import RatingDistributionChart from './RatingDistributionChart.vue';
 import CommentSection from './CommentSection.vue';
 
 // --- Interfaces ---
-interface Person {
+interface Actor {
   tmdb_id: number;
   name: string;
   profile_path?: string | null;
-  character?: string;
+}
+
+interface Cast {
+  actor: Actor;        // ⭐ 핵심
+  character: string;
+  order: number;
 }
 
 interface Movie {
@@ -237,8 +258,8 @@ interface Movie {
   tmdb_rating: number;
   imdb_rating: number;
   comments: Comment[];
-  director?: Person | null;
-  actors?: Person[];
+  director?: Actor | null;
+  casts?: Cast[];   // ⭐ 핵심 변경
   user_data?: {
     rating: number;
     comment: string;
@@ -293,7 +314,8 @@ const fetchMovieData = async () => {
         _: new Date().getTime(),
       },
     });
-    
+    console.log('movie data:', response.data);
+
     // 완전히 새로운 객체로 할당
     movie.value = JSON.parse(JSON.stringify(response.data));
 
@@ -475,7 +497,7 @@ const movieStats = computed(() => {
   };
 });
 
-const openPersonDetail = (person: Person) => {
+const openPersonDetail = (person: Cast) => {
   if (!person || !person.tmdb_id) return;
   const url = `https://www.themoviedb.org/person/${person.tmdb_id}?language=ko-KR`;
   window.open(url, '_blank');

@@ -17,13 +17,17 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("🎬 TMDB import started"))
 
         total_saved = 0
+        page = 189
+        total_pages = 189  # 초기값
 
-        for page in range(1, 501):
+        while page <= total_pages:
             self.stdout.write(f"📄 Discover page {page}")
 
             data = self.fetch_discover(page)
             if not data or "results" not in data:
                 break
+
+            total_pages = data.get("total_pages", 1)
 
             for item in data["results"]:
                 saved = self.save_movie_from_discover(item)
@@ -35,8 +39,7 @@ class Command(BaseCommand):
 
                 time.sleep(0.05)
 
-            if page >= data.get("total_pages", 1):
-                break
+            page += 1
 
         self.stdout.write(self.style.SUCCESS(
             f"✅ Import finished. Total saved: {total_saved}"
@@ -57,23 +60,48 @@ class Command(BaseCommand):
         return r.json()
 
     def save_movie_from_discover(self, item):
+        # 중복 방지
         if Movie.objects.filter(tmdb_id=item["id"]).exists():
             return False
 
-        if item.get("release_date"):
-            if date.fromisoformat(item["release_date"]) < date.today():
-                return False
+        # 🔞 성인 영화 필터
+        if item.get("adult"):
+            return False
 
+        # 🇰🇷 국내 제목 없음
+        if not item.get("title"):
+            return False
+
+        # 📝 줄거리 없음
+        if not item.get("overview"):
+            return False
+
+        # 🖼️ 이미지 부족
+        if not item.get("poster_path") or not item.get("backdrop_path"):
+            return False
+
+        # 🗑️ 저품질 필터
+        if (item.get("vote_average") or 0) < 5.5:
+            return False
+
+        if (item.get("vote_count") or 0) < 50:
+            return False
+
+        # ⏳ 이미 개봉한 영화 제외 (선택)
+        # if item.get("release_date"):
+        #     if date.fromisoformat(item["release_date"]) < date.today():
+        #         return False
+
+        # ✅ 저장
         movie = Movie.objects.create(
             tmdb_id=item["id"],
             title=item.get("title"),
             original_title=item.get("original_title"),
-            overview=item.get("overview", ""),
+            overview=item.get("overview"),
             release_date=item.get("release_date") or None,
             tmdb_rating=item.get("vote_average"),
             poster_path=item.get("poster_path"),
             backdrops=item.get("backdrop_path"),
-            is_detail_fetched=False,
         )
 
         for gid in item.get("genre_ids", []):
@@ -81,3 +109,4 @@ class Command(BaseCommand):
             movie.genres.add(genre)
 
         return True
+

@@ -11,7 +11,7 @@ from .models import Movie, Genre, FeaturedMovie, MovieRating, HeroMovie
 from .serializers import MovieResponseSerializer, FeaturedMovieSerializer
 from .serializers import MovieRatingSerializer, HeroMovieSerializer
 
-from .models import Actor, Director
+from .models import Actor, Director, Cast
 from .serializers import MovieDetailSerializer
 from .tmdb import fetch_movie_credits
 
@@ -427,23 +427,24 @@ def fetch_tmdb_movie_detail(tmdb_id):
         res = requests.get(url, params=params)
         return res.json()
 
-
-
 class MovieDetailView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, movie_id):
         movie = get_object_or_404(Movie, id=movie_id)
 
-        # DB에 director/actors 없으면 TMDB에서 가져오기
-        if movie.director is None or not movie.actors.exists():
+        # ⭐ cast 정보 없으면 TMDB에서 가져오기
+        if not movie.casts.exists():
             try:
                 credits = fetch_movie_credits(movie.tmdb_id, language="ko-KR")
-                
-                crew = credits.get("crew", [])
-                cast = credits.get("cast", [])
 
-                director_item = next((c for c in crew if c.get("job") == "Director"), None)
+                # 감독
+                crew = credits.get("crew", [])
+                director_item = next(
+                    (c for c in crew if c.get("job") == "Director"),
+                    None
+                )
+
                 if director_item:
                     director, _ = Director.objects.get_or_create(
                         tmdb_id=director_item["id"],
@@ -453,30 +454,46 @@ class MovieDetailView(APIView):
                         },
                     )
                     movie.director = director
+                    movie.save(update_fields=["director"])
+                    
+                casts = credits.get("cast", [])
 
-                actor_objs = []
-                for item in cast[:5]:
+                # 출연진 + 배역
+                for item in casts[:10]:
                     actor, _ = Actor.objects.get_or_create(
                         tmdb_id=item["id"],
                         defaults={
                             "name": item.get("name", ""),
                             "profile_path": item.get("profile_path"),
-                        },
+                        }
                     )
-                    actor_objs.append(actor)
 
-                movie.save()
-                if actor_objs:
-                    movie.actors.set(actor_objs)
-                    
+                    Cast.objects.get_or_create(
+                        movie=movie,
+                        actor=actor,
+                        defaults={
+                            "character": item.get("character", ""),
+                            "order": item.get("order", 0),
+                        }
+                    )
+
+
             except Exception as e:
-                print(f"TMDB credits fetch failed: {e}")
+                print("TMDB credits fetch failed:", e)
 
-        # ⭐ 중요: MovieResponseSerializer 사용 (comments 포함)
-        movie = Movie.objects.prefetch_related('ratings__user', 'actors', 'genres').get(id=movie_id)
-        serializer = MovieResponseSerializer(movie, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    
+        # ⭐ serializer에서 casts 내려줌
+        movie = Movie.objects.prefetch_related(
+            "casts__actor",
+            "genres",
+            "ratings__user",
+        ).get(id=movie_id)
+
+        serializer = MovieResponseSerializer(
+            movie,
+            context={"request": request}
+        )
+        return Response(serializer.data)
+
     
 # class MovieDetailView(APIView):
 #     permission_classes = [AllowAny]

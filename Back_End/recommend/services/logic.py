@@ -118,6 +118,7 @@ def run_chatbot(message: str, session):
             "genres": extract_genres_from_text(message),
             "query": message,
             "feedback_map": feedback_map,   # ⭐ 이 줄
+            "context_user": session.user,
         }
 
         scored = [{"movie": m, "score": score_movie(m, context)} for m in candidates]
