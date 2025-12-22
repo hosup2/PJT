@@ -1,38 +1,43 @@
 <template>
-  <div>
-    <div class="mb-8">
-      <p class="text-gray-400">최근 가장 많이 평가된 영화들</p>
+  <div class="grid-container">
+    <div class="grid-header">
+      <p class="grid-subtitle">최근 가장 많이 평가된 영화들</p>
     </div>
     
-    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+    <div class="cinema-grid">
       <button
         v-for="movie in movies"
         :key="movie.id"
         @click="navigateToMovie(movie.id)"
-        class="group cursor-pointer text-left"
+        class="movie-card"
       >
-        <div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 bg-gray-800">
+        <div class="poster-wrapper">
           <img
             :src="getImageUrl(movie.poster_path)"
             :alt="movie.title"
-            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            class="poster-image"
           />
-          <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-            <div class="absolute bottom-3 left-3 right-3">
-              <div class="flex items-center gap-1 text-yellow-400 mb-1">
-                <Star class="w-4 h-4 fill-yellow-400" />
-                <span class="text-sm">{{ movie.tmdb_rating.toFixed(1) }}</span>
+          <div class="poster-overlay">
+            <div class="overlay-content">
+              <div class="rating-badge">
+                <Star class="icon-star" />
+                <span class="rating-score">{{ movie.tmdb_rating ? movie.tmdb_rating.toFixed(1) : '0.0' }}</span>
               </div>
-              <p class="text-xs text-gray-300">{{ movie.stats.rating_count.toLocaleString() }}명 평가</p>
+              <p class="rating-count" v-if="movie.stats">
+                {{ movie.stats.rating_count.toLocaleString() }}명 평가
+              </p>
             </div>
           </div>
         </div>
-        <h3 class="line-clamp-2 group-hover:text-purple-400 transition-colors">
-          {{ movie.title }}
-        </h3>
-        <p class="text-sm text-gray-500 mt-1">
-          {{ new Date(movie.release_date).getFullYear() }}
-        </p>
+
+        <div class="movie-info">
+          <h3 class="movie-title">
+            {{ movie.title }}
+          </h3>
+          <p class="movie-year">
+            {{ new Date(movie.release_date).getFullYear() }}
+          </p>
+        </div>
       </button>
     </div>
   </div>
@@ -42,12 +47,14 @@
 import { useRouter } from 'vue-router';
 import { Star } from 'lucide-vue-next';
 
+// 기존 인터페이스 유지
 interface Movie {
   id: number;
   title: string;
   poster_path: string;
   release_date: string;
-  stats: {
+  tmdb_rating?: number; // 상위 컴포넌트 데이터 구조 고려하여 optional 처리
+  stats?: {
     avg_rating: number;
     rating_count: number;
   };
@@ -70,3 +77,173 @@ const getImageUrl = (path: string | null) => {
   return `https://image.tmdb.org/t/p/w500${path}`;
 };
 </script>
+
+<style scoped>
+/* 🎨 MIA Cinema Grid Style */
+.grid-container {
+  width: 100%;
+}
+
+.grid-header {
+  margin-bottom: 2rem;
+}
+
+.grid-subtitle {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+
+/* GRID LAYOUT */
+.cinema-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2rem;
+}
+
+/* CARD ITEM */
+.movie-card {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.3s ease;
+  width: 100%;
+}
+
+.movie-card:hover {
+  transform: translateY(-8px);
+}
+
+/* POSTER */
+.poster-wrapper {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.poster-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.movie-card:hover .poster-image {
+  transform: scale(1.05);
+}
+
+/* OVERLAY */
+.poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.4) 40%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: flex;
+  align-items: flex-end;
+  padding: 1rem;
+}
+
+.movie-card:hover .poster-overlay {
+  opacity: 1;
+}
+
+.overlay-content {
+  width: 100%;
+}
+
+.rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #fbbf24; /* Yellow */
+  margin-bottom: 0.25rem;
+}
+
+.icon-star {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.rating-score {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #fbbf24;
+}
+
+.rating-count {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* INFO TEXT */
+.movie-info {
+  padding: 0 0.25rem;
+}
+
+.movie-title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: color 0.2s ease;
+}
+
+.movie-card:hover .movie-title {
+  color: #8b5cf6; /* Highlight Purple */
+}
+
+.movie-year {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+}
+
+/* RESPONSIVE */
+@media {
+  .cinema-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .cinema-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .cinema-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cinema-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
+</style>

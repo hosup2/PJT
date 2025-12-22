@@ -1,219 +1,198 @@
 <template>
-  <div v-if="loading" class="text-center p-12">
-    <p>Loading...</p>
-  </div>
-  <div v-else-if="error" class="text-center p-12 text-red-400">
-    <p>{{ error }}</p>
-  </div>
-  <div v-else-if="movie" class="pb-12">
-    <button
-      @click="router.back()"
-      class="flex items-center gap-2 text-gray-400 hover:text-gray-200 transition-colors mb-6"
-    >
-      <ArrowLeft class="w-5 h-5" />
-      <span>뒤로가기</span>
-    </button>
-
-    <div class="relative w-full h-[500px] mb-12 rounded-lg overflow-hidden">
-      <div class="absolute inset-0">
-        <img
-          :src="backdropUrl"
-          :alt="movie.title"
-          class="w-full h-full object-cover"
-        />
-        <div class="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-transparent"></div>
-      </div>
-      
-      <div class="relative h-full flex items-center px-6 md:px-12 gap-10 max-w-7xl mx-auto">
-
-        <div
-          class="flex-1 z-10 max-w-2xl
-                p-6 md:p-8
-                bg-black/40 backdrop-blur-md
-                rounded-2xl"
-        >
-          <div class="flex items-center gap-4 mb-2">
-            <h1 class="text-5xl font-bold">{{ movie.title }}</h1>
-            <button
-              @click="handleLikeMovie"
-              :disabled="!isLoggedIn"
-              :class="[
-                'p-3 rounded-full transition-all',
-                isMovieLiked 
-                  ? 'bg-red-500/20 hover:bg-red-500/30' 
-                  : 'bg-gray-800/80 hover:bg-red-500/20',
-                isLoggedIn ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-              ]"
-              :title="isMovieLiked ? '찜 취소' : '찜하기'"
-            >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="w-8 h-8 transition-all"
-                stroke-width="2"
-              >
-                <path 
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  stroke-linecap="round" 
-                  stroke-linejoin="round"
-                  :stroke="isMovieLiked ? '#ef4444' : '#ffffff'"
-                  :fill="isMovieLiked ? '#ef4444' : 'none'"
-                />
-              </svg>
-            </button>
-          </div>
-          <p v-if="movie.original_title !== movie.title" class="text-xl text-gray-300 mb-4">
-            {{ movie.original_title }}
-          </p>
-
-          <p
-            v-if="movie.director"
-            class="text-sm text-gray-300 mb-4"
-          >
-            <span class="text-gray-400"></span>
-            <span class="text-xl text-gray-300 mb-4">
-              {{ movie.director.name }}
-            </span>
-          </p>
-
-          <div class="flex flex-wrap items-center gap-4 mb-4 text-gray-300">
-            <div class="flex items-center gap-2">
-              <Calendar class="w-4 h-4" />
-              <span>{{ formatDate(movie.release_date) }}</span>
-            </div>
-            <div class="flex items-center gap-2">
-              <Clock class="w-4 h-4" />
-              <span>{{ movie.runtime }}분</span>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2 mb-6">
-            <span
-              v-for="genre in movie.genres"
-              :key="genre"
-              class="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-sm"
-            >
-              {{ genre }}
-            </span>
-          </div>
-
-          <div class="flex items-center gap-6 text-white">
-            <div class="flex items-center gap-2">
-              <Star class="w-8 h-8 text-yellow-400 fill-yellow-400" />
-              <span class="text-4xl font-bold">{{ movieStats.avg_rating.toFixed(1) }}</span>
-            </div>
-            
-            <div v-if="movie.tmdb_rating" class="border-l border-white/30 pl-6">
-              <p class="text-sm text-gray-300 mb-1">TMDb</p>
-              <p class="text-2xl">{{ movie.tmdb_rating.toFixed(1) }}/10</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="hidden md:block z-10">
-          <div
-            class="rounded-lg overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300"
-            style="width: 220px; height: 330px;"
-          >
-            <img
-              :src="posterUrl"
-              :alt="movie.title"
-              class="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-      </div>
+  <div class="detail-container">
+    
+    <div v-if="loading" class="state-minimal">
+      <div class="spinner-minimal"></div>
+      <p>영화 정보를 불러오는 중입니다...</p>
     </div>
 
-    <div class="grid md:grid-cols-[2fr,1fr] gap-8 max-w-7xl mx-auto px-4">
-      <div>
-        <div class="mb-8 bg-gray-900 rounded-lg p-6">
-          <h2 class="text-xl font-semibold mb-3">줄거리</h2>
-          <p class="text-gray-300 leading-relaxed text-sm">
-            {{ movie.overview }}
-          </p>
+    <div v-else-if="error" class="state-minimal error">
+      <p>{{ error }}</p>
+    </div>
+
+    <div v-else-if="movie" class="content-wrapper">
+      
+      <section class="hero-section">
+        <div class="hero-backdrop">
+          <img :src="backdropUrl" :alt="movie.title" />
+          <div class="hero-overlay"></div>
         </div>
 
-        <div class="mb-8 bg-gray-900 rounded-lg p-6">
-          <h2 class="text-xl font-semibold mb-3">출연진</h2>
+        <div class="hero-inner">
+          <button @click="router.back()" class="btn-back-minimal">
+            <ArrowLeft class="icon-sm" />
+            <span>뒤로가기</span>
+          </button>
 
-          <div v-if="movie.casts && movie.casts.length">
-            <div class="flex flex-wrap gap-4">
-              <div
-                v-for="cast in movie.casts"
-                :key="cast.actor.tmdb_id"
-                @click="openPersonDetail(cast.actor)"
-                class="w-24 bg-gray-800/50 rounded-lg p-2 hover:bg-gray-700 transition-colors cursor-pointer"
-              >
-                <img
-                  :src="getProfileUrl(cast.actor.profile_path)"
-                  :alt="cast.actor.name"
-                  class="w-full h-36 rounded-lg object-cover bg-gray-700 mb-2"
-                />
-                <div class="text-left px-1">
-                  <p class="text-sm font-bold text-gray-100 truncate">
-                    {{ cast.actor.name }}
-                  </p>
-                  <p class="text-xs text-gray-400 mt-0.5 truncate">
-                    {{ cast.character ? cast.character + ' 역' : '출연' }}
-                  </p>
+          <div class="hero-content">
+            <div class="hero-text">
+              <div class="title-row">
+                <h1 class="movie-title">{{ movie.title }}</h1>
+                <button
+                  @click="handleLikeMovie"
+                  :disabled="!isLoggedIn"
+                  :class="['btn-like-hero', { active: isMovieLiked, disabled: !isLoggedIn }]"
+                  :title="isMovieLiked ? '찜 취소' : '찜하기'"
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    class="icon-like"
+                    stroke-width="2"
+                  >
+                    <path 
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      stroke-linecap="round" 
+                      stroke-linejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <p v-if="movie.original_title !== movie.title" class="original-title">
+                {{ movie.original_title }}
+              </p>
+
+              <div class="meta-row">
+                <div v-if="movie.director" class="director-info">
+                  <span class="label">DIRECTOR</span>
+                  <span class="value">{{ movie.director.name }}</span>
                 </div>
+                
+                <div class="info-divider"></div>
+
+                <div class="basic-info">
+                  <div class="info-item">
+                    <Calendar class="icon-xs" />
+                    <span>{{ formatDate(movie.release_date) }}</span>
+                  </div>
+                  <div class="info-item">
+                    <Clock class="icon-xs" />
+                    <span>{{ movie.runtime }}분</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="genre-list">
+                <span
+                  v-for="genre in movie.genres"
+                  :key="genre"
+                  class="genre-tag"
+                >
+                  {{ genre }}
+                </span>
+              </div>
+
+              <div class="rating-row">
+                <div class="main-rating">
+                  <Star class="icon-lg star-filled" />
+                  <span class="score">{{ movieStats.avg_rating.toFixed(1) }}</span>
+                </div>
+                
+                <div v-if="movie.tmdb_rating" class="sub-rating">
+                  <span class="label">TMDb</span>
+                  <span class="value">{{ movie.tmdb_rating.toFixed(1) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="hero-poster">
+              <div class="poster-frame">
+                <img :src="posterUrl" :alt="movie.title" />
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <div class="mb-8">
-          <RatingDistributionChart 
-            :movie-id="parseInt(id)"
-            :distribution="movieStats.rating_distribution"
-            :total-count="movieStats.rating_count"
-          />
-        </div>
+      <main class="detail-grid">
+        
+        <div class="left-column">
+          
+          <section class="section-box">
+            <h2 class="section-title">SYNOPSIS</h2>
+            <p class="plot-text">{{ movie.overview }}</p>
+          </section>
 
-        <div>
-          <h2 class="text-2xl font-bold mb-6">리뷰 ({{ comments.length }})</h2>
-          <CommentSection
-            :key="refreshKey"
-            :comments="comments"
-            :is-logged-in="isLoggedIn"
-            :rating="userRating"
-            @submit-comment="handleSubmitComment"
-            @edit-comment="handleEditComment"
-            @delete-comment="handleDeleteComment"
-            @like-comment="handleLikeComment"
-            @navigate-to-user="handleNavigateToUser"
-            @open-auth="emit('openAuth')"
-            @rating-change="handleRatingChange"
-          />
-        </div>
-      </div>
-
-      <div>
-        <div class="bg-gray-900 rounded-lg p-6 sticky top-24">
-          <div class="mb-6 pb-6 border-b border-gray-800">
-            <div class="flex items-center gap-3 mb-2">
-              <Star class="w-6 h-6 text-yellow-400 fill-yellow-400" />
-              <span class="text-3xl font-bold">{{ movieStats.avg_rating.toFixed(1) }}</span>
-            </div>
-            <p class="text-sm text-gray-400">
-              {{ movieStats.rating_count.toLocaleString() }}명 평가
-            </p>
-          </div>
-
-          <div class="mb-6 pb-6 border-b border-gray-800">
-            <p class="text-sm text-gray-400 mb-3">이 영화를 평가해주세요</p>
-            <div v-if="!isLoggedIn">
-              <button
-                @click="emit('openAuth')"
-                class="w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+          <section class="section-box">
+            <h2 class="section-title">CAST</h2>
+            <div v-if="movie.casts && movie.casts.length" class="cast-grid">
+              <div
+                v-for="cast in movie.casts"
+                :key="cast.actor.tmdb_id"
+                @click="openPersonDetail(cast.actor)"
+                class="cast-card"
               >
-                로그인하고 평가하기
-              </button>
+                <div class="cast-photo">
+                  <img
+                    :src="getProfileUrl(cast.actor.profile_path)"
+                    :alt="cast.actor.name"
+                  />
+                </div>
+                <div class="cast-info">
+                  <p class="actor-name">{{ cast.actor.name }}</p>
+                  <p class="character-name">{{ cast.character ? cast.character : '출연' }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="section-box">
+            <h2 class="section-title">RATING DISTRIBUTION</h2>
+            <div class="chart-container">
+              <RatingDistributionChart 
+                :movie-id="parseInt(id)"
+                :distribution="movieStats.rating_distribution"
+                :total-count="movieStats.rating_count"
+              />
+            </div>
+          </section>
+
+          <section class="section-box">
+            <h2 class="section-title">REVIEWS <span class="count">({{ comments.length }})</span></h2>
+            <CommentSection
+              :key="refreshKey"
+              :comments="comments"
+              :is-logged-in="isLoggedIn"
+              :rating="userRating"
+              @submit-comment="handleSubmitComment"
+              @edit-comment="handleEditComment"
+              @delete-comment="handleDeleteComment"
+              @like-comment="handleLikeComment"
+              @navigate-to-user="handleNavigateToUser"
+              @open-auth="emit('openAuth')"
+              @rating-change="handleRatingChange"
+            />
+          </section>
+        </div>
+
+        <aside class="right-column">
+          <div class="sticky-sidebar">
+            <div class="rating-summary">
+              <div class="summary-header">
+                <div class="summary-score">
+                  <Star class="icon-md star-filled" />
+                  <span class="score-text">{{ movieStats.avg_rating.toFixed(1) }}</span>
+                </div>
+                <p class="summary-count">{{ movieStats.rating_count.toLocaleString() }}명 참여</p>
+              </div>
+
+              <div class="summary-action">
+                <p class="action-label">이 영화를 평가해주세요</p>
+                <div v-if="!isLoggedIn">
+                  <button
+                    @click="emit('openAuth')"
+                    class="btn-primary-full"
+                  >
+                    로그인하고 평가하기
+                  </button>
+                </div>
+                </div>
             </div>
           </div>
-        </div>
-      </div>
+        </aside>
+
+      </main>
     </div>
   </div>
 </template>
@@ -227,7 +206,7 @@ import StarRating from './StarRating.vue';
 import RatingDistributionChart from './RatingDistributionChart.vue';
 import CommentSection from './CommentSection.vue';
 
-// --- Interfaces ---
+// --- Interfaces (Preserved) ---
 interface Actor {
   tmdb_id: number;
   name: string;
@@ -235,7 +214,7 @@ interface Actor {
 }
 
 interface Cast {
-  actor: Actor;        // ⭐ 핵심
+  actor: Actor;
   character: string;
   order: number;
 }
@@ -259,7 +238,7 @@ interface Movie {
   imdb_rating: number;
   comments: Comment[];
   director?: Actor | null;
-  casts?: Cast[];   // ⭐ 핵심 변경
+  casts?: Cast[];
   user_data?: {
     rating: number;
     comment: string;
@@ -300,9 +279,8 @@ const router = useRouter();
 const movie = ref<Movie | null>(null);
 const loading = ref(true);
 const error = ref<string | null>(null);
-const refreshKey = ref(0); // 강제 리렌더링용
+const refreshKey = ref(0);
 
-// Injected global state
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
 const currentUser = inject<Ref<User | null>>('currentUser', ref(null));
 
@@ -310,13 +288,8 @@ const currentUser = inject<Ref<User | null>>('currentUser', ref(null));
 const fetchMovieData = async () => {
   try {
     const response = await axios.get(`http://127.0.0.1:8000/movies/${props.id}/`, {
-      params: {
-        _: new Date().getTime(),
-      },
+      params: { _: new Date().getTime() },
     });
-    console.log('movie data:', response.data);
-
-    // 완전히 새로운 객체로 할당
     movie.value = JSON.parse(JSON.stringify(response.data));
 
     if (movie.value?.user_data) {
@@ -324,10 +297,7 @@ const fetchMovieData = async () => {
       commentText.value = movie.value.user_data.comment || '';
       isMovieLiked.value = movie.value.user_data.is_liked;
     }
-    
-    // 강제 리렌더링
     refreshKey.value++;
-    
   } catch (err) {
     console.error(`Failed to fetch movie ${props.id}:`, err);
     error.value = '영화 정보를 불러오는 데 실패했습니다.';
@@ -340,7 +310,7 @@ onMounted(async () => {
   await fetchMovieData();
 });
 
-// --- Computed Properties ---
+// --- Computed ---
 const comments = computed(() => {
   const _ = refreshKey.value;
   return movie.value?.comments || [];
@@ -360,7 +330,7 @@ const backdropUrl = computed(() => {
   return movie.value?.backdrops || posterUrl.value;
 });
 
-// --- Event Handlers ---
+// --- Logic ---
 const userRating = ref(0);
 const commentText = ref('');
 const isMovieLiked = ref(false);
@@ -368,22 +338,16 @@ const movieLikesCount = ref(0);
 
 const saveActivity = async () => {
   if (!isLoggedIn.value) return;
-
   try {
     const payload = {
       rating: userRating.value || null,
       comment: commentText.value,
     };
-    
     await axios.post(`http://127.0.0.1:8000/movies/${props.id}/rating/`, payload);
-    
     alert('리뷰가 저장되었습니다.');
-
     await fetchMovieData();
-    
     commentText.value = '';
     userRating.value = 0;
-    
     emit('activity-updated');
   } catch (err) {
     console.error('Failed to save activity:', err);
@@ -398,9 +362,7 @@ const handleRatingChange = (rating: number) => {
 
 const handleLikeMovie = async () => {
   if (!isLoggedIn.value) return emit('openAuth');
-  
   const originalLikedStatus = isMovieLiked.value;
-
   isMovieLiked.value = !isMovieLiked.value;
   movieLikesCount.value += isMovieLiked.value ? 1 : -1;
 
@@ -426,19 +388,9 @@ const handleSubmitComment = (content: string, spoiler: boolean) => {
 
 const handleEditComment = async (commentId: number, content: string, rating: number, spoiler: boolean) => {
   if (!isLoggedIn.value) return;
-
   try {
-    const payload = {
-      rating: rating,
-      comment: content,
-      spoiler: spoiler,
-    };
-    
-    await axios.put(
-      `http://127.0.0.1:8000/movies/${props.id}/ratings/${commentId}/`,
-      payload
-    );
-    
+    const payload = { rating, comment: content, spoiler };
+    await axios.put(`http://127.0.0.1:8000/movies/${props.id}/ratings/${commentId}/`, payload);
     alert('리뷰가 수정되었습니다.');
     await fetchMovieData();
     emit('activity-updated');
@@ -450,10 +402,8 @@ const handleEditComment = async (commentId: number, content: string, rating: num
 
 const handleDeleteComment = async (commentId: number) => {
   if (!isLoggedIn.value) return;
-
   try {
     await axios.delete(`http://127.0.0.1:8000/movies/${props.id}/ratings/${commentId}/`);
-    
     alert('리뷰가 삭제되었습니다.');
     await fetchMovieData();
     emit('activity-updated');
@@ -481,9 +431,7 @@ const formatDate = (dateStr: string) => {
 };
 
 const getProfileUrl = (path?: string | null) => {
-  if (!path) {
-    return 'https://via.placeholder.com/185x278?text=No+Image';
-  }
+  if (!path) return 'https://via.placeholder.com/185x278?text=No+Image';
   if (path.startsWith('http')) return path;
   return `https://image.tmdb.org/t/p/w185${path}`;
 };
@@ -497,9 +445,528 @@ const movieStats = computed(() => {
   };
 });
 
-const openPersonDetail = (person: Cast) => {
+const openPersonDetail = (person: Cast['actor']) => {
   if (!person || !person.tmdb_id) return;
   const url = `https://www.themoviedb.org/person/${person.tmdb_id}?language=ko-KR`;
   window.open(url, '_blank');
 };
 </script>
+
+<style scoped>
+/* 🎨 MIA Cinema - Detail Page */
+.detail-container {
+  min-height: 100vh;
+  background: #0a0b0f;
+  color: #ffffff;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  padding-bottom: 5rem;
+}
+
+/* ============ STATE ============ */
+.state-minimal {
+  padding: 8rem 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.state-minimal.error {
+  color: #f87171;
+}
+
+.spinner-minimal {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============ HERO SECTION ============ */
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: 80vh; /* Cinematic Height */
+  min-height: 600px;
+  max-height: 900px;
+  overflow: hidden;
+}
+
+.hero-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.hero-backdrop img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.6;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 11, 15, 0.2) 0%,
+    rgba(10, 11, 15, 0.8) 60%,
+    #0a0b0f 100%
+  );
+}
+
+.hero-inner {
+  position: relative;
+  height: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 3rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding-bottom: 4rem;
+}
+
+.btn-back-minimal {
+  position: absolute;
+  top: 2rem;
+  left: 3rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.625rem 1.25rem;
+  border-radius: 100px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.btn-back-minimal:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.hero-content {
+  display: flex;
+  align-items: flex-end;
+  gap: 4rem;
+}
+
+.hero-text {
+  flex: 1;
+  margin-bottom: 1rem;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.movie-title {
+  font-size: 4rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.1;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.btn-like-hero {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-like-hero:hover:not(.disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.btn-like-hero.active {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: #ef4444;
+}
+
+.btn-like-hero.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon-like {
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: none;
+  stroke: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.btn-like-hero.active .icon-like {
+  fill: #ef4444;
+  stroke: #ef4444;
+}
+
+.original-title {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 2rem 0;
+  font-weight: 300;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9375rem;
+}
+
+.director-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.director-info .label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #8b5cf6;
+  margin-bottom: 0.25rem;
+}
+
+.director-info .value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.info-divider {
+  width: 1px;
+  height: 2rem;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.basic-info {
+  display: flex;
+  gap: 1.5rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.genre-list {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.genre-tag {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  padding: 0.4rem 1rem;
+  border-radius: 100px;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rating-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+}
+
+.main-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.star-filled {
+  color: #fbbf24;
+  fill: #fbbf24;
+}
+
+.main-rating .score {
+  font-size: 3.5rem;
+  font-weight: 600;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.sub-rating {
+  padding-bottom: 0.5rem;
+  padding-left: 2rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sub-rating .label {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 0.25rem;
+}
+
+.sub-rating .value {
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Hero Poster */
+.hero-poster {
+  width: 300px;
+  flex-shrink: 0;
+  display: none; /* Mobile hidden */
+}
+
+@media (min-width: 1024px) {
+  .hero-poster {
+    display: block;
+  }
+}
+
+.poster-frame {
+  width: 100%;
+  aspect-ratio: 2/3;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateY(4rem); /* Float effect */
+}
+
+.poster-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ============ MAIN GRID ============ */
+.detail-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4rem 3rem;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 4rem;
+}
+
+.section-box {
+  margin-bottom: 4rem;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #8b5cf6;
+  margin: 0 0 1.5rem 0;
+  text-transform: uppercase;
+}
+
+.section-title .count {
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 400;
+  margin-left: 0.25rem;
+}
+
+.plot-text {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 300;
+}
+
+/* Cast Grid */
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 1.25rem;
+}
+
+.cast-card {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.cast-card:hover {
+  transform: translateY(-4px);
+}
+
+.cast-photo {
+  width: 100%;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.cast-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.actor-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.125rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.character-name {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Sidebar */
+.right-column {
+  position: relative;
+}
+
+.sticky-sidebar {
+  position: sticky;
+  top: 2rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(20px);
+  border-radius: 12px;
+  padding: 2rem;
+}
+
+.summary-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.summary-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.score-text {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.summary-count {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+}
+
+.action-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.btn-primary-full {
+  width: 100%;
+  padding: 0.875rem;
+  background: #8b5cf6;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.btn-primary-full:hover {
+  background: #7c3aed;
+}
+
+/* Chart Container */
+.chart-container {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+/* Icons */
+.icon-xs { width: 14px; height: 14px; }
+.icon-sm { width: 18px; height: 18px; }
+.icon-md { width: 24px; height: 24px; }
+.icon-lg { width: 32px; height: 32px; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+    padding: 3rem 2rem;
+  }
+  
+  .hero-poster {
+    display: none;
+  }
+  
+  .hero-inner {
+    padding: 0 2rem 3rem;
+  }
+  
+  .movie-title {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .rating-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .sub-rating {
+    border-left: none;
+    padding-left: 0;
+  }
+}
+</style>

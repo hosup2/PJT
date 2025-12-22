@@ -257,10 +257,15 @@ const submitPost = async () => {
       content: content.value
     };
 
+    const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/original'; // Use 'original' for storing the highest quality poster
+
     if (selectedMovie.value) {
       postData.movie_id = selectedMovie.value.id;
       postData.movie_title = selectedMovie.value.title;
-      postData.movie_poster = selectedMovie.value.poster_path;
+      // Construct the full URL for movie_poster
+      postData.movie_poster = selectedMovie.value.poster_path
+        ? `${TMDB_IMAGE_BASE_URL}${selectedMovie.value.poster_path}`
+        : null;
     }
 
     console.log('Submitting post with token:', token.substring(0, 20) + '...');

@@ -1,225 +1,228 @@
 <template>
   <div class="community-container">
-    <!-- Minimal Header -->
+    
     <header class="cinema-header">
       <div class="header-inner">
+        
+        <button @click="goBack" class="btn-back-minimal">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
+          </svg>
+          <span>뒤로가기</span>
+        </button>
+
         <div class="header-left">
           <span class="section-label">COMMUNITY</span>
-          <h1 class="page-title">영화 수다</h1>
-          <p class="page-subtitle">영화를 사랑하는 사람들의 이야기</p>
+          <h1 class="page-title">라운지</h1>
+          <p class="page-subtitle">영화인들의 깊이 있는 대화 공간</p>
         </div>
-        <button v-if="isLoggedIn" @click="goToCreate" class="btn-write-minimal">
+        
+        <div class="mode-switcher">
+          <button 
+            @click="currentMode = 'board'" 
+            :class="['switch-btn', { active: currentMode === 'board' }]"
+          >
+            자유 게시판
+          </button>
+          <button 
+            @click="currentMode = 'chat'" 
+            :class="['switch-btn', { active: currentMode === 'chat' }]"
+          >
+            무비 톡 (LIVE)
+          </button>
+        </div>
+
+        <button v-if="isLoggedIn && currentMode === 'board'" @click="goToCreate" class="btn-write-minimal">
           <span>새 글 작성</span>
           <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
           </svg>
         </button>
       </div>
     </header>
 
-    <!-- Trending Section (영화별 대형 카드) -->
-    <section v-if="trendingPosts.length > 0" class="trending-section">
-      <div class="section-head">
-        <span class="section-label">TRENDING NOW</span>
-        <h2 class="section-title">지금 뜨거운 수다</h2>
-      </div>
-
-      <div class="trending-grid">
-        <article
-          v-for="post in trendingPosts"
-          :key="'trending-' + post.id"
-          class="trending-card"
-          @click="goToDetail(post.id)"
-        >
-          <!-- 대형 포스터 -->
-          <div class="trending-poster">
-            <img
-              v-if="post.movie_poster"
-              :src="`https://image.tmdb.org/t/p/w500${post.movie_poster}`"
-              :alt="post.movie_title"
-            />
-            <div v-else class="poster-placeholder-large">
-              <span>🎬</span>
-            </div>
-          </div>
-
-          <!-- 간결한 정보 -->
-          <div class="trending-info">
-            <h3 class="trending-movie">{{ post.movie_title || '자유 수다' }}</h3>
-            <p class="trending-title">{{ post.title }}</p>
-            <div class="trending-meta">
-              <span>{{ post.author.username }}</span>
-              <span class="meta-dot">·</span>
-              <span>💬 {{ post.comment_count }}</span>
-            </div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <!-- Filter Bar - 심플하게 -->
-    <div class="filter-bar">
-      <div class="filter-inner">
-        <div class="filter-buttons">
-          <button
-            v-for="tab in tabs"
-            :key="tab.value"
-            :class="['filter-btn', { active: filter === tab.value }]"
+    <main v-if="currentMode === 'board'" class="board-view">
+      
+      <div class="filter-bar">
+        <div class="filter-left">
+          <button 
+            v-for="tab in tabs" :key="tab.value"
             @click="filter = tab.value"
+            :class="['filter-text-btn', { active: filter === tab.value }]"
           >
             {{ tab.label }}
           </button>
         </div>
-
         <div class="search-minimal">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="검색..."
-          />
-          <svg class="search-icon-minimal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <input v-model="searchQuery" type="text" placeholder="제목, 내용 검색..." />
+          <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
           </svg>
         </div>
       </div>
-    </div>
 
-    <!-- Main Feed - 포스터 중심 리스트 -->
-    <main class="feed-main">
-      <!-- Loading -->
-      <div v-if="loading" class="loading-minimal">
-        <div class="spinner-minimal"></div>
+      <div class="compact-list-header">
+        <span class="col-title">제목</span>
+        <div class="col-meta-group">
+          <span class="col-author">작성자</span>
+          <span class="col-date">날짜</span>
+          <span class="col-views">조회</span>
+        </div>
       </div>
 
-      <!-- Error -->
-      <div v-else-if="error" class="error-minimal">
-        <p>{{ error }}</p>
+      <div v-if="loading" class="loading-state">
+        <div class="spinner-small"></div>
       </div>
 
-      <!-- Empty -->
-      <div v-else-if="filteredPosts.length === 0" class="empty-minimal">
-        <span class="empty-icon-minimal">🎭</span>
-        <h3>아직 이야기가 없습니다</h3>
-        <p>첫 번째 이야기를 시작해보세요</p>
-        <button v-if="isLoggedIn" @click="goToCreate" class="btn-start">시작하기</button>
+      <div v-else-if="filteredPosts.length === 0" class="empty-state">
+        <p>게시글이 없습니다.</p>
       </div>
 
-      <!-- Posts List -->
-      <div v-else class="feed-list">
+      <div v-else class="compact-list">
         <article
           v-for="post in filteredPosts"
           :key="post.id"
-          class="feed-item"
+          class="compact-item"
           @click="goToDetail(post.id)"
         >
-          <!-- Left: Poster -->
-          <div class="item-poster">
-            <img
-              v-if="post.movie_poster"
-              :src="`https://image.tmdb.org/t/p/w185${post.movie_poster}`"
-              :alt="post.movie_title"
-            />
-            <div v-else class="poster-placeholder">
-              <span>🎬</span>
+          <div class="item-main">
+            <div class="title-row">
+              <span v-if="post.movie_title" class="movie-tag">{{ post.movie_title }}</span>
+              <h3 class="post-subject">{{ post.title }}</h3>
+              <span v-if="post.comment_count > 0" class="comment-badge">[{{ post.comment_count }}]</span>
             </div>
           </div>
 
-          <!-- Right: Content -->
-          <div class="item-content">
-            <!-- Movie Badge -->
-            <span v-if="post.movie_title" class="movie-label">
-              {{ post.movie_title }}
-            </span>
-
-            <!-- Title -->
-            <h3 class="item-title">{{ post.title }}</h3>
-
-            <!-- Meta -->
-            <div class="item-meta">
-              <span class="meta-author">{{ post.author.username }}</span>
-              <span class="meta-dot">·</span>
-              <span class="meta-time">{{ formatRelativeTime(post.created_at) }}</span>
-              <span class="meta-dot">·</span>
-              <span class="meta-stats">💬 {{ post.comment_count }}</span>
-              <span class="meta-dot">·</span>
-              <span class="meta-stats">👁 {{ post.view_count }}</span>
-            </div>
+          <div class="item-meta">
+            <span class="meta-author">{{ post.author.username }}</span>
+            <span class="meta-date">{{ formatSimpleDate(post.created_at) }}</span>
+            <span class="meta-view">{{ post.view_count }}</span>
           </div>
         </article>
       </div>
+    </main>
+
+
+    <main v-if="currentMode === 'chat'" class="chat-view">
+      
+      <aside class="chat-sidebar">
+        <h3 class="sidebar-title">ON AIR</h3>
+        <div class="movie-channel-list">
+          <button 
+            v-for="movie in chatMovies" 
+            :key="movie.id"
+            @click="selectChatRoom(movie)"
+            :class="['channel-item', { active: selectedChatMovie?.id === movie.id }]"
+          >
+            <img :src="`https://image.tmdb.org/t/p/w92${movie.poster_path}`" class="channel-poster" />
+            <div class="channel-info">
+              <span class="channel-name">{{ movie.title }}</span>
+              <span class="channel-users">● {{ Math.floor(Math.random() * 50) + 10 }}명 참여중</span>
+            </div>
+          </button>
+        </div>
+      </aside>
+
+      <section class="chat-interface">
+        <div v-if="selectedChatMovie" class="chat-room">
+          
+          <div class="room-header">
+            <div class="room-info">
+              <h2>{{ selectedChatMovie.title }}</h2>
+              <span class="live-badge">LIVE</span>
+            </div>
+          </div>
+
+          <div class="messages-container" ref="messagesContainer">
+            <div 
+              v-for="msg in mockMessages" 
+              :key="msg.id"
+              :class="['message-bubble', { 'me': msg.isMe }]"
+            >
+              <div v-if="!msg.isMe" class="msg-avatar">
+                {{ msg.username[0] }}
+              </div>
+              <div class="msg-content-wrapper">
+                <span v-if="!msg.isMe" class="msg-username">{{ msg.username }}</span>
+                <div class="msg-text">{{ msg.text }}</div>
+                <span class="msg-time">{{ msg.time }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-input-area">
+            <input 
+              v-model="chatInput" 
+              @keyup.enter="sendChatMessage"
+              type="text" 
+              placeholder="이 영화에 대한 생각을 나눠보세요..." 
+            />
+            <button @click="sendChatMessage" class="btn-send">
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+
+        <div v-else class="chat-placeholder">
+          <div class="placeholder-content">
+            <span class="icon">💬</span>
+            <h3>영화를 선택하여 대화를 시작하세요</h3>
+            <p>실시간으로 영화에 대한 감상을 나눌 수 있습니다.</p>
+          </div>
+        </div>
+      </section>
+
     </main>
 
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject } from 'vue';
+import { ref, computed, onMounted, inject, nextTick, type Ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
-import type { Ref } from 'vue';
 
-interface Author {
-  id: number;
-  username: string;
-}
-
+// --- Types ---
+interface Author { id: number; username: string; }
 interface Post {
-  id: number;
-  author: Author;
-  title: string;
-  movie_id?: number;
-  movie_title?: string;
-  movie_poster?: string;
-  created_at: string;
-  comment_count: number;
-  view_count: number;
+  id: number; author: Author; title: string;
+  movie_id?: number; movie_title?: string; movie_poster?: string;
+  created_at: string; comment_count: number; view_count: number;
+}
+interface ChatMessage {
+  id: number; username: string; text: string; time: string; isMe: boolean;
 }
 
 const router = useRouter();
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn');
 
+// --- State ---
+const currentMode = ref<'board' | 'chat'>('board'); // Tab State
 const posts = ref<Post[]>([]);
 const loading = ref(true);
-const error = ref<string | null>(null);
 const filter = ref('all');
 const searchQuery = ref('');
 
+// --- Board Logic ---
 const tabs = [
-  { label: '전체', value: 'all' },
-  { label: '영화별', value: 'movie' },
+  { label: '전체글', value: 'all' },
+  { label: '영화수다', value: 'movie' },
   { label: '인기글', value: 'popular' },
 ];
 
-// Trending: 영화 포스터 있는 인기글 (상단 대형 카드)
-const trendingPosts = computed(() => {
-  return posts.value
-    .filter(post => post.movie_poster && (post.comment_count >= 3 || post.view_count >= 15))
-    .slice(0, 4);
-});
-
-// 필터링된 일반 게시글
 const filteredPosts = computed(() => {
   let result = posts.value;
-
-  if (filter.value === 'movie') {
-    result = result.filter(post => post.movie_id);
-  } else if (filter.value === 'popular') {
-    result = result.filter(post => post.comment_count > 5 || post.view_count > 20);
-  }
+  if (filter.value === 'movie') result = result.filter(post => post.movie_id);
+  else if (filter.value === 'popular') result = result.filter(post => post.comment_count > 5 || post.view_count > 20);
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    result = result.filter(post =>
-      post.title.toLowerCase().includes(query) ||
-      post.movie_title?.toLowerCase().includes(query)
-    );
+    result = result.filter(post => post.title.toLowerCase().includes(query));
   }
-
   return result;
-});
-
-onMounted(async () => {
-  await fetchPosts();
 });
 
 const fetchPosts = async () => {
@@ -227,546 +230,666 @@ const fetchPosts = async () => {
     const response = await axios.get('http://127.0.0.1:8000/community/posts/');
     posts.value = response.data.results || response.data;
   } catch (err) {
-    console.error('Failed to fetch posts:', err);
-    error.value = '게시글을 불러오는 데 실패했습니다.';
+    console.error(err);
   } finally {
     loading.value = false;
   }
 };
 
-const formatRelativeTime = (dateString: string) => {
+const formatSimpleDate = (dateString: string) => {
   const date = new Date(dateString);
   const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return '방금';
-  if (diffMins < 60) return `${diffMins}분`;
-  if (diffHours < 24) return `${diffHours}시간`;
-  if (diffDays < 7) return `${diffDays}일`;
-
-  return date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
+  if (date.toDateString() === now.toDateString()) {
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+  return date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
 };
+
+// --- Chat Logic ---
+const chatMovies = ref<any[]>([]); // Movies with active discussions
+const selectedChatMovie = ref<any>(null);
+const chatInput = ref('');
+const messagesContainer = ref<HTMLElement | null>(null);
+
+// Mock Messages (Replace with real Socket/API)
+const mockMessages = ref<ChatMessage[]>([
+  { id: 1, username: 'MovieBuff', text: '이 영화 결말 진짜 충격적이지 않나요? 😱', time: '14:20', isMe: false },
+  { id: 2, username: 'PopcornLover', text: '맞아요.. 감독 연출이 미쳤음', time: '14:21', isMe: false },
+]);
+
+const selectChatRoom = (movie: any) => {
+  selectedChatMovie.value = movie;
+  // Here: Connect to socket room for movie.id
+  // Reset messages for demo
+  mockMessages.value = [
+    { id: 1, username: 'System', text: `'${movie.title}' 채팅방에 입장하셨습니다.`, time: 'Now', isMe: false },
+    { id: 2, username: 'User1', text: '다들 보셨나요?', time: '14:22', isMe: false }
+  ];
+  scrollToBottom();
+};
+
+const sendChatMessage = () => {
+  if (!chatInput.value.trim()) return;
+  
+  mockMessages.value.push({
+    id: Date.now(),
+    username: '나',
+    text: chatInput.value,
+    time: new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12: false }),
+    isMe: true
+  });
+  
+  chatInput.value = '';
+  scrollToBottom();
+  
+  // Simulate reply
+  setTimeout(() => {
+    mockMessages.value.push({
+      id: Date.now() + 1,
+      username: 'Someone',
+      text: '완전 동감합니다!',
+      time: new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12: false }),
+      isMe: false
+    });
+    scrollToBottom();
+  }, 1000);
+};
+
+const scrollToBottom = () => {
+  nextTick(() => {
+    if (messagesContainer.value) {
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+    }
+  });
+};
+
+// Load initial data
+onMounted(async () => {
+  await fetchPosts();
+  // Get movies for chat list (using existing API for demo)
+  const movieRes = await axios.get('http://127.0.0.1:8000/movies/');
+  chatMovies.value = (movieRes.data.results || movieRes.data).slice(0, 8);
+});
 
 const goToCreate = () => {
-  if (!isLoggedIn?.value) {
-    alert('로그인이 필요합니다.');
-    router.push('/');
-    return;
-  }
+  if (!isLoggedIn?.value) { alert('로그인 필요'); return; }
   router.push('/community/create');
 };
+const goToDetail = (id: number) => router.push(`/community/post/${id}`);
+const goBack = () => router.back();
 
-const goToDetail = (id: number) => {
-  router.push(`/community/post/${id}`);
-};
 </script>
 
 <style scoped>
-/* 🎨 MIA Design System - Pure Black Cinema */
+/* 🎨 MIA Cinema System - Pure Black */
 .community-container {
   min-height: 100vh;
-  background: #0a0b0f; /* MIA 순수 검정 */
+  background: #0a0b0f;
   color: #ffffff;
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  padding-bottom: 5rem;
+  font-family: 'Pretendard', sans-serif;
+  padding-top: 5rem;
+  padding-bottom: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-/* ============ HEADER ============ */
+/* Header */
 .cinema-header {
-  padding: 4rem 0 3rem;
+  padding: 2rem 3rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 11, 15, 0.95);
+  backdrop-filter: blur(20px);
+  position: sticky;
+  top: 4rem; /* 네비게이션바 아래 */
+  z-index: 40;
 }
 
 .header-inner {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 3rem;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  /* 🔥 position: relative를 추가하여 절대 위치의 기준점 역할 */
+  position: relative; 
 }
 
+/* 🔥 뒤로가기 버튼 스타일 (Absolute Position) */
+.btn-back-minimal {
+  position: absolute;
+  top: -6rem; /* 타이틀보다 위로 */
+  left: -1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-back-minimal:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 타이틀과 겹치지 않게 여백 추가 */
 .header-left {
-  flex: 1;
+  padding-top: 0rem; /* 뒤로가기 버튼 공간 확보 */
 }
 
 .section-label {
-  display: block;
   font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: #8b5cf6; /* MIA 보라색 */
-  margin-bottom: 1rem;
+  font-weight: 700;
+  color: #8b5cf6;
+  letter-spacing: 0.1em;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 .page-title {
-  font-size: 3rem;
-  font-weight: 300; /* 얇은 폰트 - MIA 스타일 */
-  letter-spacing: -0.02em;
-  margin: 0 0 0.75rem 0;
-  color: #ffffff;
+  font-size: 2.5rem;
+  font-weight: 300;
+  margin: 0;
+  color: white;
 }
 
 .page-subtitle {
-  font-size: 1rem;
-  font-weight: 400;
+  font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.4);
-  letter-spacing: 0.01em;
+  margin: 0.25rem 0 0;
+}
+
+/* Mode Switcher (Tabs) */
+.mode-switcher {
+  display: flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem;
+  border-radius: 8px;
+  gap: 0.25rem;
+}
+
+.switch-btn {
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  transition: all 0.2s ease;
+}
+
+.switch-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-weight: 600;
 }
 
 .btn-write-minimal {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
-  padding: 0.75rem 1.5rem;
+  padding: 0.625rem 1.25rem;
+  background: #8b5cf6;
   border-radius: 4px;
   font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  color: white;
+  transition: all 0.2s;
 }
 
 .btn-write-minimal:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #7c3aed;
 }
 
-/* ============ TRENDING SECTION ============ */
-.trending-section {
-  padding: 4rem 0;
+/* ================= BOARD VIEW (Compact) ================= */
+.board-view {
   max-width: 1400px;
   margin: 0 auto;
-  padding-left: 3rem;
-  padding-right: 3rem;
-}
-
-.section-head {
-  margin-bottom: 2.5rem;
-}
-
-.section-title {
-  font-size: 1.75rem;
-  font-weight: 300;
-  letter-spacing: -0.01em;
-  margin: 0.5rem 0 0 0;
-  color: #ffffff;
-}
-
-.trending-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 2.5rem;
-}
-
-.trending-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.trending-card:hover {
-  transform: translateY(-8px);
-}
-
-.trending-poster {
+  padding: 2rem 3rem;
   width: 100%;
-  aspect-ratio: 2/3;
-  border-radius: 6px;
-  overflow: hidden;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6); /* MIA 포스터 그림자 */
 }
 
-.trending-poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.poster-placeholder-large {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #1a1b20 0%, #0f1014 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  opacity: 0.3;
-}
-
-.trending-info {
-  padding: 0 0.25rem;
-}
-
-.trending-movie {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 0.5rem 0;
-  letter-spacing: 0.01em;
-}
-
-.trending-title {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #ffffff;
-  margin: 0 0 0.75rem 0;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.trending-meta {
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.35);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.meta-dot {
-  opacity: 0.5;
-}
-
-/* ============ FILTER BAR ============ */
+/* Filter Bar */
 .filter-bar {
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 1.5rem 0;
-  position: sticky;
-  top: 0;
-  background: rgba(10, 11, 15, 0.95);
-  backdrop-filter: blur(20px);
-  z-index: 10;
-}
-
-.filter-inner {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
+  margin-bottom: 2rem;
 }
 
-.filter-buttons {
+.filter-left {
   display: flex;
-  gap: 0.5rem;
+  gap: 1.5rem;
 }
 
-.filter-btn {
-  padding: 0.5rem 1.25rem;
-  background: transparent;
-  border: 1px solid transparent;
+.filter-text-btn {
+  background: none;
+  border: none;
   color: rgba(255, 255, 255, 0.4);
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  padding: 0;
+  transition: color 0.2s;
 }
 
-.filter-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.filter-btn.active {
+.filter-text-btn.active {
   color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.03);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+  text-decoration-color: #8b5cf6;
 }
 
 .search-minimal {
   position: relative;
-  width: 300px;
+  width: 240px;
 }
 
 .search-minimal input {
   width: 100%;
-  padding: 0.625rem 2.5rem 0.625rem 1rem;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
-  color: #ffffff;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 0 0.5rem 0;
+  color: white;
   font-size: 0.875rem;
-  transition: all 0.2s ease;
+  padding-right: 1.5rem;
+  transition: border-color 0.2s;
 }
 
 .search-minimal input:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: #8b5cf6;
 }
 
-.search-minimal input::placeholder {
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.search-icon-minimal {
+.search-icon {
   position: absolute;
-  right: 1rem;
+  right: 0;
   top: 50%;
   transform: translateY(-50%);
   width: 1rem;
   height: 1rem;
-  color: rgba(255, 255, 255, 0.3);
-  pointer-events: none;
+  color: rgba(255, 255, 255, 0.4);
 }
 
-/* ============ MAIN FEED ============ */
-.feed-main {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 3rem 3rem;
+/* Compact List Header */
+.compact-list-header {
+  display: flex;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
 }
 
-.feed-list {
+.col-title { flex: 1; padding-left: 0.5rem; }
+.col-meta-group { display: flex; width: 200px; text-align: center; }
+.col-author { width: 80px; }
+.col-date { width: 70px; }
+.col-views { width: 50px; }
+
+/* Compact Item */
+.compact-list {
   display: flex;
   flex-direction: column;
-  gap: 0;
 }
 
-.feed-item {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 2rem;
-  padding: 2.5rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.feed-item:hover {
-  background: rgba(255, 255, 255, 0.01);
-}
-
-.feed-item:hover .item-poster {
-  transform: scale(1.05);
-}
-
-.item-poster {
-  width: 120px;
-  aspect-ratio: 2/3;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s ease;
-}
-
-.item-poster img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.poster-placeholder {
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, #1a1b20 0%, #0f1014 100%);
+.compact-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  opacity: 0.3;
+  padding: 1rem 0.5rem; /* Compact Padding */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
-.item-content {
+.compact-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.title-row {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.75rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.movie-label {
-  display: inline-block;
+.movie-tag {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.post-subject {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.comment-badge {
+  color: #8b5cf6;
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
-  color: #8b5cf6;
-  text-transform: uppercase;
-}
-
-.item-title {
-  font-size: 1.5rem;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: #ffffff;
-  margin: 0;
-  line-height: 1.3;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 .item-meta {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  width: 200px;
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.35);
-}
-
-.meta-author {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
-}
-
-/* ============ STATES ============ */
-.loading-minimal,
-.error-minimal,
-.empty-minimal {
-  text-align: center;
-  padding: 6rem 2rem;
   color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+  flex-shrink: 0;
 }
 
-.spinner-minimal {
-  width: 2.5rem;
-  height: 2.5rem;
-  margin: 0 auto 1.5rem;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #8b5cf6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+.meta-author { width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meta-date { width: 70px; }
+.meta-view { width: 50px; }
+
+
+/* ================= CHAT VIEW ================= */
+.chat-view {
+  flex: 1;
+  display: flex;
+  height: calc(100vh - 200px);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* Chat Sidebar */
+.chat-sidebar {
+  width: 280px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(15, 16, 20, 0.5);
+  display: flex;
+  flex-direction: column;
 }
 
-.empty-icon-minimal {
-  font-size: 3rem;
-  display: block;
-  margin-bottom: 1.5rem;
-  opacity: 0.3;
+.sidebar-title {
+  padding: 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.05em;
+  margin: 0;
 }
 
-.empty-minimal h3 {
-  font-size: 1.5rem;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.7);
-  margin-bottom: 0.5rem;
+.movie-channel-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0.5rem;
 }
 
-.btn-start {
-  margin-top: 2rem;
-  padding: 0.875rem 2rem;
+.channel-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 0.25rem;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.btn-start:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* ============ FAB ============ */
-.fab-minimal {
-  position: fixed;
-  bottom: 2.5rem;
-  right: 2.5rem;
-  width: 3.5rem;
-  height: 3.5rem;
-  background: #8b5cf6;
   border: none;
-  border-radius: 50%;
-  color: white;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
-  transition: all 0.3s ease;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.channel-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.channel-item.active {
+  background: rgba(139, 92, 246, 0.15);
+}
+
+.channel-poster {
+  width: 32px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  margin-right: 0.75rem;
+}
+
+.channel-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.channel-name {
+  font-size: 0.875rem;
+  color: white;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.channel-users {
+  font-size: 0.75rem;
+  color: #34d399; /* Online Green */
+  margin-top: 0.125rem;
+}
+
+/* Chat Interface */
+.chat-interface {
+  flex: 1;
+  background: #0f1014; /* Slightly lighter than main bg */
+  position: relative;
+}
+
+.chat-room {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.room-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 16, 20, 0.8);
+}
+
+.room-info h2 {
+  font-size: 1.125rem;
+  color: white;
+  margin: 0 0 0.25rem 0;
+}
+
+.live-badge {
+  background: #ef4444;
+  color: white;
+  font-size: 0.625rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+/* Messages */
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.message-bubble {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 70%;
+}
+
+.message-bubble.me {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: #2d3748;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.fab-minimal:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 30px rgba(139, 92, 246, 0.5);
-}
-
-.fab-badge-minimal {
-  position: absolute;
-  top: -0.25rem;
-  right: -0.25rem;
-  background: #ef4444;
-  color: white;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.25rem 0.5rem;
-  border-radius: 10px;
-  min-width: 1.25rem;
+  color: rgba(255, 255, 255, 0.7);
+  flex-shrink: 0;
+}
+
+.msg-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.message-bubble.me .msg-content-wrapper {
+  align-items: flex-end;
+}
+
+.msg-username {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 0.25rem;
+}
+
+.msg-text {
+  background: #27272a;
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.625rem 1rem;
+  border-radius: 0 12px 12px 12px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.message-bubble.me .msg-text {
+  background: #7c3aed; /* Purple */
+  color: white;
+  border-radius: 12px 0 12px 12px;
+}
+
+.msg-time {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.2);
+  margin-top: 0.25rem;
+}
+
+/* Chat Input */
+.chat-input-area {
+  padding: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  gap: 0.75rem;
+  background: rgba(15, 16, 20, 0.8);
+}
+
+.chat-input-area input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  padding: 0.75rem 1.25rem;
+  color: white;
+  font-size: 0.9375rem;
+}
+
+.chat-input-area input:focus {
+  outline: none;
+  border-color: #8b5cf6;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.btn-send {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  background: #8b5cf6;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-send:hover {
+  background: #6d28d9;
+  transform: scale(1.05);
+}
+
+/* Placeholder */
+.chat-placeholder {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.placeholder-content {
   text-align: center;
 }
 
-/* ============ RESPONSIVE ============ */
-@media (max-width: 1024px) {
-  .header-inner,
-  .trending-section,
-  .filter-inner,
-  .feed-main {
-    padding-left: 2rem;
-    padding-right: 2rem;
-  }
-
-  .trending-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 2rem;
-  }
+.placeholder-content .icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.5;
 }
 
+/* Responsive */
 @media (max-width: 768px) {
-  .page-title {
-    font-size: 2rem;
-  }
-
-  .header-inner {
+  .chat-view {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 2rem;
+    height: auto;
   }
-
-  .trending-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.5rem;
-  }
-
-  .filter-inner {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-minimal {
+  
+  .chat-sidebar {
     width: 100%;
+    height: 120px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   }
-
-  .feed-item {
-    grid-template-columns: 80px 1fr;
-    gap: 1.5rem;
-    padding: 2rem 0;
+  
+  .movie-channel-list {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
   }
-
-  .item-poster {
-    width: 80px;
+  
+  .channel-item {
+    width: 200px;
+    flex-shrink: 0;
   }
-
-  .item-title {
-    font-size: 1.125rem;
+  
+  .chat-interface {
+    height: 60vh;
   }
 }
 </style>

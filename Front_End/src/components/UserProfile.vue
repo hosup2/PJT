@@ -205,61 +205,65 @@
             <h3>작성한 리뷰가 없습니다</h3>
           </div>
 
-          <div v-else class="review-list">
-            <article 
-              v-for="comment in userComments" 
-              :key="comment.id" 
-              class="review-item"
-            >
-              <div class="review-header">
-                <div class="header-left">
+          <div v-else>
+            <div class="compact-header">
+              <div class="th-movie">영화</div>
+              <div class="th-rating">평점</div>
+              <div class="th-content">내용</div>
+              <div class="th-date">작성일</div>
+              <div class="th-action" v-if="isOwnProfile">관리</div>
+            </div>
+
+            <div class="compact-list">
+              <article 
+                v-for="comment in userComments" 
+                :key="comment.id" 
+                class="compact-item"
+              >
+                <div class="td-movie">
                   <button 
                     v-if="comment.movie_id" 
                     @click="handleMovieClick(comment.movie_id)"
-                    class="review-movie-title"
+                    class="compact-movie-link"
                   >
                     {{ comment.movie_title || '영화 제목' }}
                   </button>
-                  <span v-else class="review-movie-title disabled">
-                    {{ comment.movie_title || '영화 정보 없음' }}
-                  </span>
-                  
-                  <div v-if="comment.rating && comment.rating > 0" class="review-rating">
-                    <StarRating 
-                      :initial-rating="comment.rating" 
-                      :readonly="true" 
-                      size="sm" 
-                    />
+                  <span v-else class="text-gray-500">정보 없음</span>
+                </div>
+
+                <div class="td-rating">
+                  <div v-if="comment.rating && comment.rating > 0" class="rating-pill">
+                    <Star class="icon-xs text-yellow-400 fill-current" />
+                    <span>{{ comment.rating }}</span>
+                  </div>
+                  <span v-else class="text-gray-600">-</span>
+                </div>
+
+                <div class="td-content">
+                  <p class="compact-text">
+                    {{ getReviewContent(comment) || '내용 없음' }}
+                  </p>
+                  <div v-if="comment.likes_count > 0" class="compact-likes">
+                    <Heart class="icon-xs text-red-500 fill-current" />
+                    <span>{{ comment.likes_count }}</span>
                   </div>
                 </div>
 
-                <div class="header-right">
-                  <span class="review-date">{{ formatDate(comment.created_at) }}</span>
+                <div class="td-date">
+                  {{ formatDate(comment.created_at) }}
+                </div>
+
+                <div class="td-action" v-if="isOwnProfile">
                   <button 
-                    v-if="isOwnProfile" 
                     @click="handleDeleteReview(comment.id, comment.movie_id)"
-                    class="btn-delete-minimal"
+                    class="btn-icon-delete"
                     title="리뷰 삭제"
                   >
                     <Trash2 class="icon-sm" />
                   </button>
                 </div>
-              </div>
-
-              <div class="review-body">
-                <p v-if="getReviewContent(comment)" class="review-text">
-                  {{ getReviewContent(comment) }}
-                </p>
-                <p v-else class="review-text empty">리뷰 내용이 없습니다.</p>
-              </div>
-
-              <div class="review-footer">
-                <div :class="['like-stat', { active: comment.likes_count > 0 }]">
-                  <Heart :class="['icon-sm', { 'fill-current': comment.likes_count > 0 }]" />
-                  <span>좋아요 {{ comment.likes_count }}</span>
-                </div>
-              </div>
-            </article>
+              </article>
+            </div>
           </div>
         </div>
 
@@ -297,11 +301,8 @@ import ProfileEditModal from './ProfileEditModal.vue';
 import FollowListModal from './FollowListModal.vue';
 
 const router = useRouter();
-
-// TMDB Image Base URL
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
-// Interfaces
 interface FollowInfo {
   followers_count: number;
   following_count: number;
@@ -366,7 +367,6 @@ const emit = defineEmits<{
   navigateToUser: [userId: number];
 }>();
 
-// Logic
 const handleNavigateToUser = (userId: number) => {
   showFollowModal.value = false;
   router.push({ name: 'UserProfile', params: { userId: userId.toString() } });
@@ -515,7 +515,7 @@ const filteredRatings = computed(() => {
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ko-KR', {
-    year: 'numeric', month: '2-digit', day: '2-digit'
+    year: '2-digit', month: '2-digit', day: '2-digit'
   });
 };
 
@@ -534,7 +534,7 @@ const getReviewContent = (comment: UserComment): string => {
   padding-bottom: 5rem;
 }
 
-/* ============ HEADER ============ */
+/* ============ HEADER (UNCHANGED) ============ */
 .profile-header {
   padding: 4rem 0 3rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -660,7 +660,7 @@ const getReviewContent = (comment: UserComment): string => {
   background: rgba(255, 255, 255, 0.03);
 }
 
-/* ============ STATS SECTION ============ */
+/* ============ STATS SECTION (UNCHANGED) ============ */
 .stats-section {
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(10, 11, 15, 0.5);
@@ -728,7 +728,7 @@ const getReviewContent = (comment: UserComment): string => {
   gap: 0.3rem;
 }
 
-/* ============ FILTER BAR ============ */
+/* ============ FILTER BAR (UNCHANGED) ============ */
 .filter-bar {
   position: sticky;
   top: 0;
@@ -775,7 +775,7 @@ const getReviewContent = (comment: UserComment): string => {
 .filter-btn.active::after {
   content: '';
   position: absolute;
-  bottom: -1rem; /* align with border bottom */
+  bottom: -1rem;
   left: 0;
   width: 100%;
   height: 2px;
@@ -838,7 +838,7 @@ const getReviewContent = (comment: UserComment): string => {
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* MOVIE GRID */
+/* MOVIE GRID (UNCHANGED) */
 .movie-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -914,72 +914,125 @@ const getReviewContent = (comment: UserComment): string => {
   margin: 0;
 }
 
-/* REVIEW LIST */
-.review-list {
+/* ================= COMPACT REVIEW LIST (NEW STYLE) ================= */
+.compact-header {
   display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
-.review-item {
+.th-movie { width: 180px; padding-left: 0.5rem; }
+.th-rating { width: 60px; text-align: center; }
+.th-content { flex: 1; padding-left: 1rem; }
+.th-date { width: 100px; text-align: center; }
+.th-action { width: 50px; text-align: center; }
+
+.compact-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.compact-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.2s;
+}
+
+.compact-item:hover {
   background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.3s ease;
 }
 
-.review-item:hover {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.1);
+.td-movie {
+  width: 180px;
+  padding-left: 0.5rem;
 }
 
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 1rem;
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.review-movie-title {
-  background: none;
+.compact-movie-link {
+  background: transparent;
   border: none;
   padding: 0;
-  font-size: 1.125rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: #8b5cf6;
   cursor: pointer;
   text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
 }
 
-.review-movie-title:hover {
+.compact-movie-link:hover {
   text-decoration: underline;
 }
 
-.review-movie-title.disabled {
-  color: rgba(255, 255, 255, 0.4);
-  cursor: default;
-  text-decoration: none;
+.td-rating {
+  width: 60px;
+  display: flex;
+  justify-content: center;
 }
 
-.review-date {
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.header-right {
+.rating-pill {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fbbf24;
 }
 
-.btn-delete-minimal {
+.td-content {
+  flex: 1;
+  padding: 0 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.compact-text {
+  font-size: 0.9375rem;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  flex: 1;
+}
+
+.compact-likes {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  padding: 0.125rem 0.375rem;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+
+.td-date {
+  width: 100px;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.td-action {
+  width: 50px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-icon-delete {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.2);
@@ -988,45 +1041,11 @@ const getReviewContent = (comment: UserComment): string => {
   transition: color 0.2s;
 }
 
-.btn-delete-minimal:hover {
+.btn-icon-delete:hover {
   color: #f87171;
 }
 
-.review-body {
-  margin-bottom: 1rem;
-}
-
-.review-text {
-  font-size: 0.9375rem;
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.8);
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.review-text.empty {
-  color: rgba(255, 255, 255, 0.3);
-  font-style: italic;
-}
-
-.review-footer {
-  display: flex;
-  align-items: center;
-}
-
-.like-stat {
-  display: flex;
-  align-items: center;
-  gap: 0.375rem;
-  font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.3);
-}
-
-.like-stat.active {
-  color: #f87171;
-}
-
-/* UTILS */
+/* UTILS (UNCHANGED) */
 .icon-xs { width: 14px; height: 14px; }
 .icon-sm { width: 18px; height: 18px; }
 
@@ -1105,6 +1124,38 @@ const getReviewContent = (comment: UserComment): string => {
   .movie-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+  }
+
+  /* Compact List Mobile */
+  .compact-header {
+    display: none;
+  }
+
+  .compact-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .td-movie, .td-content, .td-date, .td-rating, .td-action {
+    width: 100%;
+    padding: 0;
+    text-align: left;
+    justify-content: flex-start;
+  }
+
+  .td-content {
+    flex-direction: column;
+    align-items: flex-start;
+    overflow: visible;
+  }
+
+  .compact-text {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
 }
 </style>

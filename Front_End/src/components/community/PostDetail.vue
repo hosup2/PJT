@@ -326,7 +326,7 @@ const replyToUser = (username: string) => {
 };
 
 const goBack = () => {
-  router.push('/community');
+  router.back(); // Go back to the previous entry in the history stack
 };
 
 const formatDate = (dateString: string) => {

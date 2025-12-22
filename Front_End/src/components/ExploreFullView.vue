@@ -1,121 +1,105 @@
 <template>
-  <div class="explore-view min-h-screen bg-[#0f1419] text-white">
-    <div class="pt-20 pb-12 relative">
-
-      <div class="px-8 mb-6">
-        <button 
-          @click="goBack"
-          class="flex items-center gap-2 px-4 py-2 hover:bg-gray-700 rounded-lg transition-colors"
-        >
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+  <div class="explore-container">
+    <header class="explore-header">
+      <div class="header-inner">
+        <button @click="goBack" class="btn-back-minimal">
+          <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 19l-7-7 7-7"/>
           </svg>
           <span>뒤로가기</span>
         </button>
+        <h1 class="page-title">개봉 예정작</h1>
       </div>
+    </header>
+
+    <div class="timeline-wrapper">
+      <div class="timeline-line"></div>
       
-      <div class="absolute left-12 top-20 bottom-0 w-0.5 bg-gradient-to-b from-blue-500/50 via-purple-500/50 to-transparent"></div>
-      
-      <div class="space-y-24 pl-8">
-        <div v-for="(group, index) in movieGroups" :key="index" class="relative">
-          <div class="absolute left-4 top-0 w-5 h-5 rounded-full bg-blue-500 border-4 border-[#0f1419] z-10"></div>
+      <div class="groups-container">
+        <div v-for="(group, index) in movieGroups" :key="index" class="timeline-group">
           
-          <div class="ml-16 rounded-2xl p-8">
-            <div class="mb-5">
-              <span class="text-blue-400 font-semibold text-lg">{{ group.date }}</span>
+          <div class="timeline-node">
+            <div class="node-dot"></div>
+          </div>
+          
+          <div class="group-content">
+            <div class="date-label">
+              <span class="month">{{ group.date }}</span>
             </div>
             
-            <div class="space-y-8">
-              <div v-for="(platform, pIndex) in group.platforms" :key="pIndex">
-                <div class="flex items-center gap-3 mb-6">
-                  <h2 class="text-xl font-semibold">
-                    <span class="text-white">{{ platform.count }}편  </span>
-                    <span class="text-gray-400 ml-2">공개예정</span>
-                  </h2>
+            <div class="platforms-list">
+              <div v-for="(platform, pIndex) in group.platforms" :key="pIndex" class="platform-section">
+                
+                <div class="platform-header">
+                  <span class="count-badge">{{ platform.count }}편</span>
+                  <span class="status-text">공개 예정</span>
                 </div>
                 
-                <div class="relative group/carousel">
+                <div class="carousel-container">
                   
-                  <!-- 이전 버튼 -->
                   <button 
                     v-if="platform.movies.length > 5"
                     @click="prevPage(group)"
                     :disabled="group.currentPage === 0"
-                    class="w-12 h-12 rounded-full flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-gray-700/80"
-                    style="position: absolute; top: 50%; transform: translateY(-50%); left: -2.5rem; z-index: 20; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+                    class="nav-btn prev"
                   >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
                   </button>
 
-                  <div class="p-6 rounded-3xl" style="background-color: rgb(17, 24, 39); border-radius: 2rem;">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      <!-- 각 영화별 개별 카드 (페이지네이션 적용) -->
+                  <div class="movies-row-wrapper">
+                    <div class="movies-row">
                       <div 
                         v-for="movie in platform.movies.slice(group.currentPage * 5, (group.currentPage * 5) + 5)"
                         :key="movie.id"
                         @click="onMovieClick(movie.id)"
-                        class="cursor-pointer group p-3 rounded-lg bg-gray-700/70 hover:bg-gray-600/90 transition-all shadow-md"
-                        style="outline: 2px solid transparent; outline-offset: 11px; transition: outline 0.3s ease;"
-                        @mouseenter="$event.currentTarget.style.outline = '2px solid white'"
-                        @mouseleave="$event.currentTarget.style.outline = '2px solid transparent'"
+                        class="movie-item"
                       >
-                        <div class="relative rounded-2xl mb-3 bg-gray-900 shadow-lg" style="overflow: hidden;">
+                        <div class="poster-frame">
                           <img 
                             :src="movie.poster_path" 
                             :alt="movie.title"
-                            class="w-full aspect-[2/3] object-cover transition-transform duration-300 group-hover:scale-110"
-                            style= "border-radius: 1rem;"
                           />
-                          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          <div class="poster-overlay"></div>
                         </div>
                         
-                        <div class="space-y-2 px-1">
-                          <div class="flex items-center justify-between gap-2">
-                            <h3 class="font-medium text-sm line-clamp-2 leading-tight flex-1 group-hover:text-blue-400 transition-colors">
-                              {{ movie.title }}
-                            </h3>
+                        <div class="movie-info">
+                          <h3 class="movie-title">{{ movie.title }}</h3>
+                          
+                          <div class="meta-row">
+                            <span class="year-text">{{ movie.year }}</span>
                             
                             <button 
                               v-if="isLoggedIn"
-                              class="flex-shrink-0 w-11 h-11 rounded-full flex items-center justify-center transition-colors group/btn"
-                              :class="movie.is_liked 
-                                ? 'bg-red-600/20 text-red-400' 
-                                : 'bg-gray-700 text-gray-400 hover:bg-gray-600'"
                               @click.stop="handleAddToLikes(movie)"
+                              :class="['btn-like-mini', { active: movie.is_liked }]"
                               :title="movie.is_liked ? '좋아요 취소' : '좋아요 추가'"
                             >
                               <svg 
-                                xmlns="http://www.w3.org/2000/svg"
-                                class="w-6 h-6 transition-transform duration-200 group-hover/btn:scale-110" 
+                                xmlns="http://www.w3.org/2000/svg" 
                                 viewBox="0 0 24 24"
                                 stroke-width="2"
+                                class="icon-heart"
                               >
                                 <path 
                                   stroke-linecap="round" 
                                   stroke-linejoin="round" 
                                   d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                                  :stroke="movie.is_liked ? '#ef4444' : 'currentColor'"
-                                  :fill="movie.is_liked ? '#ef4444' : 'none'"
                                 />
                               </svg>
                             </button>
                           </div>
-                          
-                          <div class="text-xs text-gray-500">{{ movie.year }}</div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <!-- 다음 버튼 -->
                   <button
                     v-if="platform.movies.length > 5"
                     @click="nextPage(group)"
                     :disabled="group.currentPage >= Math.ceil(platform.movies.length / 5) - 1"
-                    class="w-12 h-12 rounded-full flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:bg-gray-700/80"
-                    style="position: absolute; top: 50%; transform: translateY(-50%); right: -2.5rem; z-index: 20; background-color: rgba(0,0,0,0.5); backdrop-filter: blur(8px);"
+                    class="nav-btn next"
                   >
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                   </button>
                   
                 </div>
@@ -125,11 +109,8 @@
         </div>
       </div>
 
-      <button 
-        @click="scrollToTop"
-        class="fixed bottom-8 right-8 w-14 h-14 rounded-full bg-blue-600 hover:bg-blue-700 shadow-xl flex items-center justify-center transition-all z-50 hover:scale-110 active:scale-95"
-      >
-        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <button @click="scrollToTop" class="fab-top">
+        <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
         </svg>
       </button>
@@ -199,7 +180,7 @@ onMounted(async () => {
   }
 });
 
-// 2. 그룹화 로직 (데이터가 변경될 때마다 실행)
+// 2. 그룹화 로직
 watch(allMovies, (newMovies) => {
   if (!newMovies.length) {
     movieGroups.value = [];
@@ -214,7 +195,7 @@ watch(allMovies, (newMovies) => {
   }, {} as { [key: string]: Movie[] });
 
   movieGroups.value = Object.entries(groups)
-    .sort(([yearMonthA], [yearMonthB]) => yearMonthA.localeCompare(yearMonthB)) // 오름차순 정렬
+    .sort(([yearMonthA], [yearMonthB]) => yearMonthA.localeCompare(yearMonthB))
     .map(([yearMonth, movieList]) => ({
       yearMonth: yearMonth,
       date: new Date(yearMonth).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' }),
@@ -258,7 +239,7 @@ const handleAddToLikes = async (movie: Movie) => {
   }
 
   const originalStatus = movie.is_liked;
-  movie.is_liked = !originalStatus; // UI 즉시 변경
+  movie.is_liked = !originalStatus;
 
   try {
     if (originalStatus) {
@@ -290,10 +271,370 @@ const goBack = () => {
 </script>
 
 <style scoped>
-.line-clamp-2 {
+/* 🎨 MIA Cinema Explore Style */
+.explore-container {
+  min-height: 100vh;
+  background: #0a0b0f;
+  color: #ffffff;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  padding-bottom: 5rem;
+  overflow-x: hidden;
+}
+
+/* Header */
+.explore-header {
+  padding: 2rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(10, 11, 15, 0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 3rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.btn-back-minimal {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.5rem 1rem;
+  border-radius: 100px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.btn-back-minimal:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.page-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: white;
+}
+
+/* Timeline Layout */
+.timeline-wrapper {
+  position: relative;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4rem 3rem;
+}
+
+/* Vertical Line */
+.timeline-line {
+  position: absolute;
+  left: 3rem; /* Aligned with padding */
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    rgba(139, 92, 246, 0) 0%,
+    rgba(139, 92, 246, 0.5) 10%,
+    rgba(139, 92, 246, 0.5) 90%,
+    rgba(139, 92, 246, 0) 100%
+  );
+  z-index: 0;
+}
+
+.timeline-group {
+  position: relative;
+  margin-bottom: 5rem;
+  padding-left: 3rem; /* Space for line */
+}
+
+.timeline-node {
+  position: absolute;
+  left: -5px; /* Half of width (11px) offset from padding-left 0 relative to group? No, relative to line */
+  left: -0.35rem; /* Adjust based on line position */
+  top: 0;
+  z-index: 10;
+}
+
+.node-dot {
+  width: 11px;
+  height: 11px;
+  background: #0a0b0f;
+  border: 2px solid #8b5cf6;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+.group-content {
+  padding-left: 2rem;
+}
+
+/* Date Label */
+.date-label {
+  margin-bottom: 2rem;
+}
+
+.month {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #8b5cf6;
+  letter-spacing: -0.02em;
+}
+
+/* Platforms & Carousel */
+.platform-section {
+  margin-bottom: 2rem;
+}
+
+.platform-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.count-badge {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.status-text {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+}
+
+.carousel-container {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.movies-row-wrapper {
+  overflow: hidden;
+}
+
+.movies-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+}
+
+/* Movie Item - The Outline Effect */
+.movie-item {
+  cursor: pointer;
+  position: relative;
+  padding: 0.75rem;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  
+  /* ⭐ Requested Outline Style ⭐ */
+  outline: 2px solid transparent;
+  outline-offset: 4px;
+}
+
+.movie-item:hover {
+  background: rgba(255, 255, 255, 0.03);
+  /* Hover 시 하얀색 아웃라인 적용 (요청사항 반영) */
+  outline-color: rgba(255, 255, 255, 0.8);
+}
+
+.poster-frame {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.poster-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.movie-item:hover .poster-frame img {
+  transform: scale(1.05);
+}
+
+.poster-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.movie-item:hover .poster-overlay {
+  opacity: 1;
+}
+
+.movie-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #ffffff;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.4;
+  height: 2.8em; /* 2 lines */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.movie-item:hover .movie-title {
+  color: #8b5cf6;
+}
+
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.year-text {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* Mini Like Button */
+.btn-like-mini {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-like-mini:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.btn-like-mini.active {
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.icon-heart {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+}
+
+.btn-like-mini.active .icon-heart {
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* Nav Buttons */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: rgba(10, 11, 15, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+}
+
+.nav-btn:hover:not(:disabled) {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.nav-btn:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.nav-btn.prev { left: -1.25rem; }
+.nav-btn.next { right: -1.25rem; }
+
+/* FAB */
+.fab-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: #8b5cf6;
+  border: none;
+  color: white;
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.fab-top:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(139, 92, 246, 0.5);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .movies-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .movies-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .timeline-wrapper {
+    padding: 2rem 1rem;
+  }
+  
+  .timeline-line {
+    left: 1rem;
+  }
+  
+  .timeline-group {
+    padding-left: 1.5rem;
+  }
+  
+  .nav-btn.prev { left: -0.75rem; }
+  .nav-btn.next { right: -0.75rem; }
 }
 </style>

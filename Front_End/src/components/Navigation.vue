@@ -1,104 +1,87 @@
 <template>
-  <nav class="border-b border-gray-800/30 bg-gray-960 backdrop-blur-md fixed top-0 w-full z-50 shadow-lg">
-    <div class="container mx-auto px-6 max-w-7xl">
-      <div class="flex items-center justify-between h-20">
-        <!-- 작은 로고 -->
+  <nav class="cinema-nav">
+    <div class="nav-inner">
+      <div class="nav-content">
+        
         <router-link 
           :to="{ name: 'Home' }"
-          class="flex items-center gap-2 hover:opacity-90 transition-all duration-200"
+          class="nav-logo"
         >
-          <img src="/mia_logo1.png" alt="MIA 로고" style="height: 80px; width: auto; margin-left: 30px" />
+          <img src="/mia_logo1.png" alt="MIA 로고" class="logo-img" />
         </router-link>
         
-        <!-- 메뉴 -->
-        <div class="flex items-center gap-6">
+        <div class="nav-menu">
+          
           <router-link
             :to="{ name: 'Home' }"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
-            active-class="!text-white !bg-purple-600 !shadow-lg !shadow-purple-500/30"
+            class="menu-link"
+            active-class="active"
           >
-            <Home class="w-5 h-5" />
-            <span class="text-base">홈</span>
+            <Home class="icon-sm" />
+            <span>홈</span>
           </router-link>
 
           <router-link
             :to="{ name: 'Explore' }"
-            class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
-            active-class="!text-white !bg-purple-600 !shadow-lg !shadow-purple-500/30"
+            class="menu-link"
+            active-class="active"
           >
-            <Film class="w-5 h-5" />
-            <span class="text-base">둘러보기</span>
+            <Film class="icon-sm" />
+            <span>둘러보기</span>
           </router-link>
           
           <template v-if="isLoggedIn">
             <router-link
               v-if="currentUser"
               :to="{ name: 'UserProfile', params: { userId: currentUser.id } }"
-              class="flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 font-medium text-gray-300 hover:text-white hover:bg-gray-800/50"
-              active-class="!text-white !bg-purple-600 !shadow-lg !shadow-purple-500/30"
+              class="menu-link"
+              active-class="active"
             >
-              <User class="w-5 h-5" />
-              <span class="text-base">내 영화</span>
+              <User class="icon-sm" />
+              <span>내 영화</span>
             </router-link>
             
-            <div class="relative" ref="userMenuRef">
+            <div class="user-menu-wrapper" ref="userMenuRef">
               <button
                 @click="showUserMenu = !showUserMenu"
-                class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-200"
+                class="user-btn"
+                :class="{ 'active': showUserMenu }"
               >
                 <img
                   v-if="currentUser?.profile_image"
                   :src="currentUser.profile_image"
                   :alt="currentUser.username"
-                  class="w-8 h-8 rounded-full object-cover ring-2 ring-gray-700 hover:ring-purple-500 transition-all"
+                  class="user-avatar"
                 />
-                <div v-else class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center ring-2 ring-gray-700 hover:ring-purple-500 transition-all">
-                  <span class="text-xs font-semibold">{{ currentUser?.username.charAt(0).toUpperCase() }}</span>
+                <div v-else class="user-avatar-placeholder">
+                  {{ currentUser?.username.charAt(0).toUpperCase() }}
                 </div>
               </button>
               
-              <!-- 말풍선 스타일 드롭다운 -->
-              <div
-                v-if="showUserMenu"
-                style="position: absolute; left: calc(100% + 8px); top: 0; width: 140px; background-color: #111827; border: 1px solid rgba(147, 51, 234, 0.3); border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(147, 51, 234, 0.3), 0 8px 10px -6px rgba(147, 51, 234, 0.3); padding: 4px; z-index: 9999;"
-              >
-                <!-- 왼쪽 말풍선 화살표 -->
-                <div style="position: absolute; left: -8px; top: 12px; width: 16px; height: 16px; background-color: #111827; border-left: 1px solid rgba(147, 51, 234, 0.3); border-bottom: 1px solid rgba(147, 51, 234, 0.3); transform: rotate(45deg);"></div>
-                
-                <!-- 프로필 편집 버튼 -->
-                <button
-                  @click="handleProfileEdit"
-                  style="width: 100%; padding: 8px 12px; text-align: center; color: #d1d5db; font-weight: 500; font-size: 0.875rem; border-radius: 8px; border: none; background: transparent; cursor: pointer; transition: all 0.2s; margin-bottom: 2px;"
-                  @mouseover="$event.target.style.backgroundColor = '#9333ea'; $event.target.style.color = '#ffffff'"
-                  @mouseout="$event.target.style.backgroundColor = 'transparent'; $event.target.style.color = '#d1d5db'"
-                >
-                  프로필 편집
-                </button>
-
-                <!-- 구분선 -->
-                <div style="height: 1px; background-color: rgba(147, 51, 234, 0.2); margin: 4px 8px;"></div>
-                
-                <!-- 로그아웃 버튼 -->
-                <button
-                  @click="handleLogout"
-                  style="width: 100%; padding: 8px 12px; text-align: center; color: #d1d5db; font-weight: 500; font-size: 0.875rem; border-radius: 8px; border: none; background: transparent; cursor: pointer; transition: all 0.2s; margin-top: 2px;"
-                  @mouseover="$event.target.style.backgroundColor = '#9333ea'; $event.target.style.color = '#ffffff'"
-                  @mouseout="$event.target.style.backgroundColor = 'transparent'; $event.target.style.color = '#d1d5db'"
-                >
-                  로그아웃
-                </button>
-              </div>
+              <transition name="fade-slide">
+                <div v-if="showUserMenu" class="dropdown-panel">
+                  <div class="dropdown-arrow"></div>
+                  <button @click="handleProfileEdit" class="dropdown-item">
+                    프로필 편집
+                  </button>
+                  <div class="dropdown-divider"></div>
+                  <button @click="handleLogout" class="dropdown-item">
+                    로그아웃
+                  </button>
+                </div>
+              </transition>
             </div>
           </template>
           
           <template v-else>
             <button
               @click="emit('openAuth')"
-              class="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-lg transition-all duration-200 font-semibold shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105"
+              class="btn-login"
             >
               로그인
             </button>
           </template>
+
         </div>
       </div>
     </div>
@@ -142,7 +125,6 @@ const handleProfileEdit = () => {
   emit('editProfile');
 };
 
-// 외부 클릭 감지
 const handleClickOutside = (event: MouseEvent) => {
   if (userMenuRef.value && !userMenuRef.value.contains(event.target as Node)) {
     showUserMenu.value = false;
@@ -157,3 +139,234 @@ onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
 </script>
+
+<style scoped>
+/* 🎨 MIA Cinema Navbar Style */
+.cinema-nav {
+  /* 🔥 핵심 수정: Fixed 제거하고 Relative로 변경 */
+  position: relative; 
+  width: 100%;
+  z-index: 50;
+  background: #0a0b0f; /* 배경을 불투명한 Pure Black으로 설정 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.nav-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.nav-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 5rem; /* 64px */
+}
+
+/* Logo */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+.nav-logo:hover {
+  opacity: 0.8;
+}
+
+.logo-img {
+  height: 4rem;
+  filter: drop-shadow(0 2px 6px rgb(66, 27, 156));
+}
+
+/* Menu */
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Menu Links */
+.menu-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 8px; /* 둥근 정도를 조금 줄여서 모던하게 */
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.menu-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* 🔥 Active State: 테두리(Line) 제거, 텍스트 색상과 배경만 은은하게 */
+.menu-link.active {
+  color: #8b5cf6; /* 텍스트 보라색 */
+  background: rgba(139, 92, 246, 0.1); /* 배경 아주 연하게 */
+  font-weight: 600;
+}
+
+.icon-sm {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+/* User Menu */
+.user-menu-wrapper {
+  position: relative;
+  margin-left: 0.5rem;
+}
+
+.user-btn {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.user-btn:hover, .user-btn.active {
+  transform: scale(1.05);
+}
+
+.user-avatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s;
+}
+
+.user-btn:hover .user-avatar {
+  border-color: #8b5cf6;
+}
+
+.user-avatar-placeholder {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dropdown Panel */
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  width: 160px;
+  background: #0a0b0f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  z-index: 100;
+  transform-origin: top right;
+}
+
+.dropdown-arrow {
+  position: absolute;
+  top: -6px;
+  right: 12px;
+  width: 12px;
+  height: 12px;
+  background: #0a0b0f;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  transform: rotate(45deg);
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.dropdown-item:hover {
+  background: rgba(139, 92, 246, 0.1);
+  color: #c084fc;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0.25rem 0.5rem;
+}
+
+/* Login Button */
+.btn-login {
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-login:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+/* Animations */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.2s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-inner {
+    padding: 0 1rem;
+  }
+  
+  .nav-menu {
+    gap: 0.5rem;
+  }
+  
+  .menu-link span {
+    display: none;
+  }
+  
+  .menu-link {
+    padding: 0.5rem;
+  }
+}
+</style>
