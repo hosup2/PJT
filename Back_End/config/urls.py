@@ -28,6 +28,7 @@ urlpatterns = [
     path('movies/', include('movies.urls')),
     path('users/', include('users.urls')),
     path('recommend/', include('recommend.urls')),
+    path('community/', include('community.urls')),
     path("api/token/", TokenObtainPairView.as_view()),
     path("api/token/refresh/", TokenRefreshView.as_view()),
     re_path(r'^.*', TemplateView.as_view(template_name='index.html'), name='index'),

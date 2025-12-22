@@ -1,5 +1,14 @@
 ## FrontEnd
 
+## 12.22 (오늘)
+- **커뮤니티(게시판) 기능 기본 구조 마련**
+  - `community` 관련 컴포넌트 디렉토리 및 파일 생성
+    - `src/components/community/CommunityView.vue` (게시글 목록)
+    - `src/components/community/PostDetail.vue` (게시글 상세)
+    - `src/components/community/PostCreate.vue` (게시글 작성)
+  - `router/index.ts`에 커뮤니티 페이지 라우팅 경로 추가
+  - `ExploreView.vue`의 커뮤니티 섹션을 클릭 시 게시판으로 이동하도록 링크 적용
+
 ## 12.20
 - ExploreView 페이지 재구성
   - 기존 타임라인 뷰를 3개의 카드형 섹션으로 변경 (공개 예정 영화, 인생작 영화, 커뮤니티)

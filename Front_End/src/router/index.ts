@@ -4,6 +4,9 @@ import ExploreView from '../components/ExploreView.vue';
 import MovieDetail from '../components/MovieDetail.vue';
 import UserProfile from '../components/UserProfile.vue';
 import ExploreFullView from '../components/ExploreFullView.vue';
+import CommunityView from '../components/community/CommunityView.vue';
+import PostDetail from '../components/community/PostDetail.vue';
+import PostCreate from '../components/community/PostCreate.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -33,7 +36,23 @@ const routes: Array<RouteRecordRaw> = [
     name: 'UserProfile',
     component: UserProfile,
     props: true,
-  }
+  },
+  {
+    path: '/community',
+    name: 'Community',
+    component: CommunityView,
+  },
+  {
+    path: '/community/post/:id',
+    name: 'PostDetail',
+    component: PostDetail,
+    props: true,
+  },
+  {
+    path: '/community/create',
+    name: 'PostCreate',
+    component: PostCreate,
+  },
 ];
 
 const router = createRouter({

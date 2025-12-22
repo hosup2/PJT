@@ -1,5 +1,16 @@
 ## Back_End Test
 
+## 12.22 
+- 커뮤니티(게시판) 기능 추가
+  - `community` 앱 생성
+  - 게시글(`Post`) 및 댓글(`Comment`) 모델 정의
+  - 게시글, 댓글 CRUD API 엔드포인트 구현
+    - `GET, POST /community/posts/`
+    - `GET, PUT, DELETE /community/posts/<int:pk>/`
+    - `GET, POST /community/posts/<int:post_pk>/comments/`
+    - `GET, PUT, DELETE /community/posts/<int:post_pk>/comments/<int:pk>/`
+  - 작성자만 수정/삭제 가능하도록 권한 설정
+
 ## 12.22
 - 챗봇 이전대화 기억, 사용자 피드백 수용, scoring구체화
 

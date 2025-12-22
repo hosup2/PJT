@@ -140,8 +140,9 @@
            </div>
         </div>
 
-        <div 
-          class="md:col-span-12 group relative bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500"
+        <router-link
+          to="/community"
+          class="md:col-span-12 group relative bg-gradient-to-r from-gray-900/60 to-gray-800/60 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 overflow-hidden hover:border-white/20 transition-all duration-500 block"
         >
           <div class="absolute inset-0 bg-gradient-to-r from-green-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
@@ -178,12 +179,14 @@
                 </div>
               </div>
             </div>
+            
+            <div class="shrink-0 flex items-center justify-center text-green-400">
+                <span class="text-sm font-bold">커뮤니티 입장</span>
+                <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+            </div>
 
-            <button class="shrink-0 px-8 py-3 bg-green-600 hover:bg-green-500 rounded-full text-white font-bold shadow-lg shadow-green-900/50 transition-all transform group-hover:scale-105">
-              커뮤니티 입장
-            </button>
           </div>
-        </div>
+        </router-link>
 
       </div>
     </div>

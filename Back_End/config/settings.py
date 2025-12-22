@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'movies',
     'users',
     'recommend',
+    'community',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
