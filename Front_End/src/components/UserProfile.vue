@@ -1,384 +1,271 @@
 <template>
-  <div>
-    <!-- User not found message -->
-    <div v-if="!user" class="flex items-center justify-center min-h-[400px]">
-      <div class="text-center">
-        <p class="text-xl text-gray-400 mb-2">😥 사용자를 찾을 수 없습니다</p>
-        <p class="text-sm text-gray-500 mb-6">프로필 정보를 불러올 수 없습니다.</p>
-        <button
-          @click="emit('goHome')"
-          class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-        >
-          홈으로 돌아가기
-        </button>
-      </div>
+  <div class="profile-container">
+    
+    <div v-if="!user" class="loading-minimal">
+      <div class="spinner-minimal"></div>
+      <p class="error-text">사용자 정보를 불러오는 중입니다...</p>
+      <button @click="emit('goHome')" class="btn-action-minimal mt-4">
+        홈으로 돌아가기
+      </button>
     </div>
 
-    <!-- Profile content -->
-    <div v-if="user">
-      <!-- Profile Header -->
-      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 md:p-8 mb-8 border border-gray-700/50">
-        <!-- Profile Info Section -->
-        <div class="mb-8">
-          <!-- Profile Image & Username - Horizontal Layout -->
-          <div class="flex items-center justify-center gap-6 mb-6">
-            <!-- Profile Image -->
-            <div class="relative flex-shrink-0">
-              <img
-                :src="user.profile_image"
-                :alt="user.username"
-                class="w-24 h-24 md:w-32 md:h-32 rounded-full bg-gray-800 object-cover ring-4 ring-purple-500/20"
-              />
-              <div class="absolute -bottom-2 -right-2 bg-purple-600 rounded-full p-2">
-                <Star class="w-4 h-4 md:w-5 md:h-5 text-white fill-white" />
-              </div>
-            </div>
-            
-            <!-- Username -->
-            <div class="text-left">
-              <h1 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
-                {{ user.username }}
-              </h1>
-              <p class="text-gray-400">{{ user.email }}</p>
+    <div v-if="user" class="profile-inner">
+      
+      <header class="profile-header">
+        <div class="header-content">
+          <div class="profile-avatar-wrapper">
+            <img
+              :src="user.profile_image || '/mia5.png'"
+              :alt="user.username"
+              class="profile-avatar"
+            />
+            <div class="avatar-badge">
+              <Star class="icon-sm" />
             </div>
           </div>
-    
-          <!-- Follow Button - Centered -->
-          <div class="flex justify-center">
-            <button
-              v-if="!isOwnProfile"
-              @click="toggleFollow"
-              :class="[
-                'px-6 py-2 rounded-full text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg',
-                user.follow_info.is_following
-                  ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:shadow-gray-600/50'
-                  : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 hover:shadow-purple-500/50'
-              ]"
-            >
-              <UserCheck v-if="user.follow_info.is_following" class="w-4 h-4" />
-              <UserPlus v-else class="w-4 h-4" />
-              <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
-            </button>
+
+          <div class="user-info">
+            <span class="user-label">MEMBER PROFILE</span>
+            <h1 class="user-name">{{ user.username }}</h1>
+            <p class="user-email">{{ user.email }}</p>
+
+            <div class="action-buttons">
+              <button
+                v-if="!isOwnProfile"
+                @click="toggleFollow"
+                :class="['btn-follow', { 'active': user.follow_info.is_following }]"
+              >
+                <UserCheck v-if="user.follow_info.is_following" class="icon-sm" />
+                <UserPlus v-else class="icon-sm" />
+                <span>{{ user.follow_info.is_following ? '팔로잉' : '팔로우' }}</span>
+              </button>
+
+              <button 
+                v-if="isOwnProfile" 
+                @click="showEditModal = true"
+                class="btn-edit"
+              >
+                프로필 수정
+              </button>
+            </div>
           </div>
         </div>
-        
-        <!-- Stats Grid -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 max-w-5xl mx-auto">
-          <!-- Followers -->
-          <button
-            @click="openFollowModal('followers')"
-            class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105 w-full"
-          >
-            <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20">
-                <Users class="w-5 h-5 text-emerald-400" />
-              </div>
-              <span class="text-2xl font-bold text-emerald-400">{{ user.follow_info.followers_count }}</span>
-              <p class="text-xs text-gray-400">팔로워</p>
-            </div>
+      </header>
+
+      <section class="stats-section">
+        <div class="stats-grid">
+          <button @click="openFollowModal('followers')" class="stat-item clickable">
+            <span class="stat-value">{{ user.follow_info.followers_count }}</span>
+            <span class="stat-label">
+              <Users class="icon-xs" /> 팔로워
+            </span>
           </button>
           
-          <!-- Following -->
-          <button
-            @click="openFollowModal('following')"
-            class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-emerald-500/50 transition-all duration-200 hover:scale-105 w-full"
-          >
-            <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-500/20">
-                <UserCheck class="w-5 h-5 text-emerald-400" />
-              </div>
-              <span class="text-2xl font-bold text-emerald-400">{{ user.follow_info.following_count }}</span>
-              <p class="text-xs text-gray-400">팔로잉</p>
-            </div>
+          <button @click="openFollowModal('following')" class="stat-item clickable">
+            <span class="stat-value">{{ user.follow_info.following_count }}</span>
+            <span class="stat-label">
+              <UserCheck class="icon-xs" /> 팔로잉
+            </span>
           </button>
 
-          <!-- Rated Movies -->
-          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-purple-500/50 transition-all duration-200 hover:scale-105">
-            <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-purple-500/20">
-                <Film class="w-5 h-5 text-purple-400" />
-              </div>
-              <span class="text-2xl font-bold text-purple-400">{{ stats.total_ratings }}</span>
-              <p class="text-xs text-gray-400">평가</p>
-            </div>
+          <div class="stat-item">
+            <span class="stat-value purple">{{ stats.total_ratings }}</span>
+            <span class="stat-label">
+              <Film class="icon-xs" /> 평가
+            </span>
           </div>
-          
-          <!-- Average Rating -->
-          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-yellow-500/50 transition-all duration-200 hover:scale-105">
-            <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-yellow-500/20">
-                <Star class="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              </div>
-              <span class="text-2xl font-bold text-yellow-400">{{ stats.avg_rating.toFixed(1) }}</span>
-              <p class="text-xs text-gray-400">평균</p>
-            </div>
+
+          <div class="stat-item">
+            <span class="stat-value yellow">{{ stats.avg_rating.toFixed(1) }}</span>
+            <span class="stat-label">
+              <Star class="icon-xs" /> 평균 별점
+            </span>
           </div>
-          
-          <!-- Likes -->
-          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-red-500/50 transition-all duration-200 hover:scale-105">
-            <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-red-500/20">
-                <Heart class="w-5 h-5 text-red-400" />
-              </div>
-              <span class="text-2xl font-bold text-red-400">{{ stats.liked_movies }}</span>
-              <p class="text-xs text-gray-400">좋아요</p>
-            </div>
+
+          <div class="stat-item">
+            <span class="stat-value red">{{ stats.liked_movies }}</span>
+            <span class="stat-label">
+              <Heart class="icon-xs" /> 좋아요
+            </span>
           </div>
-          
-          <!-- Reviews -->
-          <div class="bg-gray-800/50 rounded-xl p-4 backdrop-blur-sm border border-gray-700/30 hover:border-blue-500/50 transition-all duration-200 hover:scale-105">
-            <div class="flex flex-col items-center gap-2">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/20">
-                <MessageSquare class="w-5 h-5 text-blue-400" />
-              </div>
-              <span class="text-2xl font-bold text-blue-400">{{ stats.total_comments }}</span>
-              <p class="text-xs text-gray-400">리뷰</p>
-            </div>
+
+          <div class="stat-item">
+            <span class="stat-value blue">{{ stats.total_comments }}</span>
+            <span class="stat-label">
+              <MessageSquare class="icon-xs" /> 리뷰
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <div class="filter-bar">
+        <div class="filter-inner">
+          <div class="filter-buttons">
+            <button
+              @click="activeTab = 'ratings'"
+              :class="['filter-btn', { active: activeTab === 'ratings' }]"
+            >
+              평가한 영화
+            </button>
+            <button
+              @click="activeTab = 'likes'"
+              :class="['filter-btn', { active: activeTab === 'likes' }]"
+            >
+              좋아요한 영화
+            </button>
+            <button
+              @click="activeTab = 'comments'"
+              :class="['filter-btn', { active: activeTab === 'comments' }]"
+            >
+              작성한 리뷰
+            </button>
           </div>
         </div>
       </div>
 
-      <!-- Tabs -->
-      <div class="flex gap-2 mb-6 border-b border-gray-800">
-        <button
-          @click="activeTab = 'ratings'"
-          :class="[
-            'px-4 py-3 transition-colors relative',
-            activeTab === 'ratings' ? 'text-purple-400' : 'text-gray-400 hover:text-gray-200'
-          ]"
-        >
-          평가한 영화
-          <div
-            v-if="activeTab === 'ratings'"
-            class="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400"
-          />
-        </button>
+      <main class="content-main">
         
-        <button
-          @click="activeTab = 'likes'"
-          :class="[
-            'px-4 py-3 transition-colors relative',
-            activeTab === 'likes' ? 'text-purple-400' : 'text-gray-400 hover:text-gray-200'
-          ]"
-        >
-          좋아요한 영화
-          <div
-            v-if="activeTab === 'likes'"
-            class="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400"
-          />
-        </button>
-        
-        <button
-          @click="activeTab = 'comments'"
-          :class="[
-            'px-4 py-3 transition-colors relative',
-            activeTab === 'comments' ? 'text-purple-400' : 'text-gray-400 hover:text-gray-200'
-          ]"
-        >
-          작성한 리뷰
-          <div
-            v-if="activeTab === 'comments'"
-            class="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-400"
-          />
-        </button>
-      </div>
-
-      <!-- Ratings Tab -->
-      <div v-if="activeTab === 'ratings'">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-2xl">평가한 영화 ({{ filteredRatings.length }})</h2>
-          
-          <div class="flex gap-2">
-            <button
-              @click="ratingFilter = 'all'"
-              :class="[
-                'px-4 py-2 rounded-lg transition-colors',
-                ratingFilter === 'all'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              ]"
-            >
-              전체
-            </button>
-            <button
-              @click="ratingFilter = 'high'"
-              :class="[
-                'px-4 py-2 rounded-lg transition-colors',
-                ratingFilter === 'high'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              ]"
-            >
-              4점 이상
-            </button>
-            <button
-              @click="ratingFilter = 'low'"
-              :class="[
-                'px-4 py-2 rounded-lg transition-colors',
-                ratingFilter === 'low'
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              ]"
-            >
-              2점 이하
-            </button>
+        <div v-if="activeTab === 'ratings'" class="tab-content">
+          <div class="content-header">
+            <h2 class="content-title">평가한 영화 <span class="count">{{ filteredRatings.length }}</span></h2>
+            <div class="sub-filters">
+              <button @click="ratingFilter = 'all'" :class="['sub-filter-btn', { active: ratingFilter === 'all' }]">전체</button>
+              <button @click="ratingFilter = 'high'" :class="['sub-filter-btn', { active: ratingFilter === 'high' }]">4점 이상</button>
+              <button @click="ratingFilter = 'low'" :class="['sub-filter-btn', { active: ratingFilter === 'low' }]">2점 이하</button>
+            </div>
           </div>
-        </div>
 
-        <div v-if="filteredRatings.length === 0" class="text-center py-12 text-gray-400">
-          평가한 영화가 없습니다
-        </div>
+          <div v-if="filteredRatings.length === 0" class="empty-minimal">
+            <span class="empty-icon-minimal">🎬</span>
+            <h3>평가한 영화가 없습니다</h3>
+          </div>
 
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          <div v-for="rating in filteredRatings" :key="rating.movie_id" class="group">
-            <button
+          <div v-else class="movie-grid">
+            <article 
+              v-for="rating in filteredRatings" 
+              :key="rating.movie_id" 
+              class="movie-card"
               @click="handleMovieClick(rating.movie_id)"
-              class="w-full text-left"
             >
-              <div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 bg-gray-800">
+              <div class="poster-wrapper">
                 <img
                   :src="getFullImageUrl(rating.poster_path)"
                   :alt="rating.title"
-                  class="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   @error="handleImageError"
                 />
+                <div class="rating-badge">
+                  <Star class="icon-xs fill-current" /> {{ rating.rating }}
+                </div>
               </div>
-              
-              <h3 class="line-clamp-2 text-sm group-hover:text-purple-400 transition-colors">
-                {{ rating.title }}
-              </h3>
-            </button>
+              <h3 class="movie-title">{{ rating.title }}</h3>
+            </article>
           </div>
         </div>
-      </div>
 
-      <!-- Likes Tab -->
-      <div v-if="activeTab === 'likes'">
-        <h2 class="text-2xl mb-6">좋아요한 영화 ({{ likedMovies.length }})</h2>
-        
-        <div v-if="likedMovies.length === 0" class="text-center py-12 text-gray-400">
-          좋아요한 영화가 없습니다
-        </div>
+        <div v-if="activeTab === 'likes'" class="tab-content">
+          <div class="content-header">
+            <h2 class="content-title">좋아요한 영화 <span class="count">{{ likedMovies.length }}</span></h2>
+          </div>
 
-        <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          <div v-for="movie in likedMovies" :key="movie.id" class="group">
-            <button
+          <div v-if="likedMovies.length === 0" class="empty-minimal">
+            <span class="empty-icon-minimal">💔</span>
+            <h3>좋아요한 영화가 없습니다</h3>
+          </div>
+
+          <div v-else class="movie-grid">
+            <article 
+              v-for="movie in likedMovies" 
+              :key="movie.id" 
+              class="movie-card"
               @click="handleMovieClick(movie.id)"
-              class="w-full text-left"
             >
-              <div class="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 bg-gray-800">
+              <div class="poster-wrapper">
                 <img
                   :src="getFullImageUrl(movie.poster_path)"
                   :alt="movie.title"
-                  class="w-full h-full object-cover group-hover:scale-105 transition-transform"
                   @error="handleImageError"
                 />
-                <div class="absolute top-3 right-3">
-                  <Heart class="w-5 h-5 text-red-400 fill-current" />
+                <div class="like-badge">
+                  <Heart class="icon-xs fill-current" />
                 </div>
               </div>
-              
-              <h3 class="line-clamp-2 text-sm group-hover:text-purple-400 transition-colors">
-                {{ movie.title }}
-              </h3>
-              
-              <p class="text-xs text-gray-500 mt-1">
-                {{ new Date(movie.release_date).getFullYear() }}
-              </p>
-            </button>
+              <h3 class="movie-title">{{ movie.title }}</h3>
+              <p class="movie-year">{{ new Date(movie.release_date).getFullYear() }}</p>
+            </article>
           </div>
         </div>
-      </div>
 
-      <!-- Comments Tab -->
-      <div v-if="activeTab === 'comments'">
-        <h2 class="text-2xl mb-6">작성한 리뷰 ({{ userComments.length }})</h2>
-        
-        <div v-if="userComments.length === 0" class="text-center py-12 text-gray-400">
-          작성한 리뷰가 없습니다
-        </div>
+        <div v-if="activeTab === 'comments'" class="tab-content">
+          <div class="content-header">
+            <h2 class="content-title">작성한 리뷰 <span class="count">{{ userComments.length }}</span></h2>
+          </div>
 
-        <div v-else class="space-y-4">
-          <div
-            v-for="comment in userComments"
-            :key="comment.id"
-            class="bg-gray-900/50 rounded-xl p-6 border border-gray-800 hover:border-purple-500/30 transition-all"
-          >
-            <!-- Header: Movie Title, Rating, Date, Delete Button -->
-            <div class="flex items-start justify-between mb-4">
-              <div class="flex-1">
-                <!-- Movie Title - Clickable -->
-                <button
-                  v-if="comment.movie_id"
-                  @click="handleMovieClick(comment.movie_id)"
-                  class="text-lg font-semibold text-purple-400 hover:text-purple-300 transition-all mb-2 text-left block border-b-2 border-purple-400 hover:border-purple-300 pb-0.5"
-                >
-                  {{ comment.movie_title || '영화 제목' }}
-                </button>
-                
-                <!-- Fallback if no movie info -->
-                <div v-else class="text-xl font-bold text-gray-500 mb-2">
-                  {{ comment.movie_title || '영화 정보 없음' }}
+          <div v-if="userComments.length === 0" class="empty-minimal">
+            <span class="empty-icon-minimal">✍️</span>
+            <h3>작성한 리뷰가 없습니다</h3>
+          </div>
+
+          <div v-else class="review-list">
+            <article 
+              v-for="comment in userComments" 
+              :key="comment.id" 
+              class="review-item"
+            >
+              <div class="review-header">
+                <div class="header-left">
+                  <button 
+                    v-if="comment.movie_id" 
+                    @click="handleMovieClick(comment.movie_id)"
+                    class="review-movie-title"
+                  >
+                    {{ comment.movie_title || '영화 제목' }}
+                  </button>
+                  <span v-else class="review-movie-title disabled">
+                    {{ comment.movie_title || '영화 정보 없음' }}
+                  </span>
+                  
+                  <div v-if="comment.rating && comment.rating > 0" class="review-rating">
+                    <StarRating 
+                      :initial-rating="comment.rating" 
+                      :readonly="true" 
+                      size="sm" 
+                    />
+                  </div>
                 </div>
-                
-                <!-- Rating if exists -->
-                <div v-if="comment.rating && comment.rating > 0" class="flex items-center gap-2 mb-2">
-                  <StarRating
-                    :initial-rating="comment.rating"
-                    :readonly="true"
-                    size="sm"
-                  />
+
+                <div class="header-right">
+                  <span class="review-date">{{ formatDate(comment.created_at) }}</span>
+                  <button 
+                    v-if="isOwnProfile" 
+                    @click="handleDeleteReview(comment.id, comment.movie_id)"
+                    class="btn-delete-minimal"
+                    title="리뷰 삭제"
+                  >
+                    <Trash2 class="icon-sm" />
+                  </button>
                 </div>
               </div>
-              
-              <div class="flex items-center gap-3 ml-4">
-                <span class="text-sm text-gray-500 whitespace-nowrap">
-                  {{ formatDate(comment.created_at) }}
-                </span>
-                
-                <!-- Delete Button - Only show for own profile -->
-                <button
-                  v-if="isOwnProfile"
-                  @click="handleDeleteReview(comment.id, comment.movie_id)"
-                  class="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                  title="리뷰 삭제"
-                >
-                  <Trash2 class="w-5 h-5" />
-                </button>
+
+              <div class="review-body">
+                <p v-if="getReviewContent(comment)" class="review-text">
+                  {{ getReviewContent(comment) }}
+                </p>
+                <p v-else class="review-text empty">리뷰 내용이 없습니다.</p>
               </div>
-            </div>
-            
-            <!-- Review Content -->
-            <div v-if="getReviewContent(comment)" class="bg-gray-800/30 rounded-lg p-4 mb-4">
-              <p class="text-gray-200 leading-relaxed whitespace-pre-wrap text-base">
-                {{ getReviewContent(comment) }}
-              </p>
-            </div>
-            <div v-else class="bg-gray-800/30 rounded-lg p-4 mb-4">
-              <p class="text-gray-500 italic text-sm">
-                리뷰 내용이 없습니다.
-              </p>
-            </div>
-            
-            <!-- Footer: Likes -->
-            <div class="flex items-center gap-2 pt-2">
-              <Heart 
-                class="w-5 h-5 transition-colors" 
-                :class="comment.likes_count > 0 ? 'fill-current text-red-500' : 'text-gray-600'" 
-              />
-              <span 
-                class="text-sm font-medium" 
-                :class="comment.likes_count > 0 ? 'text-red-500' : 'text-gray-600'"
-              >
-                좋아요 {{ comment.likes_count }}개
-              </span>
-            </div>
+
+              <div class="review-footer">
+                <div :class="['like-stat', { active: comment.likes_count > 0 }]">
+                  <Heart :class="['icon-sm', { 'fill-current': comment.likes_count > 0 }]" />
+                  <span>좋아요 {{ comment.likes_count }}</span>
+                </div>
+              </div>
+            </article>
           </div>
         </div>
-      </div>
+
+      </main>
     </div>
 
-    <!-- Profile Edit Modal -->
     <ProfileEditModal
       v-if="user"
       :is-open="showEditModal"
@@ -387,15 +274,16 @@
       @save="handleSaveProfile"
     />
 
-    <!-- Follow List Modal -->
     <FollowListModal
       v-if="user"
       :is-open="showFollowModal"
       :user-id="Number(userId)"
       :type="followModalType"
       :current-user-id="currentUserId"
-      @close="handleFollowModalClose"  @navigate-to-user="handleNavigateToUser"
+      @close="handleFollowModalClose"
+      @navigate-to-user="handleNavigateToUser"
     />
+
   </div>
 </template>
 
@@ -413,7 +301,7 @@ const router = useRouter();
 // TMDB Image Base URL
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
-// Type definitions based on backend serializers
+// Interfaces
 interface FollowInfo {
   followers_count: number;
   following_count: number;
@@ -478,19 +366,15 @@ const emit = defineEmits<{
   navigateToUser: [userId: number];
 }>();
 
-// UserProfile.vue의 <script setup> 내 handleNavigateToUser 함수 수정
-
+// Logic
 const handleNavigateToUser = (userId: number) => {
-  showFollowModal.value = false; // 모달 닫기
-  // 라우터를 통해 해당 사용자의 프로필로 이동
-  // 라우트 이름('UserProfile')은 실제 설정하신 이름과 맞춰주세요.
+  showFollowModal.value = false;
   router.push({ name: 'UserProfile', params: { userId: userId.toString() } });
 };
 
-// 팔로우 모달이 닫힐 때 부모 페이지의 숫자를 최신화하기 위해 watch 추가 또는 close 핸들러 수정
 const handleFollowModalClose = () => {
   showFollowModal.value = false;
-  fetchUserProfile(); // 모달에서 팔로우/언팔로우를 했을 수 있으므로 프로필 정보(카운트) 다시 불러오기
+  fetchUserProfile();
 };
 
 const user = ref<UserProfile | null>(null);
@@ -504,7 +388,6 @@ const activeTab = ref<'ratings' | 'likes' | 'comments'>('ratings');
 const ratingFilter = ref<'all' | 'high' | 'low'>('all');
 const showEditModal = ref(false);
 
-// 팔로우 리스트 모달 상태
 const showFollowModal = ref(false);
 const followModalType = ref<'followers' | 'following'>('followers');
 
@@ -515,24 +398,13 @@ const openFollowModal = (type: 'followers' | 'following') => {
 
 const isOwnProfile = computed(() => Number(props.userId) === props.currentUserId);
 
-// Helper function to get full image URL
 const getFullImageUrl = (path: string | null | undefined): string => {
-  if (!path) {
-    return '/placeholder-movie.png';
-  }
-  
-  if (path.startsWith('http')) {
-    return path;
-  }
-  
-  if (path.startsWith('/')) {
-    return `${TMDB_IMAGE_BASE_URL}${path}`;
-  }
-  
+  if (!path) return '/placeholder-movie.png';
+  if (path.startsWith('http')) return path;
+  if (path.startsWith('/')) return `${TMDB_IMAGE_BASE_URL}${path}`;
   return `${TMDB_IMAGE_BASE_URL}/${path}`;
 };
 
-// Handle image loading errors
 const handleImageError = (event: Event) => {
   const target = event.target as HTMLImageElement;
   target.src = '/placeholder-movie.png';
@@ -540,13 +412,11 @@ const handleImageError = (event: Event) => {
 
 const fetchUserProfile = async () => {
   const numericUserId = Number(props.userId);
-  console.log('Fetching profile for userId:', numericUserId);
   isLoading.value = true;
   error.value = null;
   try {
     const response = await axios.get(`http://127.0.0.1:8000/users/${numericUserId}/profile/`);
     user.value = response.data;
-    
     if (user.value && !user.value.profile_image) {
       user.value.profile_image = '/mia5.png';  
     }
@@ -569,7 +439,6 @@ const toggleFollow = async () => {
     try {
       const response = await axios.post(`http://127.0.0.1:8000/users/${numericUserId}/follow/`);
       const { followed } = response.data;
-      
       if (user.value.follow_info) {
         user.value.follow_info.is_following = followed;
         if (followed) {
@@ -599,15 +468,11 @@ const handleMovieClick = (movieId: number) => {
 };
 
 const handleDeleteReview = async (reviewId: number, movieId?: number) => {
-  if (!confirm('이 리뷰를 삭제하시겠습니까?')) {
-    return;
-  }
-
+  if (!confirm('이 리뷰를 삭제하시겠습니까?')) return;
   try {
     await axios.delete(`http://127.0.0.1:8000/movies/${movieId}/rating/`, {
       data: { rating_id: reviewId }
     });
-    
     await fetchUserProfile();
     alert('리뷰가 삭제되었습니다.');
   } catch (error) {
@@ -633,19 +498,15 @@ const stats = computed(() => {
   };
 });
 
-// Filtered ratings based on selected filter - 중복 제거 추가
 const filteredRatings = computed(() => {
   const ratingsMap = new Map<number, UserRating>();
-  
   userRatings.value.forEach(rating => {
     const existing = ratingsMap.get(rating.movie_id);
     if (!existing || rating.id > existing.id) {
       ratingsMap.set(rating.movie_id, rating);
     }
   });
-  
   const uniqueRatings = Array.from(ratingsMap.values());
-
   if (ratingFilter.value === 'all') return uniqueRatings;
   if (ratingFilter.value === 'high') return uniqueRatings.filter(r => r.rating >= 4.0);
   if (ratingFilter.value === 'low') return uniqueRatings.filter(r => r.rating <= 2.0);
@@ -653,10 +514,597 @@ const filteredRatings = computed(() => {
 });
 
 const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('ko-KR');
+  return new Date(dateString).toLocaleDateString('ko-KR', {
+    year: 'numeric', month: '2-digit', day: '2-digit'
+  });
 };
 
 const getReviewContent = (comment: UserComment): string => {
   return comment.comment || comment.review_content || '';
 };
 </script>
+
+<style scoped>
+/* 🎨 MIA Design System - Pure Black Cinema Profile */
+.profile-container {
+  min-height: 100vh;
+  background: #0a0b0f;
+  color: #ffffff;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  padding-bottom: 5rem;
+}
+
+/* ============ HEADER ============ */
+.profile-header {
+  padding: 4rem 0 3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.08) 0%, rgba(10, 11, 15, 0) 70%);
+}
+
+.header-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 3rem;
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.profile-avatar {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.avatar-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: #8b5cf6;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 4px solid #0a0b0f;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: #8b5cf6;
+  margin-bottom: 0.5rem;
+}
+
+.user-name {
+  font-size: 3.5rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem 0;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.user-email {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-bottom: 2rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-follow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #8b5cf6;
+  color: white;
+  border: 1px solid #8b5cf6;
+  padding: 0.625rem 1.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-follow:hover {
+  background: #7c3aed;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.btn-follow.active {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.8);
+  box-shadow: none;
+}
+
+.btn-follow.active:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.btn-edit {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.625rem 1.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-edit:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ============ STATS SECTION ============ */
+.stats-section {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(10, 11, 15, 0.5);
+}
+
+.stats-grid {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-around;
+  padding: 1.5rem 0;
+}
+
+.stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  position: relative;
+  background: none;
+  border: none;
+  cursor: default;
+}
+
+.stat-item.clickable {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.stat-item.clickable:hover {
+  opacity: 0.8;
+}
+
+.stat-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 50%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 300;
+  color: #ffffff;
+}
+
+.stat-value.purple { color: #8b5cf6; }
+.stat-value.yellow { color: #fbbf24; }
+.stat-value.red { color: #f87171; }
+.stat-value.blue { color: #60a5fa; }
+
+.stat-label {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* ============ FILTER BAR ============ */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(10, 11, 15, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1rem 0;
+}
+
+.filter-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 3rem;
+  display: flex;
+  justify-content: center;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 2rem;
+}
+
+.filter-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.filter-btn.active {
+  color: #ffffff;
+}
+
+.filter-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1rem; /* align with border bottom */
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: #8b5cf6;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+/* ============ MAIN CONTENT ============ */
+.content-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 3rem 3rem;
+}
+
+.content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.content-title {
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: #ffffff;
+  margin: 0;
+}
+
+.content-title .count {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 0.5rem;
+  font-weight: 400;
+}
+
+.sub-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sub-filter-btn {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.375rem 1rem;
+  border-radius: 4px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sub-filter-btn.active {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.sub-filter-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* MOVIE GRID */
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 2rem;
+}
+
+.movie-card {
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.movie-card:hover {
+  transform: translateY(-5px);
+}
+
+.poster-wrapper {
+  position: relative;
+  aspect-ratio: 2/3;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.poster-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.movie-card:hover .poster-wrapper img {
+  transform: scale(1.05);
+}
+
+.rating-badge, .like-badge {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  color: #fbbf24;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.like-badge {
+  color: #f87171;
+}
+
+.movie-title {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 0.25rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.movie-card:hover .movie-title {
+  color: #8b5cf6;
+}
+
+.movie-year {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  margin: 0;
+}
+
+/* REVIEW LIST */
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.review-item {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.review-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.review-movie-title {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #8b5cf6;
+  cursor: pointer;
+  text-align: left;
+}
+
+.review-movie-title:hover {
+  text-decoration: underline;
+}
+
+.review-movie-title.disabled {
+  color: rgba(255, 255, 255, 0.4);
+  cursor: default;
+  text-decoration: none;
+}
+
+.review-date {
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-delete-minimal {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: color 0.2s;
+}
+
+.btn-delete-minimal:hover {
+  color: #f87171;
+}
+
+.review-body {
+  margin-bottom: 1rem;
+}
+
+.review-text {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.review-text.empty {
+  color: rgba(255, 255, 255, 0.3);
+  font-style: italic;
+}
+
+.review-footer {
+  display: flex;
+  align-items: center;
+}
+
+.like-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.like-stat.active {
+  color: #f87171;
+}
+
+/* UTILS */
+.icon-xs { width: 14px; height: 14px; }
+.icon-sm { width: 18px; height: 18px; }
+
+.loading-minimal, .empty-minimal {
+  text-align: center;
+  padding: 6rem 2rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.spinner-minimal {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: 0 auto 1.5rem;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.empty-icon-minimal {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.btn-action-minimal {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+
+  .stats-grid {
+    flex-wrap: wrap;
+    gap: 1.5rem;
+  }
+
+  .stat-item {
+    min-width: 33%;
+  }
+  
+  .stat-item::after {
+    display: none;
+  }
+
+  .filter-inner {
+    padding: 0 1rem;
+    overflow-x: auto;
+  }
+  
+  .filter-buttons {
+    gap: 1.5rem;
+  }
+
+  .content-main {
+    padding: 2rem 1.5rem;
+  }
+
+  .movie-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+</style>
