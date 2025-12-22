@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from movies.models import Movie
 
 
 class ChatSession(models.Model):
@@ -34,3 +35,18 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         return f"{self.role}: {self.content[:30]}"
+
+
+class MovieFeedback(models.Model):
+    FEEDBACK_CHOICES = (
+        ("like", "Like"),
+        ("dislike", "Dislike"),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    feedback = models.CharField(max_length=10, choices=FEEDBACK_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("user", "movie")  # 중복 피드백 방지

@@ -12,6 +12,8 @@ from .models import ChatSession, ChatMessage
 from .serializers import ChatRequestSerializer, ChatSessionSerializer
 from .services.logic import update_session_summary
 
+from recommend.models import MovieFeedback
+from movies.models import Movie
 
 class ChatRecommendView(APIView):
     permission_classes = [IsAuthenticated]
@@ -112,3 +114,25 @@ class ChatSessionListView(APIView):
 
         serializer = ChatSessionSerializer(sessions, many=True)
         return Response(serializer.data)
+
+class MovieFeedbackView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        movie_id = request.data.get("movie_id")
+        feedback = request.data.get("feedback")  # "like" or "dislike"
+
+        if feedback not in ["like", "dislike"]:
+            return Response({"error": "Invalid feedback"}, status=400)
+
+        movie = Movie.objects.filter(id=movie_id).first()
+        if not movie:
+            return Response({"error": "Movie not found"}, status=404)
+
+        obj, _ = MovieFeedback.objects.update_or_create(
+            user=request.user,
+            movie=movie,
+            defaults={"feedback": feedback},
+        )
+
+        return Response({"status": "ok", "feedback": obj.feedback})

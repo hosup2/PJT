@@ -212,34 +212,71 @@
                 <div
                   v-for="movie in msg.movies"
                   :key="movie.movie_id"
-                  @click="goToMovie(movie.movie_id)"
                   style="
                     background: #111827;
                     border: 1px solid rgba(147,51,234,0.3);
                     border-radius: 8px;
                     padding: 8px;
                     margin-bottom: 6px;
-                    cursor: pointer;
-                    transition: all 0.2s;
                   "
-                  @mouseover="($event.currentTarget as HTMLElement).style.background='#1f2937'"
-                  @mouseleave="($event.currentTarget as HTMLElement).style.background='#111827'"
                 >
-                  <div style="font-weight: 600; color: #c084fc;">
-                    🎬 {{ movie.title }}
+                  <!-- 카드 클릭 영역 -->
+                  <div @click="goToMovie(movie.movie_id)" style="cursor:pointer;">
+                    <div style="font-weight: 600; color: #c084fc;">
+                      🎬 {{ movie.title }}
+                    </div>
+
+                    <div
+                      v-if="movie.reason"
+                      style="font-size: 11px; color: #9ca3af; margin-top: 2px;"
+                    >
+                      {{ movie.reason }}
+                    </div>
+
+                    <div style="font-size: 10px; color: #7c3aed; margin-top: 4px;">
+                      상세 페이지로 이동 →
+                    </div>
                   </div>
 
+                  <!-- 👍 👎 피드백 버튼 -->
                   <div
-                    v-if="movie.reason"
-                    style="font-size: 11px; color: #9ca3af; margin-top: 2px;"
+                    style="
+                      display: flex;
+                      gap: 8px;
+                      margin-top: 6px;
+                      justify-content: flex-end;
+                    "
                   >
-                    {{ movie.reason }}
-                  </div>
+                    <button
+                      @click.stop="sendFeedback(movie.movie_id, 'like')"
+                      style="
+                        background: #1f2937;
+                        border-radius: 6px;
+                        padding: 4px 8px;
+                        font-size: 11px;
+                        color: #22c55e;
+                        cursor: pointer;
+                      "
+                    >
+                      👍 좋아요
+                    </button>
 
-                  <div style="font-size: 10px; color: #7c3aed; margin-top: 4px;">
-                    상세 페이지로 이동 →
+                    <button
+                      @click.stop="sendFeedback(movie.movie_id, 'dislike')"
+                      style="
+                        background: #1f2937;
+                        border-radius: 6px;
+                        padding: 4px 8px;
+                        font-size: 11px;
+                        color: #ef4444;
+                        cursor: pointer;
+                      "
+                    >
+                      👎 싫어요
+                    </button>
                   </div>
                 </div>
+
               </div>
             </div>
 
@@ -327,7 +364,7 @@
 import { ref, inject, nextTick, watch } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-
+import type { Ref } from 'vue';
 const router = useRouter();
 
 const goToMovie = (movieId: number) => {
@@ -338,7 +375,7 @@ const goToMovie = (movieId: number) => {
 };
 
 
-const isLoggedIn = inject<boolean>('isLoggedIn', false);
+const isLoggedIn = inject<Ref<boolean>>('isLoggedIn', ref(false));
 const openAuthModal = inject<() => void>('openAuthModal');
 
 const SESSION_KEY = 'mia_chat_session_id';
@@ -536,6 +573,70 @@ const startNewChat = () => {
   ];
 
   showSessions.value = false;
+};
+
+const sendFeedback = async (
+  movieId: number,
+  feedback: 'like' | 'dislike'
+) => {
+  try {
+    await axios.post(
+      'http://127.0.0.1:8000/recommend/feedback/',
+      {
+        movie_id: movieId,
+        feedback,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      }
+    );
+
+    // UX용 메시지 (선택)
+    messages.value.push({
+      role: 'assistant',
+      content:
+        feedback === 'like'
+          ? '👍 반영했어요! 비슷한 취향으로 추천할게요.'
+          : '👎 알겠어요! 이런 스타일은 줄일게요.',
+    });
+  } catch {
+    messages.value.push({
+      role: 'assistant',
+      content: '피드백 저장 중 문제가 생겼어요 😥',
+    });
+  }
+};
+
+const resetChatbot = () => {
+  sessionId.value = null;
+  localStorage.removeItem(SESSION_KEY);
+
+  messages.value = [
+    {
+      role: 'assistant',
+      content: isLoggedIn
+        ? '안녕하세요! 어떤 영화를 추천해드릴까요? 🎬'
+        : '로그인 후 MIA의 영화 추천을 이용할 수 있어요 😊',
+    },
+  ];
+
+  showSessions.value = false;
+};
+
+watch(isLoggedIn!, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    resetChatbot();
+  }
+});
+
+
+const logout = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+
+  resetChatbot(); // ⭐ 반드시 호출
 };
 
 

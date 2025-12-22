@@ -2,36 +2,47 @@
 
 def score_movie(movie, context):
     """
-    movie: Movie instance
-    context: {
-        "genres": [...],
-        "query": str
-    }
+    context:
+      - genres
+      - query
+      - feedback_map   ⭐ 추가
     """
     score = 0.0
 
-    # 1️⃣ 장르 매칭 점수 (가장 중요)
+    # 1️⃣ 장르 매칭
     if context["genres"]:
         movie_genres = {g.name for g in movie.genres.all()}
         matched = movie_genres & set(context["genres"])
-        score += len(matched) * 3.0   # 가중치 큼
+        score += len(matched) * 3.0
 
-    # 2️⃣ 평점 점수 (정규화)
+    # 2️⃣ 평점
     if movie.tmdb_rating:
         score += (movie.tmdb_rating / 10) * 2.0
 
-    # 3️⃣ 인기 보정 (너무 센 영향 방지)
+    # 3️⃣ 인기 보정
     if hasattr(movie, "vote_count") and movie.vote_count:
         score += min(movie.vote_count / 10000, 1.5)
 
-    # 4️⃣ 쿼리 키워드가 제목/설명에 있으면 가산
+    # 4️⃣ 쿼리 키워드
     q = context["query"].lower()
     if q in (movie.title or "").lower():
         score += 1.5
     if q in (movie.overview or "").lower():
         score += 1.0
 
+    # ==========================
+    # 🔥 5️⃣ 사용자 피드백 반영
+    # ==========================
+    feedback_map = context.get("feedback_map", {})
+    fb = feedback_map.get(movie.id)
+
+    if fb == "like":
+        score += 3.0        # 👍 강력 가중치
+    elif fb == "dislike":
+        score -= 5.0        # 👎 강력 패널티
+
     return score
+
 
 def score_movie_seeded(movie, seed) -> float:
     score = 0.0
@@ -50,3 +61,15 @@ def score_movie_seeded(movie, seed) -> float:
 
     score += (movie.tmdb_rating or 0) * 0.6
     return score
+
+from recommend.models import MovieFeedback
+
+def get_user_feedback_map(user):
+    """
+    return:
+      {
+        movie_id: "like" | "dislike"
+      }
+    """
+    qs = MovieFeedback.objects.filter(user=user)
+    return {fb.movie_id: fb.feedback for fb in qs}

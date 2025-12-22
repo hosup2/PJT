@@ -14,8 +14,7 @@ from .candidate import (
     find_seed_movie,
     get_candidates_by_seed
 )
-from .scoring import score_movie, score_movie_seeded
-
+from .scoring import score_movie, score_movie_seeded, get_user_feedback_map
 
 SUMMARY_TRIGGER_COUNT = 8
 RECENT_MESSAGE_COUNT = 4
@@ -113,9 +112,12 @@ def run_chatbot(message: str, session):
 
         candidates = candidates[:300]
 
+        feedback_map = get_user_feedback_map(session.user)
+
         context = {
             "genres": extract_genres_from_text(message),
             "query": message,
+            "feedback_map": feedback_map,   # ⭐ 이 줄
         }
 
         scored = [{"movie": m, "score": score_movie(m, context)} for m in candidates]
