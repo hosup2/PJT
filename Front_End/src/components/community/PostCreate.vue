@@ -170,22 +170,18 @@ const searchMovies = () => {
     return;
   }
 
-  if (!TMDB_API_KEY || TMDB_API_KEY === 'YOUR_TMDB_API_KEY') {
-    console.warn('TMDb API key is not configured');
-    return;
-  }
-
   movieSearching.value = true;
+
   searchTimeout = window.setTimeout(async () => {
     try {
-      const response = await axios.get(`${TMDB_BASE_URL}/search/movie`, {
-        params: {
-          api_key: TMDB_API_KEY,
-          query: movieSearchQuery.value,
-          language: 'ko-KR'
+      const response = await axios.get(
+        'http://127.0.0.1:8000/movies/search/',
+        {
+          params: { q: movieSearchQuery.value }
         }
-      });
-      movieSearchResults.value = response.data.results.slice(0, 5);
+      );
+
+      movieSearchResults.value = response.data;
     } catch (err) {
       console.error('Failed to search movies:', err);
     } finally {
@@ -193,6 +189,7 @@ const searchMovies = () => {
     }
   }, 300);
 };
+
 
 const selectMovie = (movie: Movie) => {
   selectedMovie.value = movie;

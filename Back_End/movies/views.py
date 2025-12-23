@@ -108,22 +108,34 @@ class MovieListView(APIView):
         serializer = MovieResponseSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
 
-# 영화 검색
 class MovieSearchView(APIView):
-    permission_classes = [AllowAny]
-
+    """
+    우리 DB에 저장된 영화 검색
+    """
     def get(self, request):
-        q = request.GET.get("q", "")
+        query = request.query_params.get("q", "").strip()
 
-        if not q:
-            return Response([], status=200)
+        if not query:
+            return Response([])
 
-        qs = Movie.objects.filter(
-            Q(title__icontains=q) | Q(original_title__icontains=q)
-        ).distinct()
+        qs = (
+            Movie.objects
+            .filter(title__icontains=query)
+            .order_by("-tmdb_rating")[:10]
+        )
 
-        serializer = MovieResponseSerializer(qs, many=True, context={'request': request})
-        return Response(serializer.data)
+        data = [
+            {
+                "id": movie.id,
+                "title": movie.title,
+                "poster_path": movie.poster_path,
+                "release_date": movie.release_date,
+            }
+            for movie in qs
+        ]
+
+        return Response(data)
+
 
 
 # Featured Movie 조회

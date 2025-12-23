@@ -26,7 +26,11 @@
       <!-- Post Article -->
       <article class="post-article-minimal">
         <!-- Movie Info (if exists) -->
-        <div v-if="post.movie_title" class="movie-info-banner">
+        <div
+          v-if="post.movie_title"
+          class="movie-info-banner clickable"
+          @click="goToMovieDetail"
+        >
           <img
             v-if="post.movie_poster"
             :src="`https://image.tmdb.org/t/p/w200${post.movie_poster}`"
@@ -38,6 +42,7 @@
             <h3>{{ post.movie_title }}</h3>
           </div>
         </div>
+
 
         <!-- Post Header -->
         <header class="post-header-minimal">
@@ -360,6 +365,16 @@ const formatRelativeTime = (dateString: string) => {
 
   return date.toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
 };
+
+const goToMovieDetail = () => {
+  if (!post.value?.movie_id) return;
+
+  router.push({
+    name: 'MovieDetail',
+    params: { id: post.value.movie_id }
+  });
+};
+
 </script>
 
 <style scoped>
@@ -399,6 +414,17 @@ const formatRelativeTime = (dateString: string) => {
   margin: 0 auto;
   padding: 0 3rem;
 }
+
+.movie-info-banner.clickable {
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.movie-info-banner.clickable:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
 
 .btn-back-detail {
   display: inline-flex;
