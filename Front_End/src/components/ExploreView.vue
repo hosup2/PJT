@@ -92,13 +92,20 @@
               <div
                 v-for="item in lifeMovies.slice(0,3)"
                 :key="item.user.id"
-                class="mini-movie-card"
+                class="mini-movie-card cursor-pointer"
+                @click="onMovieClick(item.movie.id)"
               >
                 <div class="mini-poster">
-                  <img :src="`https://image.tmdb.org/t/p/w154${item.movie.poster_path}`" />
+                  <img :src="`https://image.tmdb.org/t/p/w342${item.movie.poster_path}`" />
                 </div>
                 <div class="mini-info">
-                  <p class="mini-user">{{ item.user.username }}</p>
+                  <p
+                    class="mini-user hover:underline cursor-pointer"
+                    @click.stop="goToUserProfile(item.user.id)"
+                  >
+                    {{ item.user.username }}
+                  </p>
+
                   <p class="mini-title">{{ item.movie.title }}</p>
                   <p v-if="item.review" class="mini-rating">★ {{ item.review.rating }}/5</p>
                 </div>
@@ -273,6 +280,14 @@ const onMovieClick = (movieId: number) => {
 const goToFullExplore = () => {
   router.push({ name: 'ExploreFull' });
 };
+
+const goToUserProfile = (userId: number) => {
+  router.push({
+    name: 'UserProfile',
+    params: { userId: userId.toString() },
+  });
+};
+
 </script>
 
 <style scoped>
@@ -613,6 +628,13 @@ const goToFullExplore = () => {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.mini-movie-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.35);
 }
 
 .mini-poster {

@@ -2,6 +2,10 @@
 
 ### [Notion](https://www.notion.so/2aae9e31af908065b2c3e27638e1a98e?source=copy_link)
 
+## 12.23
+- chatbot UX 향상
+- 인생영화 클릭기능 추가 (Username -> profile / moviecard -> moviedetail)
+
 ## 12.21
 - 디테일 페이지 감독, 출연진 정보 추가, 챗봇 대화기능 보완
 

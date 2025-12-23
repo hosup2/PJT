@@ -3,7 +3,7 @@
     <div class="chatbot-layout">
       
       <transition name="chat-pop">
-        <div v-if="open" class="chat-window">
+        <div v-if="open" ref="chatWindow" class="chat-window">
           
           <div class="chat-tail"></div>
 
@@ -120,6 +120,7 @@
       </transition>
 
       <img
+        ref="robotButton"
         src="/mia.png"
         alt="MIA"
         class="mia-float"
@@ -135,6 +136,53 @@ import { ref, inject, nextTick, watch } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
 import type { Ref } from 'vue';
+import { onMounted, onBeforeUnmount } from 'vue'
+
+// 챗봇 화면 밖 클릭시 닫힘 + ESC로 닫기
+const chatWindow = ref<HTMLElement | null>(null);
+const robotButton = ref<HTMLElement | null>(null);
+
+const toggleChat = () => {
+  open.value = !open.value;
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (!open.value) return;
+
+  const target = event.target as Node;
+
+  // 1️⃣ 채팅창 내부 클릭 → 무시
+  if (chatWindow.value?.contains(target)) return;
+
+  // 2️⃣ 로봇 버튼 클릭 → 무시
+  if (robotButton.value?.contains(target)) return;
+
+  // 3️⃣ 그 외 → 닫기
+  open.value = false;
+};
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside);
+});
+
+const handleKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Escape') {
+    open.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', handleKeydown);
+});
+
 
 // --- Logic Preserved Completely ---
 const router = useRouter();
