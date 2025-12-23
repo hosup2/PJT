@@ -449,7 +449,7 @@ const toggleFollow = async () => {
       }
     } catch (err) {
       console.error("Follow/unfollow failed:", err);
-      alert("요청을 처리할 수 없습니다.");
+      alert("로그인이 필요합니다.");
     }
   }
 };

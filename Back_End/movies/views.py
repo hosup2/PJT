@@ -19,7 +19,6 @@ from .tmdb import fetch_movie_credits
 def safe_date(value):
     return value if value else None
 
-
 # TMDB 장르 처리 함수
 def get_or_create_genres(genre_ids):
     return Genre.objects.filter(id__in=genre_ids)
@@ -56,10 +55,8 @@ class TMDBGenreSyncView(APIView):
             "updated": updated,
         })
 
-
-
 class TMDBImportView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminUser]
 
     def get(self, request):
         TMDB_KEY = settings.TMDB_API_KEY
@@ -101,13 +98,12 @@ class TMDBImportView(APIView):
 
         return Response({"message": "Upcoming import finished", "imported": imported})
 
-
 # 영화 목록
 class MovieListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        qs = Movie.objects.all().order_by("-release_date")[:20]
+        qs = Movie.objects.all().order_by("-release_date")[:41]
         # ⭐ context에 request 전달 (is_liked 계산을 위해)
         serializer = MovieResponseSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)

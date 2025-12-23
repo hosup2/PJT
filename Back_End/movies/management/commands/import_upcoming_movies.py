@@ -23,7 +23,7 @@ class Command(BaseCommand):
         total_saved = 0
         skipped = 0
 
-        for page in range(501, 1000):
+        for page in range(1, 500):
             self.stdout.write(f"📄 Discover page {page}")
 
             data = self.fetch_discover(page)
@@ -66,8 +66,8 @@ class Command(BaseCommand):
             "language": "ko-KR",
             "page": page,
             "sort_by": "popularity.desc",
-            "primary_release_date.gte": "2025-01-01",
-            "primary_release_date.lte": "2027-12-31",
+            "primary_release_date.gte": "2025-12-20",
+            "primary_release_date.lte": "2028-12-31",
             "include_adult": False,
         }
         r = requests.get(f"{TMDB_BASE}/discover/movie", params=params)
@@ -105,10 +105,10 @@ class Command(BaseCommand):
         #     return False
 
         # 저품질 필터
-        if vote_avg < self.MIN_VOTE_AVERAGE:
-            return False
-        if vote_cnt < self.MIN_VOTE_COUNT:
-            return False
+        # if vote_avg < self.MIN_VOTE_AVERAGE:
+        #     return False
+        # if vote_cnt < self.MIN_VOTE_COUNT:
+        #     return False
 
         return True
 

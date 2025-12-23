@@ -64,7 +64,7 @@
             <p class="character-count">{{ formData.username.length }}/20</p>
           </div>
 
-          <!-- Email (read-only) -->
+          <!-- Email (read-only)
           <div class="input-group">
             <label for="email">이메일</label>
             <input
@@ -75,7 +75,7 @@
               class="disabled-input"
             />
             <p class="helper-text">이메일은 변경할 수 없습니다</p>
-          </div>
+          </div> -->
 
           <!-- Action Buttons -->
           <div class="button-group">
