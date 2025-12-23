@@ -151,3 +151,23 @@ class FollowSerializer(serializers.ModelSerializer):
         model = UserFollow
         fields = ("id", "follower", "following", "created_at")
         read_only_fields = ("follower",)
+
+from movies.models import CuratedLifeMovie
+
+class FollowedUserLifeMovieSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    profile_image = serializers.SerializerMethodField()
+    movie_title = serializers.CharField(source='movie.title', read_only=True)
+    movie_poster = serializers.CharField(source='movie.poster_path', read_only=True)
+    movie_id = serializers.IntegerField(source='movie.id', read_only=True)
+
+    class Meta:
+        model = FavoriteMovie
+        fields = ('id', 'user_id', 'username', 'profile_image', 'movie_id', 'movie_title', 'movie_poster')
+
+    def get_profile_image(self, obj):
+        try:
+            return obj.user.userprofile.profile_image
+        except UserProfile.DoesNotExist:
+            return "/mia5.png"

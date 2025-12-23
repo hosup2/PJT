@@ -7,6 +7,7 @@ import ExploreFullView from '../components/ExploreFullView.vue';
 import CommunityView from '../components/community/CommunityView.vue';
 import PostDetail from '../components/community/PostDetail.vue';
 import PostCreate from '../components/community/PostCreate.vue';
+import FollowedMoviesView from '../components/community/FollowedMoviesView.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -52,6 +53,12 @@ const routes: Array<RouteRecordRaw> = [
     path: '/community/create',
     name: 'PostCreate',
     component: PostCreate,
+  },
+  {
+    path: '/community/following',
+    name: 'FollowedMovies',
+    component: FollowedMoviesView,
+    meta: { requiresAuth: true } // 로그인 필요 시
   },
 ];
 

@@ -114,6 +114,12 @@ class MovieRating(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    like_users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="comment_likes",
+        blank=True
+    )
+
     class Meta:
         # ⭐ unique_together 제거! 이제 같은 영화에 여러 리뷰 작성 가능
         unique_together = ("user", "movie")  # 이 줄 삭제 또는 주석처리

@@ -132,7 +132,7 @@
                 ]"
               >
                 <Heart :class="['w-4 h-4', comment.isLiked && 'fill-current']" />
-                <span class="text-sm">{{ comment.likes_count || 0 }}</span>
+                <span class="text-sm">{{ comment.likesCount || 0 }}</span>
               </button>
               
               <!-- 수정/삭제 버튼 (본인 댓글만) -->
@@ -173,7 +173,7 @@ interface Comment {
   created_at: string;
   username: string;
   profile_image?: string;
-  likes_count?: number;
+  likesCount?: number;
   isLiked?: boolean;
 }
 

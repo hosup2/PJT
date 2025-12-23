@@ -255,7 +255,7 @@ interface Comment {
   created_at: string;
   profile_image?: string;
   spoiler?: boolean;
-  likes_count?: number;
+  likesCount?: number;
   isLiked?: boolean;
 }
 
@@ -413,8 +413,57 @@ const handleDeleteComment = async (commentId: number) => {
   }
 };
 
-const handleLikeComment = (commentId: number) => {
-  console.log(`Liking comment ${commentId}. TODO: Implement API call.`);
+const handleLikeComment = async (commentId: number) => {
+  if (!isLoggedIn.value) {
+    emit('openAuth');
+    return;
+  }
+
+  if (!movie.value) return;
+
+  try {
+    // 백엔드 호출
+    const response = await axios.post(
+      `http://127.0.0.1:8000/movies/${props.id}/ratings/${commentId}/like/`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      }
+    );
+    
+    // 🔥 조용히 영화 데이터 다시 불러오기 (로딩 없이)
+    const movieResponse = await axios.get(
+      `http://127.0.0.1:8000/movies/${props.id}/`,
+      { 
+        params: { _: new Date().getTime() },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`
+        }
+      }
+    );
+    
+    movie.value = JSON.parse(JSON.stringify(movieResponse.data));
+    
+    if (movie.value?.user_data) {
+      userRating.value = movie.value.user_data.rating || 0;
+      commentText.value = movie.value.user_data.comment || '';
+      isMovieLiked.value = movie.value.user_data.is_liked;
+    }
+    
+    refreshKey.value++;
+
+  } catch (err: any) {
+    console.error(`Failed to like comment ${commentId}:`, err);
+    
+    if (err.response?.status === 401) {
+      alert('로그인이 만료되었습니다.');
+      emit('openAuth');
+    } else {
+      alert('리뷰 좋아요 처리에 실패했습니다.');
+    }
+  }
 };
 
 const handleNavigateToUser = (userId: number) => {

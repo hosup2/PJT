@@ -14,6 +14,8 @@ from .serializers import MovieRatingSerializer, HeroMovieSerializer
 from .models import Actor, Director, Cast, CuratedLifeMovie
 from .serializers import MovieDetailSerializer, LifeMovieSerializer
 from .tmdb import fetch_movie_credits
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 # TMDB 날짜 안전 파서
 def safe_date(value):
@@ -430,7 +432,8 @@ class MovieDetailView(APIView):
         movie = Movie.objects.prefetch_related(
             "casts__actor",
             "genres",
-            "ratings__user",
+            "ratings__user__userprofile",
+            "ratings__like_users",
         ).get(id=movie_id)
 
         serializer = MovieResponseSerializer(
@@ -450,3 +453,23 @@ class LifeMovieCurationView(APIView):
 
         serializer = LifeMovieSerializer(qs, many=True)
         return Response(serializer.data)
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CommentLikeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, movie_id, rating_id):
+        rating = get_object_or_404(MovieRating, id=rating_id, movie_id=movie_id)
+        user = request.user
+
+        if user in rating.like_users.all():
+            rating.like_users.remove(user)
+            liked = False
+        else:
+            rating.like_users.add(user)
+            liked = True
+        
+        rating.save()
+
+        return Response({"isLiked": liked, "likesCount": rating.like_users.count()})
+

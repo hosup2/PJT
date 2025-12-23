@@ -13,6 +13,7 @@ from .views import (
     FollowToggleView,
     FollowerListView,
     FollowingListView,
+    FollowedMoviesView,
 )
 
 urlpatterns = [
@@ -29,5 +30,6 @@ urlpatterns = [
     path("<int:user_id>/follow/", FollowToggleView.as_view()),
     path("<int:user_id>/followers/", FollowerListView.as_view()),
     path("<int:user_id>/following/", FollowingListView.as_view()),
+    path("followed-life-movies/", FollowedMoviesView.as_view()),
 
 ]

@@ -120,13 +120,13 @@
 
         <div class="right-column">
           
-          <div class="bento-card curation-card">
+          <div @click="goToFollowedMovies" class="bento-card curation-card cursor-pointer">
             <div class="curation-grid">
               <div
                 v-for="item in lifeMovies.slice(0,3)"
                 :key="item.user.id"
                 class="mini-movie-card cursor-pointer"
-                @click="onMovieClick(item.movie.id)"
+                @click.stop="onMovieClick(item.movie.id)"
               >
                 <div class="mini-poster">
                   <img :src="`https://image.tmdb.org/t/p/w342${item.movie.poster_path}`" />
@@ -324,6 +324,14 @@ const goToUserProfile = (userId: number) => {
     name: 'UserProfile',
     params: { userId: userId.toString() },
   });
+};
+
+const goToFollowedMovies = () => {
+  if (!isLoggedIn.value) {
+    emit('open-auth'); // Use 'open-auth' as defined in defineEmits
+    return;
+  }
+  router.push('/community/following');
 };
 </script>
 

@@ -253,3 +253,21 @@ class FollowingListView(APIView):
             })
 
         return Response(data)
+
+from .serializers import FollowedUserLifeMovieSerializer
+from movies.models import CuratedLifeMovie
+
+class FollowedMoviesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Get the IDs of users that the current user is following
+        following_user_ids = user.following.all().values_list('following_id', flat=True)
+        following_users = User.objects.filter(id__in=following_user_ids)
+        
+        # favorite movies are used as life movies
+        life_movies = FavoriteMovie.objects.filter(user__in=following_users).select_related('user', 'movie', 'user__userprofile').order_by('-created_at')
+        
+        serializer = FollowedUserLifeMovieSerializer(life_movies, many=True)
+        return Response(serializer.data)

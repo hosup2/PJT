@@ -71,8 +71,8 @@ class MovieRatingSerializer(serializers.ModelSerializer):
     profile_image = serializers.SerializerMethodField()
     movie_id = serializers.IntegerField(source='movie.id', read_only=True)
     movie_title = serializers.CharField(source='movie.title', read_only=True)
-    likes_count = serializers.SerializerMethodField()
-    is_liked = serializers.SerializerMethodField()
+    likesCount = serializers.SerializerMethodField(method_name='get_likes_count')
+    isLiked = serializers.SerializerMethodField(method_name='get_is_liked')
 
     class Meta:
         model = MovieRating
@@ -81,7 +81,7 @@ class MovieRatingSerializer(serializers.ModelSerializer):
             "user_id", "username", "profile_image",
             "movie_id","movie_title",
             "rating", "comment",
-            "created_at", "likes_count", "is_liked",
+            "created_at", "likesCount", "isLiked",
         )
 
     def get_profile_image(self, obj):
@@ -91,18 +91,19 @@ class MovieRatingSerializer(serializers.ModelSerializer):
             return "/mia5.png"
 
     def get_likes_count(self, obj):
-        # Placeholder
-        return 0
+        return obj.like_users.count()
 
     def get_is_liked(self, obj):
-        # Placeholder
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.like_users.filter(id=request.user.id).exists()
         return False
 
 class MovieResponseSerializer(serializers.ModelSerializer):
     genres = serializers.SerializerMethodField()
     stats = serializers.SerializerMethodField()
     user_data = serializers.SerializerMethodField()
-    comments = MovieRatingSerializer(source='ratings', many=True, read_only=True)
+    comments = serializers.SerializerMethodField()
     is_liked = serializers.SerializerMethodField()
     director = DirectorSerializer(read_only=True)  # ← 추가
     casts = CastSerializer(read_only=True, many=True)
@@ -131,6 +132,10 @@ class MovieResponseSerializer(serializers.ModelSerializer):
 
     def get_genres(self, obj):
         return [g.name for g in obj.genres.all()]
+    
+    def get_comments(self, obj):
+        serializer = MovieRatingSerializer(obj.ratings.all(), many=True, context=self.context)
+        return serializer.data
 
     def get_stats(self, obj):
         ratings = obj.ratings.all()

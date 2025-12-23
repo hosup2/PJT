@@ -811,13 +811,21 @@ watch(isLoggedIn!, (newVal, oldVal) => {
   width: auto;
   cursor: pointer;
   filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.6));
-  animation: mia-float 3s ease-in-out infinite;
+  animation: mia-float 2s ease-in-out infinite;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* 커서 올라갈 때 볼록하게 확대 */
+.mia-float:hover {
+  animation: none;
+  transform: scale(1.04) translateY(0); /* 확대 + 위치 고정 */
 }
 
 /* Animations */
 @keyframes mia-float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-10px) scale(1); }
 }
 
 .chat-pop-enter-active,
