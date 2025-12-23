@@ -7,7 +7,8 @@ from typing import List, Tuple, Optional
 import threading
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+import numpy as np
+# from sentence_transformers import SentenceTransformer
 import pickle
 from pathlib import Path
 
@@ -17,15 +18,17 @@ from movies.models import Movie
 MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"
 
 _lock = threading.Lock()
-_model: Optional[SentenceTransformer] = None
+# _model: Optional[SentenceTransformer] = None
+_model = None
 _cache: Optional[list[tuple[int, np.ndarray]]] = None  # [(movie_id, vec)]
 _loaded_count: int = 0
 
 
-def _get_model() -> SentenceTransformer:
+def _get_model():
     global _model
     if _model is None:
-        _model = SentenceTransformer(MODEL_NAME)
+        # _model = SentenceTransformer(MODEL_NAME)
+        pass
     return _model
 
 

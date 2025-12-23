@@ -68,3 +68,22 @@ class PostCreateUpdateSerializer(serializers.ModelSerializer):
         model = Post
         fields = ('title', 'content', 'movie_id', 'movie_title', 'movie_poster')
 
+
+from .models import ChatRoom, ChatMessage
+
+class ChatMessageSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = ChatMessage
+        fields = ['id', 'user', 'username', 'message', 'created_at']
+
+class ChatRoomSerializer(serializers.ModelSerializer):
+    movie_title = serializers.CharField(source='movie.title', read_only=True)
+    movie_poster = serializers.CharField(source='movie.poster_path', read_only=True)
+    message_count = serializers.IntegerField(source='messages.count', read_only=True)
+    
+    class Meta:
+        model = ChatRoom
+        fields = ['id', 'movie', 'movie_title', 'movie_poster', 'message_count', 'created_at', 'is_active']
+

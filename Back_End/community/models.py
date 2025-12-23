@@ -42,3 +42,23 @@ class Comment(models.Model):
     def __str__(self):
         return f'{self.author.username}: {self.content[:20]}'
 
+
+from movies.models import Movie
+
+class ChatRoom(models.Model):
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='chat_rooms')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+
+class ChatMessage(models.Model):
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['created_at']
+

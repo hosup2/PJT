@@ -94,3 +94,39 @@ class PostViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+
+from .models import ChatRoom, ChatMessage
+from .serializers import ChatRoomSerializer, ChatMessageSerializer
+
+class ChatRoomViewSet(viewsets.ModelViewSet):
+    queryset = ChatRoom.objects.filter(is_active=True)
+    serializer_class = ChatRoomSerializer
+
+    def create(self, request, *args, **kwargs):
+        movie_id = request.data.get('movie_id')
+        if not movie_id:
+            return Response({'error': 'movie_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            # 있으면 가져오고, 없으면 생성
+            room, created = ChatRoom.objects.get_or_create(movie_id=movie_id)
+            serializer = self.get_serializer(room)
+            return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def active_rooms(self, request):
+        """영화별 활성 채팅방 목록"""
+        rooms = self.queryset.select_related('movie').all()
+        serializer = self.get_serializer(rooms, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def messages(self, request, pk=None):
+        """특정 채팅방의 메시지 내역"""
+        room = self.get_object()
+        messages = room.messages.select_related('user').all()
+        serializer = ChatMessageSerializer(messages, many=True)
+        return Response(serializer.data)
+

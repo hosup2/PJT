@@ -109,33 +109,38 @@
         <h3 class="sidebar-title">ON AIR</h3>
         <div class="movie-channel-list">
           <button 
-            v-for="movie in chatMovies" 
-            :key="movie.id"
-            @click="selectChatRoom(movie)"
-            :class="['channel-item', { active: selectedChatMovie?.id === movie.id }]"
+            v-for="room in chatRooms" 
+            :key="room.id"
+            @click="selectChatRoom(room)"
+            :class="['channel-item', { active: selectedChatRoom?.id === room.id }]"
           >
-            <img :src="`https://image.tmdb.org/t/p/w92${movie.poster_path}`" class="channel-poster" />
+            <img :src="`https://image.tmdb.org/t/p/w92${room.movie_poster}`" class="channel-poster" />
             <div class="channel-info">
-              <span class="channel-name">{{ movie.title }}</span>
-              <span class="channel-users">● {{ Math.floor(Math.random() * 50) + 10 }}명 참여중</span>
+              <span class="channel-name">{{ room.movie_title }}</span>
+              <span class="channel-users">● {{ room.message_count }} msg</span>
             </div>
+          </button>
+          
+          <!-- 새 채팅방 만들기 버튼 -->
+          <button @click="openCreateModal" class="add-room-btn">
+            + 새로운 영화 채팅방 만들기
           </button>
         </div>
       </aside>
 
       <section class="chat-interface">
-        <div v-if="selectedChatMovie" class="chat-room">
+        <div v-if="selectedChatRoom" class="chat-room">
           
           <div class="room-header">
             <div class="room-info">
-              <h2>{{ selectedChatMovie.title }}</h2>
+              <h2>{{ selectedChatRoom.movie_title }}</h2>
               <span class="live-badge">LIVE</span>
             </div>
           </div>
 
           <div class="messages-container" ref="messagesContainer">
             <div 
-              v-for="msg in mockMessages" 
+              v-for="msg in chatMessages" 
               :key="msg.id"
               :class="['message-bubble', { 'me': msg.isMe }]"
             >
@@ -173,9 +178,47 @@
             <p>실시간으로 영화에 대한 감상을 나눌 수 있습니다.</p>
           </div>
         </div>
+
       </section>
 
     </main>
+
+    <!-- Create Room Modal (Moved to Root) -->
+    <div v-if="isCreateModalOpen" class="modal-overlay" @click.self="closeCreateModal">
+      <div class="modal-content">
+        <h3 class="modal-title">영화 채팅방 만들기</h3>
+        
+        <div class="search-input-group">
+          <input 
+            v-model="movieSearchQuery" 
+            @keyup.enter="searchMovies"
+            placeholder="영화 제목을 검색하세요"
+            autoFocus
+          />
+          <button @click="searchMovies" class="search-btn">검색</button>
+        </div>
+
+        <div class="search-results">
+          <button 
+            v-for="movie in movieSearchResults" 
+            :key="movie.id" 
+            class="search-item"
+            @click="createAndJoinRoom(movie)"
+          >
+            <img :src="`https://image.tmdb.org/t/p/w92${movie.poster_path}`" class="search-poster" v-if="movie.poster_path" />
+            <div class="search-info">
+              <span class="search-title">{{ movie.title }}</span>
+              <span class="search-year">{{ movie.release_date?.split('-')[0] }}</span>
+            </div>
+          </button>
+          <div v-if="movieSearchResults.length === 0 && movieSearchQuery" class="no-results">
+            검색 결과가 없습니다.
+          </div>
+        </div>
+
+        <button @click="closeCreateModal" class="close-btn">닫기</button>
+      </div>
+    </div>
 
   </div>
 </template>
@@ -198,6 +241,7 @@ interface ChatMessage {
 
 const router = useRouter();
 const isLoggedIn = inject<Ref<boolean>>('isLoggedIn');
+const currentUser = inject<Ref<any>>('currentUser');
 
 // --- State ---
 const currentMode = ref<'board' | 'chat'>('board'); // Tab State
@@ -246,53 +290,140 @@ const formatSimpleDate = (dateString: string) => {
 };
 
 // --- Chat Logic ---
-const chatMovies = ref<any[]>([]); // Movies with active discussions
-const selectedChatMovie = ref<any>(null);
+const chatRooms = ref<any[]>([]);
+const selectedChatRoom = ref<any>(null);
+const chatMessages = ref<ChatMessage[]>([]);
 const chatInput = ref('');
 const messagesContainer = ref<HTMLElement | null>(null);
+let chatSocket: WebSocket | null = null;
 
-// Mock Messages (Replace with real Socket/API)
-const mockMessages = ref<ChatMessage[]>([
-  { id: 1, username: 'MovieBuff', text: '이 영화 결말 진짜 충격적이지 않나요? 😱', time: '14:20', isMe: false },
-  { id: 2, username: 'PopcornLover', text: '맞아요.. 감독 연출이 미쳤음', time: '14:21', isMe: false },
-]);
+// --- Modal & Search State ---
+const isCreateModalOpen = ref(false);
+const movieSearchQuery = ref('');
+const movieSearchResults = ref<any[]>([]);
 
-const selectChatRoom = (movie: any) => {
-  selectedChatMovie.value = movie;
-  // Here: Connect to socket room for movie.id
-  // Reset messages for demo
-  mockMessages.value = [
-    { id: 1, username: 'System', text: `'${movie.title}' 채팅방에 입장하셨습니다.`, time: 'Now', isMe: false },
-    { id: 2, username: 'User1', text: '다들 보셨나요?', time: '14:22', isMe: false }
-  ];
+const openCreateModal = () => {
+  isCreateModalOpen.value = true;
+  movieSearchQuery.value = '';
+  movieSearchResults.value = [];
+};
+
+const closeCreateModal = () => {
+  isCreateModalOpen.value = false;
+};
+
+const searchMovies = async () => {
+  if (!movieSearchQuery.value.trim()) return;
+  try {
+    const response = await axios.get(`http://127.0.0.1:8000/movies/search/?q=${movieSearchQuery.value}`);
+    movieSearchResults.value = response.data.results || response.data;
+  } catch (err) {
+    console.error('Failed to search movies:', err);
+  }
+};
+
+const createAndJoinRoom = async (movie: any) => {
+  try {
+    const response = await axios.post('http://127.0.0.1:8000/community/chatrooms/', {
+      movie_id: movie.id
+    });
+    
+    const room = response.data;
+    await selectChatRoom(room);
+    closeCreateModal();
+    await loadChatRooms();
+  } catch (err) {
+    console.error('Failed to create room:', err);
+    alert('채팅방 생성 실패');
+  }
+};
+
+const loadChatRooms = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/community/chatrooms/active_rooms/');
+    chatRooms.value = response.data;
+  } catch (err) {
+    console.error('Failed to load chat rooms:', err);
+  }
+};
+
+const selectChatRoom = async (room: any) => {
+  selectedChatRoom.value = room;
+  
+  if (chatSocket) {
+    chatSocket.close();
+  }
+
+  // Load previous messages
+  try {
+    const response = await axios.get(`http://127.0.0.1:8000/community/chatrooms/${room.id}/messages/`);
+    chatMessages.value = response.data.map((msg: any) => ({
+      id: msg.id,
+      username: msg.username,
+      text: msg.message,
+      time: new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      isMe: msg.username === currentUser.value?.username
+    }));
+  } catch (err) {
+    console.error('Failed to load messages:', err);
+  }
+
+  connectWebSocket(room.id);
   scrollToBottom();
 };
 
-const sendChatMessage = () => {
-  if (!chatInput.value.trim()) return;
-  
-  mockMessages.value.push({
-    id: Date.now(),
-    username: '나',
-    text: chatInput.value,
-    time: new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12: false }),
-    isMe: true
-  });
-  
-  chatInput.value = '';
-  scrollToBottom();
-  
-  // Simulate reply
-  setTimeout(() => {
-    mockMessages.value.push({
-      id: Date.now() + 1,
-      username: 'Someone',
-      text: '완전 동감합니다!',
-      time: new Date().toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit', hour12: false }),
-      isMe: false
+const connectWebSocket = (roomId: number) => {
+  const wsUrl = `ws://127.0.0.1:8000/ws/chat/${roomId}/`;
+  chatSocket = new WebSocket(wsUrl);
+
+  chatSocket.onopen = () => {
+    console.log('WebSocket connected');
+  };
+
+  chatSocket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    chatMessages.value.push({
+      id: Date.now(),
+      username: data.username,
+      text: data.message,
+      time: new Date(data.timestamp || Date.now()).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+      isMe: data.username === currentUser.value?.username
     });
     scrollToBottom();
-  }, 1000);
+  };
+
+  chatSocket.onclose = () => {
+    console.log('WebSocket disconnected');
+  };
+};
+
+const sendChatMessage = () => {
+  console.log('Attempting to send message...');
+  if (!chatInput.value.trim()) {
+    console.log('Chat input is empty');
+    return;
+  }
+  if (!chatSocket) {
+    console.error('Chat socket is not connected');
+    alert('채팅 서버에 연결되지 않았습니다.');
+    return;
+  }
+  if (!currentUser.value) {
+    console.error('Current user is missing');
+    alert('로그인 정보가 없습니다. 다시 로그인해주세요.');
+    return;
+  }
+
+  const messageData = {
+    message: chatInput.value,
+    username: currentUser.value.username,
+    user_id: currentUser.value.id,
+    timestamp: new Date().toISOString()
+  };
+  
+  console.log('Sending message:', messageData);
+  chatSocket.send(JSON.stringify(messageData));
+  chatInput.value = '';
 };
 
 const scrollToBottom = () => {
@@ -306,9 +437,7 @@ const scrollToBottom = () => {
 // Load initial data
 onMounted(async () => {
   await fetchPosts();
-  // Get movies for chat list (using existing API for demo)
-  const movieRes = await axios.get('http://127.0.0.1:8000/movies/');
-  chatMovies.value = (movieRes.data.results || movieRes.data).slice(0, 8);
+  await loadChatRooms();
 });
 
 const goToCreate = () => {
@@ -891,5 +1020,138 @@ const goBack = () => router.back();
   .chat-interface {
     height: 60vh;
   }
+}
+
+/* Create Room Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1f1f1f;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-input-group input {
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  background: #2b2b2b;
+  color: white;
+}
+
+.search-btn {
+  padding: 0 1.5rem;
+  background: #e50914;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.search-results {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 200px;
+}
+
+.search-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  background: #2b2b2b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: none;
+  text-align: left;
+  width: 100%;
+}
+
+.search-item:hover {
+  background: #333;
+}
+
+.search-poster {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.search-info {
+  display: flex;
+  flex-direction: column;
+  color: white;
+}
+
+.search-title {
+  font-weight: bold;
+}
+
+.search-year {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.close-btn {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.add-room-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: #333;
+  color: #ccc;
+  border: 1px dashed #555;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-room-btn:hover {
+  background: #444;
+  color: white;
+  border-color: #888;
 }
 </style>

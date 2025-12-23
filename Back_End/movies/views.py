@@ -103,7 +103,12 @@ class MovieListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        qs = Movie.objects.all().order_by("-release_date")[:41]
+        search_query = request.query_params.get("search")
+        if search_query:
+            qs = Movie.objects.filter(title__icontains=search_query).order_by("-release_date")[:20]
+        else:
+            qs = Movie.objects.all().order_by("-release_date")[:41]
+        
         # ⭐ context에 request 전달 (is_liked 계산을 위해)
         serializer = MovieResponseSerializer(qs, many=True, context={'request': request})
         return Response(serializer.data)
