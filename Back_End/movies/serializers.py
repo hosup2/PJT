@@ -68,7 +68,7 @@ class MovieSerializer(serializers.ModelSerializer):
 class MovieRatingSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     user_id = serializers.IntegerField(source='user.id', read_only=True)
-    profile_image = serializers.ImageField(source='user.profile_image', read_only=True)
+    profile_image = serializers.SerializerMethodField()
     movie_id = serializers.IntegerField(source='movie.id', read_only=True)
     movie_title = serializers.CharField(source='movie.title', read_only=True)
     likes_count = serializers.SerializerMethodField()
@@ -83,6 +83,12 @@ class MovieRatingSerializer(serializers.ModelSerializer):
             "rating", "comment",
             "created_at", "likes_count", "is_liked",
         )
+
+    def get_profile_image(self, obj):
+        try:
+            return obj.user.userprofile.profile_image
+        except:
+            return "/mia5.png"
 
     def get_likes_count(self, obj):
         # Placeholder

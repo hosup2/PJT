@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.db import models
 from django.contrib.auth import get_user_model
-from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow
+from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow, UserProfile
 from movies.serializers import MovieResponseSerializer, MovieRatingSerializer
 
 
@@ -31,9 +31,16 @@ class WatchedMovieSerializer(serializers.ModelSerializer):
 
 
 class MeSerializer(serializers.ModelSerializer):
+    profile_image = serializers.CharField(
+        source="userprofile.profile_image",
+        read_only=True
+    )
+
     class Meta:
         model = User
-        fields = ("id", "username", "email")
+        fields = ("id", "username", "email", "profile_image")
+
+
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -71,10 +78,10 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
     rated_movies = serializers.SerializerMethodField()
     liked_movies = serializers.SerializerMethodField()
     reviews = serializers.SerializerMethodField()
-
+    profile_image = serializers.SerializerMethodField()
     class Meta:
         model = User
-        fields = ("id", "username", "stats", "follow_info", "rated_movies", "liked_movies", "reviews")
+        fields = ("id", "username", "stats", "follow_info", "rated_movies", "liked_movies", "reviews", "profile_image")
 
     def get_stats(self, obj):
         # obj is the user instance
@@ -133,6 +140,11 @@ class PublicUserProfileSerializer(serializers.ModelSerializer):
         reviews = MovieRating.objects.filter(user=obj, comment__isnull=False).exclude(comment__exact='').select_related('movie')
         return MovieRatingSerializer(reviews, many=True, context=self.context).data
 
+    def get_profile_image(self, obj):
+        try:
+            return obj.userprofile.profile_image
+        except UserProfile.DoesNotExist:
+            return "/mia5.png"
 
 class FollowSerializer(serializers.ModelSerializer):
     class Meta:

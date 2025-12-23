@@ -459,9 +459,20 @@ watch(() => props.userId, () => {
 });
 
 const handleSaveProfile = (username: string, profileImage: string) => {
+  // 1️⃣ App.vue에 저장 요청
   emit('updateProfile', username, profileImage);
+
+  // 2️⃣ 🔥 현재 페이지 즉시 반영
+  if (user.value) {
+    user.value.username = username;
+    user.value.profile_image = profileImage && profileImage.trim()
+      ? profileImage
+      : '/mia5.png';
+  }
+
   showEditModal.value = false;
 };
+
 
 const handleMovieClick = (movieId: number) => {
   router.push({ name: 'MovieDetail', params: { id: movieId } });

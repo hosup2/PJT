@@ -196,20 +196,36 @@ const handleLogout = () => {
 };
 
 const handleProfileEdit = async (username: string, profileImage: string) => {
-  if (currentUser.value) {
-    try {
-      const { data } = await axios.patch(`http://127.0.0.1:8000/users/me/update/`, {
-        username: username,
-      });
-      currentUser.value = data;
-      alert('프로필이 업데이트되었습니다!');
-    } catch(error) {
-       console.error('Profile update failed', error);
-       alert('프로필 업데이트에 실패했습니다.');
-    }
+  if (!currentUser.value) return;
+
+  try {
+    const payload = {
+      username,
+      profile_image: profileImage && profileImage.trim()
+        ? profileImage
+        : '/mia5.png',
+    };
+
+    const { data } = await axios.patch(
+      'http://127.0.0.1:8000/users/me/update/',
+      payload
+    );
+
+    // 🔥 즉시 반영
+    currentUser.value = {
+      ...currentUser.value,
+      ...data,
+    };
+
+    alert('프로필이 업데이트되었습니다!');
+  } catch (error) {
+    console.error('Profile update failed', error);
+    alert('프로필 업데이트에 실패했습니다.');
+  } finally {
+    showProfileEditModal.value = false;
   }
-  showProfileEditModal.value = false;
 };
+
 
 const handleOnboardingComplete = async (data: { genres: string[], movies: number[] }) => {
   if (currentUser.value) {

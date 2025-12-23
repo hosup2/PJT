@@ -37,3 +37,12 @@ class UserFollow(models.Model):
 
     def __str__(self):
         return f"{self.follower} → {self.following}"
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    profile_image = models.URLField(
+        max_length=500,
+        blank=True,
+        default="/mia5.png"
+    )

@@ -5,6 +5,7 @@
 ## 12.23
 - chatbot UX 향상
 - 인생영화 클릭기능 추가 (Username -> profile / moviecard -> moviedetail)
+- 프로필 이미지 모델 + 프론트 연동
 
 ## 12.21
 - 디테일 페이지 감독, 출연진 정보 추가, 챗봇 대화기능 보완

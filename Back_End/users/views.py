@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 
 from movies.models import Movie, MovieRating
-from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow
+from .models import UserPreference, FavoriteMovie, WatchedMovie, UserFollow, UserProfile
 from .serializers import (
     UserPreferenceSerializer,
     FavoriteMovieSerializer,
@@ -38,6 +38,7 @@ class SignupView(APIView):
         serializer = SignupSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            UserProfile.objects.create(user=user)
             return Response(MeSerializer(user).data, status=201)
 
         # 유효성 검사 실패 시 에러 출력
@@ -50,18 +51,31 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        UserProfile.objects.get_or_create(user=request.user)
         return Response(MeSerializer(request.user).data)
 
-# 내 정보 수정
 class MeUpdateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
-        serializer = MeSerializer(request.user, data=request.data, partial=True)
+        serializer = MeSerializer(
+            request.user,
+            data=request.data,
+            partial=True
+        )
         if serializer.is_valid():
             user = serializer.save()
+
+            profile, _ = UserProfile.objects.get_or_create(user=user)
+            if "profile_image" in request.data:
+                profile.profile_image = request.data["profile_image"]
+                profile.save()
+
             return Response(MeSerializer(user).data)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 # 회원 삭제
 class MeDeleteView(APIView):
@@ -190,12 +204,12 @@ class FollowerListView(APIView):
                     following=follower_user
                 ).exists()
             
-            # getattr로 안전하게 가져오기
-            profile_image = getattr(follower_user, 'profile_image', None)
-            profile_image_url = None
-            if profile_image and hasattr(profile_image, 'url'):
-                profile_image_url = profile_image.url
-            
+            profile = getattr(follower_user, "userprofile", None)
+            profile_image_url = (
+                profile.profile_image if profile else "/mia5.png"
+            )
+
+
             data.append({
                 "id": follower_user.id,
                 "username": follower_user.username,
@@ -224,12 +238,12 @@ class FollowingListView(APIView):
                     following=following_user
                 ).exists()
             
-            # getattr로 안전하게 가져오기
-            profile_image = getattr(following_user, 'profile_image', None)
-            profile_image_url = None
-            if profile_image and hasattr(profile_image, 'url'):
-                profile_image_url = profile_image.url
-            
+            profile = getattr(following_user, "userprofile", None)
+            profile_image_url = (
+                profile.profile_image if profile else "/mia5.png"
+            )
+
+
             data.append({
                 "id": following_user.id,
                 "username": following_user.username,
