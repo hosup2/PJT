@@ -1,6 +1,7 @@
+```vue
 <template>
   <div class="hero-container">
-    <div class="ambient-glow blue"></div>
+    <div class="ambient-glow white"></div>
     <div class="ambient-glow purple"></div>
 
     <div class="hero-inner">
@@ -45,13 +46,13 @@
               </div>
             </div>
 
-            <div class="carousel-wrapper">
-              <div class="carousel-track animate-marquee">
-                
+            <div class="double-carousel">
+              
+              <div class="carousel-track animate-marquee-left">
                 <div class="carousel-set">
                   <div 
                     v-for="(movie, idx) in previewMovies" 
-                    :key="`org-${movie.id}`" 
+                    :key="`org-l-${movie.id}`" 
                     @click.stop="onMovieClick(movie.id)"
                     class="carousel-item group/poster"
                   >
@@ -63,11 +64,10 @@
                     <p class="poster-year">{{ movie.year }}</p>
                   </div>
                 </div>
-
                 <div class="carousel-set" aria-hidden="true">
                   <div 
                     v-for="(movie, idx) in previewMovies" 
-                    :key="`clone-${movie.id}`" 
+                    :key="`clone-l-${movie.id}`" 
                     @click.stop="onMovieClick(movie.id)"
                     class="carousel-item group/poster"
                   >
@@ -79,8 +79,41 @@
                     <p class="poster-year">{{ movie.year }}</p>
                   </div>
                 </div>
-
               </div>
+
+              <div class="carousel-track animate-marquee-left mt-6">
+                <div class="carousel-set">
+                  <div 
+                    v-for="(movie, idx) in reversePreviewMovies" 
+                    :key="`org-r-${movie.id}`" 
+                    @click.stop="onMovieClick(movie.id)"
+                    class="carousel-item group/poster"
+                  >
+                    <div class="poster-box">
+                      <div class="poster-overlay"></div>
+                      <img :src="movie.poster_path" :alt="movie.title" />
+                    </div>
+                    <p class="poster-title">{{ movie.title }}</p>
+                    <p class="poster-year">{{ movie.year }}</p>
+                  </div>
+                </div>
+                <div class="carousel-set" aria-hidden="true">
+                  <div 
+                    v-for="(movie, idx) in reversePreviewMovies" 
+                    :key="`clone-r-${movie.id}`" 
+                    @click.stop="onMovieClick(movie.id)"
+                    class="carousel-item group/poster"
+                  >
+                    <div class="poster-box">
+                      <div class="poster-overlay"></div>
+                      <img :src="movie.poster_path" :alt="movie.title" />
+                    </div>
+                    <p class="poster-title">{{ movie.title }}</p>
+                    <p class="poster-year">{{ movie.year }}</p>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
@@ -114,7 +147,7 @@
               <div class="curation-text-box">
                 <div class="badge-pill purple">CURATION</div>
                 <h2 class="card-title-sm">
-                  인증회원들의<br />
+                  내 친구들의<br />
                   <span class="text-purple">인생 영화</span>
                 </h2>
               </div>
@@ -138,7 +171,7 @@
                 <div class="chat-bubble">
                   <div class="chat-header">
                     <span class="tag-hot">HOT</span>
-                    <span class="chat-title">"대홍수 - 과연 명작인가?"</span>
+                    <span class="chat-title">"라라랜드 - 과연 명작인가?"</span>
                   </div>
                   <div class="chat-lines">
                     <div class="line long"></div>
@@ -269,6 +302,11 @@ const previewMovies = computed(() => {
   return movies.value.slice(0, 25); 
 });
 
+// 🔥 Reverse order for second carousel
+const reversePreviewMovies = computed(() => {
+  return [...previewMovies.value].reverse();
+});
+
 const onMovieClick = (movieId: number) => {
   router.push({ 
     name: 'MovieDetail', 
@@ -287,7 +325,6 @@ const goToUserProfile = (userId: number) => {
     params: { userId: userId.toString() },
   });
 };
-
 </script>
 
 <style scoped>
@@ -299,6 +336,8 @@ const goToUserProfile = (userId: number) => {
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   position: relative;
   overflow: hidden;
+  /* 👇 네비게이션 바와 겹치지 않도록 상단 여백 추가 */
+  padding-top: 5rem; 
   padding-bottom: 4rem;
 }
 
@@ -313,10 +352,10 @@ const goToUserProfile = (userId: number) => {
   pointer-events: none;
 }
 
-.ambient-glow.blue {
+.ambient-glow.white {
   top: -10%;
   left: -10%;
-  background: rgba(37, 99, 235, 0.15);
+  background: rgba(30, 18, 80, 0.557);
 }
 
 .ambient-glow.purple {
@@ -330,7 +369,7 @@ const goToUserProfile = (userId: number) => {
   z-index: 10;
   max-width: 1400px;
   margin: 0 auto;
-  padding: 6rem 3rem 0;
+  padding: 2rem 3rem 0;
 }
 
 /* Header */
@@ -347,7 +386,8 @@ const goToUserProfile = (userId: number) => {
 }
 
 .gradient-text {
-  background: linear-gradient(to right, #60a5fa, #c084fc, #f472b6);
+  /* 연한 블루 -> 보라 */
+  background: linear-gradient(to right, #93c5fd 0%, #8b5cf6 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -409,11 +449,17 @@ const goToUserProfile = (userId: number) => {
   flex-direction: column;
 }
 
+.card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .card-header-row {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
 }
 
 .badge-pill {
@@ -509,7 +555,17 @@ const goToUserProfile = (userId: number) => {
   transform: translateX(4px);
 }
 
-/* Carousel */
+/* Double Carousel */
+.double-carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  margin-top: 1rem;
+}
+
 .carousel-wrapper {
   position: relative;
   width: 100%;
@@ -529,9 +585,10 @@ const goToUserProfile = (userId: number) => {
 }
 
 .carousel-item {
-  width: 180px;
+  width: 140px;
   flex-shrink: 0;
   transition: transform 0.3s ease;
+  cursor: pointer;
 }
 
 .carousel-item:hover {
@@ -540,11 +597,11 @@ const goToUserProfile = (userId: number) => {
 
 .poster-box {
   aspect-ratio: 2/3;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .poster-box img {
@@ -565,9 +622,9 @@ const goToUserProfile = (userId: number) => {
 }
 
 .poster-title {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.8);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -580,22 +637,33 @@ const goToUserProfile = (userId: number) => {
 }
 
 .poster-year {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.4);
   margin: 0;
 }
 
-@keyframes marquee {
+/* Marquee Animation */
+@keyframes marquee-left {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); } /* Halfway for seamless loop */
+  100% { transform: translateX(-50%); }
 }
 
 .animate-marquee {
   animation: marquee 60s linear infinite;
 }
 
-.carousel-wrapper:hover .animate-marquee {
+.animate-marquee-left {
+  animation: marquee-left 60s linear infinite;
+}
+
+.upcoming-card:hover .animate-marquee,
+.upcoming-card:hover .animate-marquee-left {
   animation-play-state: paused;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
 }
 
 
@@ -628,13 +696,6 @@ const goToUserProfile = (userId: number) => {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
-}
-
-.mini-movie-card:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.35);
 }
 
 .mini-poster {
@@ -811,7 +872,7 @@ const goToUserProfile = (userId: number) => {
 
 @media (max-width: 768px) {
   .hero-inner {
-    padding: 6rem 1.5rem 0;
+    padding: 2rem 1.5rem 0;
   }
   
   .card-header-row {
@@ -833,3 +894,6 @@ const goToUserProfile = (userId: number) => {
   }
 }
 </style>
+```
+
+밑에 줄도 같은 방향(왼쪽으로)으로 가도록 `animate-marquee-right`를 `animate-marquee-left`로 변경했습니다!
