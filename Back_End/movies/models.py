@@ -41,7 +41,7 @@ class Movie(models.Model):
     runtime = models.IntegerField(null=True, blank=True)
 
     tmdb_rating = models.FloatField(null=True, blank=True)
-
+    
     genres = models.ManyToManyField(Genre)
 
         # ✅ 추가

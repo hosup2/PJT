@@ -2,14 +2,48 @@
 
 from movies.models import Movie
 from .genre_parser import extract_genres_from_text
+import re
+
+STOP_WORDS = [
+    "영화", "추천", "느낌", "같은", "비슷한", "유사한",
+    "처럼", "의", "랑", "과", "와"
+]
+
+SIMILAR_TRIGGERS = ["같은", "비슷한", "유사한", "느낌"]
 
 def extract_seed_title(text: str) -> str | None:
-    for k in ["같은", "비슷한", "처럼", "느낌", "유사한"]:
+    if not text:
+        return None
+
+    # 트리거 키워드가 없으면 SIMILAR 아님
+    if not any(k in text for k in SIMILAR_TRIGGERS):
+        return None
+
+    # 트리거 앞부분 우선 사용
+    for k in SIMILAR_TRIGGERS:
         if k in text:
-            left = text.split(k, 1)[0]
-            left = left.replace("영화", "").replace("추천", "").strip()
-            return left if left else None
-    return None
+            candidate = text.split(k, 1)[0]
+            break
+    else:
+        return None
+
+    # 불필요 단어 제거
+    for w in STOP_WORDS:
+        candidate = candidate.replace(w, "")
+
+    candidate = candidate.strip()
+
+    # 너무 짧으면 seed 아님
+    if len(candidate) < 2:
+        return None
+
+    # 장르 단어면 seed 취급 안 함
+    from .genre_parser import extract_genres_from_text
+    if extract_genres_from_text(candidate):
+        return None
+
+    return candidate
+
 
 
 def get_candidate_movies(user, query, limit=50):
