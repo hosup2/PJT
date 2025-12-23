@@ -275,7 +275,7 @@
       :is-open="showEditModal"
       :user="user"
       @close="showEditModal = false"
-      @save="handleSaveProfile"
+      @save="handleProfileEdit"
     />
 
     <FollowListModal
@@ -459,8 +459,6 @@ watch(() => props.userId, () => {
 });
 
 const handleSaveProfile = (username: string, profileImage: string) => {
-  // 1️⃣ App.vue에 저장 요청
-  emit('updateProfile', username, profileImage);
 
   // 2️⃣ 🔥 현재 페이지 즉시 반영
   if (user.value) {
@@ -533,6 +531,37 @@ const formatDate = (dateString: string) => {
 const getReviewContent = (comment: UserComment): string => {
   return comment.comment || comment.review_content || '';
 };
+
+const handleProfileEdit = async (username: string, profileImage: string) => {
+  try {
+    const payload = {
+      username,
+      profile_image: profileImage && profileImage.trim()
+        ? profileImage
+        : '/mia5.png',
+    };
+
+    const { data } = await axios.patch(
+      'http://127.0.0.1:8000/users/me/update/',
+      payload
+    );
+
+    // 🔥 DB 응답 기준으로 화면 갱신
+    if (user.value) {
+      user.value.username = data.username;
+      user.value.profile_image = data.profile_image || '/mia5.png';
+    }
+
+    alert('프로필이 업데이트되었습니다!');
+  } catch (error) {
+    console.error('Profile update failed', error);
+    alert('프로필 업데이트에 실패했습니다.');
+  } finally {
+    showEditModal.value = false;
+  }
+};
+
+
 </script>
 
 <style scoped>

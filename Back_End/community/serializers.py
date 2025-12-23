@@ -6,10 +6,11 @@ User = get_user_model()
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
-    """사용자 기본 정보"""
+    profile_image = serializers.CharField(source="userprofile.profile_image", read_only=True)
+
     class Meta:
         model = User
-        fields = ('id', 'username')
+        fields = ("id", "username", "profile_image")
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -18,7 +19,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comment
-        fields = ('id', 'post', 'author', 'content', 'created_at', 'updated_at')
+        fields = ('id', 'post', 'author', 'content', 'created_at', 'updated_at',)
         read_only_fields = ('post', 'author')
 
 

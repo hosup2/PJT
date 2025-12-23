@@ -45,9 +45,10 @@
 
           <div class="author-bar">
             <div class="author-section-minimal">
-              <div class="avatar-minimal">
-                {{ post.author.username[0].toUpperCase() }}
-              </div>
+              <img
+                :src="post.author.profile_image || '/mia5.png'"
+                class="avatar-image"
+              />
               <div class="author-text">
                 <strong>{{ post.author.username }}</strong>
                 <div class="meta-text">
@@ -86,9 +87,10 @@
 
         <!-- Comment Form -->
         <div v-if="isLoggedIn" class="comment-form-minimal">
-          <div class="form-avatar-small">
-            {{ currentUser?.username[0].toUpperCase() }}
-          </div>
+          <img
+            :src="currentUser?.profile_image || '/mia5.png'"
+            class="comment-avatar-image"
+          />
           <div class="form-textarea-wrapper">
             <textarea
               v-model="newComment"
@@ -120,9 +122,11 @@
             :key="comment.id"
             class="comment-item-minimal"
           >
-            <div class="comment-avatar-small">
-              {{ comment.author.username[0].toUpperCase() }}
-            </div>
+            <img
+              :src="comment.author.profile_image || '/mia5.png'"
+              class="comment-avatar-image"
+            />
+
             <div class="comment-content">
               <div class="comment-header-minimal">
                 <strong>{{ comment.author.username }}</strong>
@@ -162,6 +166,7 @@ import type { Ref } from 'vue';
 interface Author {
   id: number;
   username: string;
+  profile_image?: string;
 }
 
 interface Comment {
@@ -777,5 +782,18 @@ const formatRelativeTime = (dateString: string) => {
     flex-direction: column;
     text-align: center;
   }
+}
+.avatar-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-avatar-image {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  object-fit: cover;
 }
 </style>
