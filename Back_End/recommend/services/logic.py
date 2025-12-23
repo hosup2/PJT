@@ -15,6 +15,7 @@ from .candidate import (
     get_candidates_by_seed
 )
 from .scoring import score_movie, score_movie_seeded, get_user_feedback_map
+from .semantic import semantic_topk
 
 SUMMARY_TRIGGER_COUNT = 8
 RECENT_MESSAGE_COUNT = 4
@@ -104,40 +105,43 @@ def run_chatbot(message: str, session):
         }
 
     if intent == "PREFERENCE":
-        candidates = get_candidate_movies(session.user, message, limit=None)
+        candidates_qs = get_candidate_movies(session.user, message, limit=None)
 
-        # 🔥 이전 추천 제외
         if wants_exclude_previous(message):
-            candidates = exclude_previous(session, candidates)
+            candidates_qs = exclude_previous(session, candidates_qs)
 
-        candidates = candidates[:300]
-
-        feedback_map = get_user_feedback_map(session.user)
-
-        context = {
-            "genres": extract_genres_from_text(message),
-            "query": message,
-            "feedback_map": feedback_map,   # ⭐ 이 줄
-            "context_user": session.user,
-        }
-
-        scored = [{"movie": m, "score": score_movie(m, context)} for m in candidates]
-        scored.sort(key=lambda x: x["score"], reverse=True)
-        top_movies = scored[:5]
-
-        if not top_movies:
+        candidates = list(candidates_qs[:300])  # 일단 300개까지
+        if not candidates:
             fallback = Movie.objects.order_by("-tmdb_rating")[:5]
-            save_recommend_history(session, list(fallback))  # 🔥 fallback도 저장
+            save_recommend_history(session, list(fallback))
             return {
                 "answer": "조건에 맞는 영화가 없어서 인기작으로 추천할게요 🎬",
                 "movies": [{"movie_id": m.id, "title": m.title, "reason": "인기/평점 기반"} for m in fallback],
             }
 
-        # 🔥 여기서 저장
-        save_recommend_history(
-            session,
-            [item["movie"] for item in top_movies]
-        )
+        # ✅ 1) 의미 기반으로 후보 300개 중 topK를 먼저 뽑아 “유사한 것만 남김”
+        candidate_ids = [m.id for m in candidates]
+        top_ids = semantic_topk(message, top_k=60, candidate_ids=candidate_ids)  # 60개로 압축
+        top_id_set = set(top_ids) if top_ids else set(candidate_ids)
+
+        filtered = [m for m in candidates if m.id in top_id_set]
+        if not filtered:
+            filtered = candidates  # 안전장치
+
+        # ✅ 2) 그 다음 기존 score_movie로 최종 정렬 (너의 로직 살림)
+        feedback_map = get_user_feedback_map(session.user)
+        context = {
+            "genres": extract_genres_from_text(message),
+            "query": message,
+            "feedback_map": feedback_map,
+            "context_user": session.user,
+        }
+
+        scored = [{"movie": m, "score": score_movie(m, context)} for m in filtered]
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        top_movies = scored[:5]
+
+        save_recommend_history(session, [item["movie"] for item in top_movies])
 
         return {
             "answer": "이런 영화들이 잘 어울릴 것 같아요 🎬",
@@ -150,6 +154,7 @@ def run_chatbot(message: str, session):
                 for item in top_movies
             ],
         }
+
 
 
     # 4) CHITCHAT (일반 대화)

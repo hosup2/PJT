@@ -1,46 +1,54 @@
 # services/scoring.py
 from django.db.models import Avg
 
+
 def score_movie(movie, context):
-    score = (movie.tmdb_rating or 0) * 10
+    score = 0.0
 
-    # # 👍 좋아요 수
-    # like_count = movie.favorited_by.count()
-    # score += like_count * 1.5
-
-    # 💬 리뷰 수
-    review_count = movie.ratings.count()
-    score += review_count * 2
-
-    # ⭐ 우리 서비스 평균 평점
-    avg_rating = movie.ratings.aggregate(
-        Avg("rating")
-    )["rating__avg"]
-
-    if avg_rating:
-        score += avg_rating * 3
-
-    # 🎯 장르 매칭
+    # 1️⃣ 장르 매칭 (기본)
     genres = context.get("genres", [])
     if genres:
         matched = movie.genres.filter(name__in=genres).count()
-        score += matched * 4
+        score += matched * 6
+
+    
+    # 3️⃣ 우리 서비스 평점
+    avg_rating = movie.ratings.aggregate(
+        Avg("rating")
+    )["rating__avg"]
+    if avg_rating:
+        score += avg_rating * 4
+
+    # 4️⃣ 리뷰 수 (신뢰도)
+    review_count = movie.ratings.count()
+    score += min(review_count, 10) * 1.5
+
+    # 5️⃣ tmdb_rating (보조)
+    if movie.tmdb_rating:
+        score += min(movie.tmdb_rating, 8.5) * 1.2
+
+    # 6️⃣ 유저 피드백 확장 (핵심)
+    score += feedback_adjustment(movie, context)
 
     return score
 
 
-def score_movie_seeded(movie, seed):
-    score = (movie.tmdb_rating or 0) * 10
+def score_movie_seeded(movie, seed, context):
+    score = 0.0
 
     overlap = movie.genres.filter(
         id__in=seed.genres.values_list("id", flat=True)
     ).count()
-    score += overlap * 5
+    score += overlap * 7
 
-    # seed와 연도 가까우면 가산
     if movie.release_date and seed.release_date:
         diff = abs(movie.release_date.year - seed.release_date.year)
-        score += max(0, 5 - diff)
+        score += max(0, 6 - diff)
+
+    score += feedback_adjustment(movie, context)
+
+    if movie.tmdb_rating:
+        score += min(movie.tmdb_rating, 8.5)
 
     return score
 

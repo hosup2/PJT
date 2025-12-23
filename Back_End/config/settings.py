@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'movies',
     'users',
-    'recommend',
+    "recommend.apps.RecommendConfig",
     'community',
     'django.contrib.admin',
     'django.contrib.auth',
