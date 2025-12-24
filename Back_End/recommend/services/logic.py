@@ -6,7 +6,7 @@ from .ai_client import AIClient
 from .summary import summarize_messages
 from .genre_parser import extract_genres_from_text
 from movies.models import Movie
-
+from django.utils import timezone
 from .intent import route_intent, wants_exclude_previous
 from .candidate import (
     get_candidate_movies,
@@ -14,7 +14,7 @@ from .candidate import (
     find_seed_movie,
     get_candidates_by_seed
 )
-from .scoring import score_movie, score_movie_seeded, get_user_feedback_map
+from .scoring import score_movie, score_movie_seeded, get_user_feedback_map, get_user_genre_preference_map
 from .semantic import semantic_topk
 
 SUMMARY_TRIGGER_COUNT = 8
@@ -97,11 +97,72 @@ def run_chatbot(message: str, session):
     if intent == "UPCOMING":
         from django.utils.timezone import now
         today = now().date()
-        qs = Movie.objects.filter(release_date__gte=today).order_by("release_date")[:30]
-        top = sorted(qs, key=lambda m: (m.tmdb_rating or 0), reverse=True)[:5]
+
+        # ✅ 1. 개봉 예정 영화만 후보로
+        candidates_qs = Movie.objects.filter(
+            release_date__gte=today
+        )
+
+        if wants_exclude_previous(message):
+            candidates_qs = exclude_previous(session, candidates_qs)
+
+        candidates = list(candidates_qs[:300])
+        if not candidates:
+            return {
+                "answer": "아직 추천할 만한 개봉 예정 작품이 없어요 🥲",
+                "movies": [],
+            }
+
+        # ✅ 2. 의미 기반 TopK 압축
+        candidate_ids = [m.id for m in candidates]
+        top_ids = semantic_topk(
+            message,
+            top_k=60,
+            candidate_ids=candidate_ids
+        )
+        semantic_scores = {
+            mid: (60 - rank) / 60  # 0~1 점수
+            for rank, mid in enumerate(top_ids)
+        }
+
+
+        filtered = [m for m in candidates if m.id in set(top_ids)] if top_ids else candidates
+
+        # ✅ 3. UPCOMING 전용 점수 계산 (개인화)
+        genre_pref_map = get_user_genre_preference_map(session.user)
+
+
+        context = {
+            "genres": extract_genres_from_text(message),
+            "query": message,
+            "semantic_scores": semantic_scores,
+            "genre_pref_map": genre_pref_map,
+        }
+
+
+        scored = [
+            {
+                "movie": m,
+                "score": score_upcoming_movie(m, context)
+            }
+            for m in filtered
+        ]
+
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        top_movies = scored[:2]
+
+        save_recommend_history(session, [item["movie"] for item in top_movies])
+
         return {
-            "answer": "곧 개봉하는 작품 중에서 평점/기대치가 좋은 걸로 골라봤어요 🎟️",
-            "movies": [{"movie_id": m.id, "title": m.title, "reason": f"개봉일 {m.release_date}"} for m in top],
+            "answer": "말씀해주신 취향을 바탕으로 개봉 예정 작품을 골라봤어요 🎟️",
+            "movies": [
+                {
+                    "movie_id": item["movie"].id,
+                    "title": item["movie"].title,
+                    "reason": f"기대 점수 {item['score']:.1f}",
+                }
+                for item in top_movies
+            ],
         }
 
     if intent == "PREFERENCE":
@@ -267,4 +328,35 @@ def exclude_previous(session, queryset):
     if ids:
         return queryset.exclude(id__in=ids)
     return queryset
+
+def score_upcoming_movie(movie, context):
+    score = 0.0
+
+    # 1️⃣ 장르 점수
+    user_genres = context.get("genres", [])
+    if user_genres:
+        movie_genres = {g.name for g in movie.genres.all()}
+        matched = len(set(user_genres) & movie_genres)
+        score += (matched / len(user_genres)) * 40
+
+    # 2️⃣ 의미 점수 (semantic_topk 기반)
+    semantic_scores = context.get("semantic_scores", {})
+    score += semantic_scores.get(movie.id, 0) * 35
+
+    # 3️⃣ 사용자 취향 보정
+    genre_pref_map = context.get("genre_pref_map", {})
+
+    for g in movie.genres.all():
+        score += genre_pref_map.get(g.id, 0) * 15
+
+
+    # 4️⃣ 개봉일 보정
+    if movie.release_date:
+        days = (movie.release_date - timezone.now().date()).days
+        if days < 30:
+            score += 10
+        elif days < 90:
+            score += 5
+
+    return score
 

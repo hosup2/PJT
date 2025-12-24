@@ -5,10 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 import threading
+import numpy as np
 
-import numpy as np
-import numpy as np
-# from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer
 import pickle
 from pathlib import Path
 
@@ -27,8 +26,7 @@ _loaded_count: int = 0
 def _get_model():
     global _model
     if _model is None:
-        # _model = SentenceTransformer(MODEL_NAME)
-        pass
+        _model = SentenceTransformer(MODEL_NAME)
     return _model
 
 

@@ -101,3 +101,25 @@ def feedback_adjustment(movie, context):
             score -= sim * 3.5      # 👎 유사할수록 감점
 
     return score
+
+def get_user_genre_preference_map(user):
+    """
+    genre_id -> preference score (float)
+    """
+    prefs = {}
+
+    feedbacks = (
+        MovieFeedback.objects
+        .filter(user=user)
+        .select_related("movie")
+        .prefetch_related("movie__genres")
+    )
+
+    for fb in feedbacks:
+        for g in fb.movie.genres.all():
+            if fb.feedback == "like":
+                prefs[g.id] = prefs.get(g.id, 0) + 1.0
+            elif fb.feedback == "dislike":
+                prefs[g.id] = prefs.get(g.id, 0) - 1.5
+
+    return prefs
