@@ -857,9 +857,9 @@ const handleProfileEdit = async (username: string, profileImage: string) => {
 }
 
 .sub-filter-btn {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.5);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.7);
   padding: 0.375rem 1rem;
   border-radius: 4px;
   font-size: 0.8125rem;
@@ -868,7 +868,7 @@ const handleProfileEdit = async (username: string, profileImage: string) => {
 }
 
 .sub-filter-btn.active {
-  background: #8b5cf6;
+  background: #271a44;
   border-color: #8b5cf6;
   color: white;
 }

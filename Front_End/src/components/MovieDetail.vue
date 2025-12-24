@@ -607,8 +607,10 @@ const openPersonDetail = (person: Cast['actor']) => {
 }
 
 .btn-back-minimal:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2); /* 은은한 보라색 빛 */
 }
 
 .hero-content {

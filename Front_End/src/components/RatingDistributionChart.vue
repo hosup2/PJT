@@ -1,31 +1,33 @@
 <template>
-  <div class="bg-gray-900 rounded-lg p-6">
-    <h2 class="text-xl mb-6">
-      평점 분포 <span class="text-gray-400">({{ totalCount.toLocaleString() }}명)</span>
+  <!-- 🔥 아웃라인만 있는 와이어프레임 스타일 -->
+  <div class="chart-wrapper">
+    <h2 class="chart-title">
+      평점 분포 <span class="count-text">({{ totalCount.toLocaleString() }}명)</span>
     </h2>
     
-    <div class="space-y-3">
+    <div class="ratings-container">
       <div 
         v-for="rating in ratings" 
         :key="rating.value"
-        class="flex items-center gap-4"
+        class="rating-row"
       >
-        <span class="text-yellow-400 w-24 text-sm">
+        <span class="star-label">
           {{ rating.label }}
         </span>
         
-        <div class="flex-1 bg-gray-800 rounded-full h-6 overflow-hidden">
+        <!-- 🔥 와이어프레임 프로그레스 바 -->
+        <div class="progress-container">
           <div
-            class="bg-gradient-to-r from-yellow-500 to-yellow-400 h-full rounded-full transition-all duration-500"
+            class="progress-fill"
             :style="{ width: `${getPercentage(rating.count)}%` }"
           />
         </div>
         
-        <span class="text-gray-400 w-16 text-right text-sm">
+        <span class="count-text">
           {{ rating.count.toLocaleString() }}
         </span>
         
-        <span class="text-gray-500 w-12 text-right text-sm">
+        <span class="percent-text">
           {{ getPercentage(rating.count).toFixed(0) }}%
         </span>
       </div>
@@ -56,3 +58,92 @@ const getPercentage = (count: number) => {
   return props.totalCount > 0 ? (count / props.totalCount) * 100 : 0;
 };
 </script>
+
+<style scoped>
+/* 🔥 와이어프레임 컨테이너 */
+.chart-wrapper {
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.12);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: border-color 0.3s ease;
+}
+
+.chart-wrapper:hover {
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+/* 제목 */
+.chart-title {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: white;
+  font-weight: 600;
+}
+
+/* 평점 컨테이너 */
+.ratings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 평점 행 */
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* 별 라벨 */
+.star-label {
+  color: #fbbf24;
+  width: 6rem;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* 🔥 와이어프레임 프로그레스 바 컨테이너 */
+.progress-container {
+  flex: 1;
+  height: 1.5rem;
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.12);
+  border-radius: 100px;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 🔥 프로그레스 바 채우기 */
+.progress-fill {
+  height: 100%;
+    /* 원래의 노란색 그라데이션 복구 */
+    background: linear-gradient(
+      90deg,
+      rgba(251, 191, 36, 1) 0%,    /* 시작: 진한 금색 */
+      rgba(255, 249, 63, 1) 100%   /* 끝: 밝은 노란색 */
+    );
+    border-radius: 100px;
+    transition: width 0.5s ease;
+    /* 노란색 빛 번짐 효과 */
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+/* 개수 텍스트 */
+.count-text {
+  color: rgba(255, 255, 255, 0.4);
+  width: 4rem;
+  text-align: right;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* 퍼센트 텍스트 */
+.percent-text {
+  color: rgba(255, 255, 255, 0.3);
+  width: 3rem;
+  text-align: right;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+</style>

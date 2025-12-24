@@ -503,9 +503,11 @@ const goBack = () => router.back();
 }
 
 .btn-back-minimal:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-color: rgba(255, 255, 255, 0.3);
+ /* 배경이 살짝 밝아지며 보라색 기운이 돔 */
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2); /* 은은한 보라색 빛 */
 }
 
 /* 타이틀과 겹치지 않게 여백 추가 */
@@ -565,7 +567,8 @@ const goBack = () => router.back();
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: #8b5cf6;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.3);
   border-radius: 4px;
   font-size: 0.875rem;
   font-weight: 600;
@@ -574,7 +577,11 @@ const goBack = () => router.back();
 }
 
 .btn-write-minimal:hover {
-  background: #7c3aed;
+  
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2); /* 은은한 보라색 빛 */
 }
 
 /* ================= BOARD VIEW (Compact) ================= */

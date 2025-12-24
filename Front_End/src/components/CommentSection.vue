@@ -1,8 +1,7 @@
 <template>
   <div>
-    <!-- Comment Input -->
-    <div v-if="isLoggedIn" class="bg-gray-900 rounded-lg p-6 mb-6">
-      <h3 class="text-lg mb-4">{{ editingCommentId ? '리뷰 수정' : '리뷰 작성' }}</h3>
+    <div v-if="isLoggedIn" class="comment-input-box">
+      <h3 class="text-lg font-semibold text-white mb-4">{{ editingCommentId ? '리뷰 수정' : '리뷰 작성' }}</h3>
       
       <form @submit.prevent="handleSubmitComment">
         <div class="mb-4">
@@ -11,79 +10,77 @@
         <textarea
           v-model="newComment"
           placeholder="이 영화에 대한 리뷰를 작성해주세요..."
-          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 resize-none focus:outline-none focus:border-purple-500 transition-colors mb-3"
+          class="custom-textarea"
           rows="4"
           required
         />
         
-        <div class="flex items-center justify-between">
-          <label class="flex items-center gap-2 text-sm text-gray-400 cursor-pointer">
+        <div class="form-footer">
+          <label class="spoiler-checkbox">
             <input
               v-model="includeSpoiler"
               type="checkbox"
-              class="w-4 h-4 rounded border-gray-700 bg-gray-800 text-purple-600 focus:ring-purple-500"
             />
-            <span>스포일러 포함</span>
+            <span class="checkbox-label">스포일러 포함</span>
           </label>
           
-          <div class="flex gap-2">
+          <div class="btn-group">
             <button
               v-if="editingCommentId"
               @click="cancelEdit"
               type="button"
-              class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              class="btn-cancel"
             >
               취소
             </button>
             <button
               type="submit"
               :disabled="!newComment.trim() || currentRating === 0"
-              class="px-6 py-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed rounded-lg transition-colors"
+              class="btn-submit"
             >
               {{ editingCommentId ? '수정' : '등록' }}
-            </button>
+            </button>   
           </div>
         </div>
       </form>
     </div>
 
-    <!-- Login Prompt -->
-    <div v-else class="bg-gray-900 rounded-lg p-6 mb-6 text-center">
+    <div v-else class="comment-input-box text-center">
       <p class="text-gray-400 mb-4">리뷰를 작성하려면 로그인이 필요합니다</p>
       <button
         @click="emit('openAuth')"
-        class="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+        class="btn-submit"
       >
         로그인
       </button>
     </div>
 
-    <!-- Comments List -->
-    <div class="space-y-4">
+    <!-- 🔥 개별 댓글 - 와이어프레임 스타일로 변경 -->
+    <div class="comments-list">
       <div
         v-for="comment in comments"
         :key="comment.id"
-        class="bg-gray-900 rounded-lg p-6 hover:bg-gray-850 transition-colors"
+        class="comment-card"
       >
-        <div class="flex items-start gap-4">
+        <div class="comment-inner">
           <button
             @click="emit('navigateToUser', comment.user_id)"
-            class="flex-shrink-0"
+            class="profile-btn"
           >
             <img
               :src="getProfileImage(comment.profile_image)"
               :alt="comment.username"
-              class="w-12 h-12 rounded-full bg-gray-800 object-cover hover:ring-2 hover:ring-purple-500 transition-all"
+              class="profile-image"
               @error="handleImageError"
             />
           </button>
           
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-2">
-              <div class="flex items-center gap-3">
+          <div class="comment-content">
+            <div class="comment-header">
+              <div class="user-info">
                 <button
                   @click="emit('navigateToUser', comment.user_id)"
-                  class="font-medium hover:text-purple-400 transition-colors"
+                  class="username"
                 >
                   {{ comment.username }}
                 </button>
@@ -95,57 +92,56 @@
                 />
               </div>
               
-              <span class="text-sm text-gray-500">
+              <span class="comment-date">
                 {{ formatDate(comment.created_at) }}
               </span>
             </div>
 
-            <div v-if="comment.comment">
+            <div v-if="comment.comment" class="comment-body">
               <button
                 v-if="comment.spoiler && !showSpoilers.has(comment.id)"
                 @click="toggleSpoiler(comment.id)"
-                class="flex items-center gap-2 text-orange-400 hover:text-orange-300 transition-colors"
+                class="spoiler-warning"
               >
                 <AlertCircle class="w-4 h-4" />
                 <span class="text-sm">스포일러가 포함되어 있습니다 (클릭하여 보기)</span>
               </button>
               
               <div v-else>
-                <div v-if="comment.spoiler" class="flex items-center gap-2 text-orange-400 text-sm mb-2">
+                <div v-if="comment.spoiler" class="spoiler-badge">
                   <AlertCircle class="w-4 h-4" />
                   <span>스포일러 포함</span>
                 </div>
-                <p class="text-gray-300 leading-relaxed">
+                <p class="comment-text">
                   {{ comment.comment }}
                 </p>
               </div>
             </div>
 
-            <div class="flex items-center gap-4 mt-3">
+            <div class="comment-actions">
               <button
                 @click="handleLike(comment.id)"
                 :disabled="!isLoggedIn"
                 :class="[
-                  'flex items-center gap-2 transition-colors',
-                  comment.isLiked ? 'text-red-400' : 'text-gray-400',
-                  isLoggedIn ? 'hover:text-red-400 cursor-pointer' : 'cursor-not-allowed'
+                  'like-btn',
+                  comment.isLiked ? 'liked' : '',
+                  !isLoggedIn ? 'disabled' : ''
                 ]"
               >
                 <Heart :class="['w-4 h-4', comment.isLiked && 'fill-current']" />
                 <span class="text-sm">{{ comment.likesCount || 0 }}</span>
               </button>
               
-              <!-- 수정/삭제 버튼 (본인 댓글만) -->
-              <div v-if="isOwner(comment.user_id)" class="flex gap-3 ml-auto">
+              <div v-if="isOwner(comment.user_id)" class="edit-delete-btns">
                 <button
                   @click="startEdit(comment)"
-                  class="text-sm text-gray-400 hover:text-purple-400 transition-colors"
+                  class="edit-btn"
                 >
                   수정
                 </button>
                 <button
                   @click="handleDelete(comment.id)"
-                  class="text-sm text-gray-400 hover:text-red-400 transition-colors"
+                  class="delete-btn"
                 >
                   삭제
                 </button>
@@ -191,7 +187,7 @@ interface User {
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  submitComment: [content: string, spoiler: boolean];
+  submitComment: [content: string, rating: number, spoiler: boolean];
   editComment: [commentId: number, content: string, rating: number, spoiler: boolean];
   deleteComment: [commentId: number];
   likeComment: [commentId: number];
@@ -208,7 +204,6 @@ const showSpoilers = ref(new Set<number>());
 const currentRating = ref(props.rating);
 const editingCommentId = ref<number | null>(null);
 
-// rating prop 변경 감지
 watch(() => props.rating, (newVal) => {
   if (!editingCommentId.value) {
     currentRating.value = newVal;
@@ -258,11 +253,9 @@ const handleSubmitComment = () => {
   }
   
   if (editingCommentId.value) {
-    // 수정 모드
     emit('editComment', editingCommentId.value, newComment.value, currentRating.value, includeSpoiler.value);
   } else {
-    // 새 댓글
-    emit('submitComment', newComment.value, includeSpoiler.value);
+    emit('submitComment', newComment.value, currentRating.value, includeSpoiler.value);
   }
   
   newComment.value = '';
@@ -276,6 +269,7 @@ const startEdit = (comment: Comment) => {
   newComment.value = comment.comment;
   currentRating.value = comment.rating || 0;
   includeSpoiler.value = comment.spoiler || false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const cancelEdit = () => {
@@ -319,3 +313,323 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('ko-KR');
 };
 </script>
+
+<style scoped>
+/* ✅ Comment Input Box (Wireframe Style) */
+.comment-input-box {
+  background: transparent;
+  border: 3px solid rgba(139, 92, 246, 0.15);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.3s ease;
+}
+
+/* ✅ Custom Textarea */
+.custom-textarea {
+  width: 100%;
+  background: transparent;
+  border: 1px solid rgba(218, 201, 243, 0.15);
+  border-radius: 8px;
+  padding: 1rem;
+  color: white;
+  font-size: 0.95rem;
+  resize: none;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+}
+
+.custom-textarea:focus {
+  outline: none;
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.custom-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* ✅ Footer Area */
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ✅ Spoiler Checkbox */
+.spoiler-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.spoiler-checkbox input {
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.spoiler-checkbox input:checked {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.spoiler-checkbox input:checked::after {
+  content: '✔';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 0.7rem;
+}
+
+.checkbox-label {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ✅ Button Group */
+.btn-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* ✅ Cancel Button */
+.btn-cancel {
+  padding: 0.3rem 1rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* ✅ Submit Button */
+.btn-submit {
+  padding: 0.3rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+  letter-spacing: 0.02em;
+  transition: all 0.2s ease;
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-0.5px);
+  filter: brightness(1.1);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(139, 92, 246, 0.3);
+}
+
+.btn-submit:disabled {
+  background: rgba(55, 65, 81, 0.5);
+  color: #9ca3af;
+  border-color: rgba(55, 65, 81, 0.5);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* 🔥 개별 댓글 카드 - 와이어프레임 스타일 */
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.comment-card {
+  background: transparent;
+  border: 2px solid rgba(139, 92, 246, 0.12);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.comment-inner {
+  display: flex;
+  gap: 1rem;
+}
+
+/* 프로필 이미지 */
+.profile-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.profile-image {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  transition: all 0.2s ease;
+}
+
+.profile-image:hover {
+  border-color: rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+}
+
+/* 댓글 내용 */
+.comment-content {
+  flex: 1;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.username {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.username:hover {
+  color: #a78bfa;
+}
+
+.comment-date {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* 댓글 본문 */
+.comment-body {
+  margin-bottom: 0.75rem;
+}
+
+.spoiler-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #fb923c;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.spoiler-warning:hover {
+  color: #fdba74;
+}
+
+.spoiler-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fb923c;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.comment-text {
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+/* 댓글 액션 (좋아요, 수정, 삭제) */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.like-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.like-btn:hover:not(.disabled) {
+  color: #ef4444;
+}
+
+.like-btn.liked {
+  color: #ef4444;
+}
+
+.like-btn.disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 수정/삭제 버튼 */
+.edit-delete-btns {
+  display: flex;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+.edit-btn,
+.delete-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.edit-btn:hover {
+  color: #a78bfa;
+}
+
+.delete-btn:hover {
+  color: #ef4444;
+}
+</style>
