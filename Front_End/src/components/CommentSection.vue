@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="isLoggedIn" class="comment-input-box">
+    <div v-if="isLoggedIn" class="comment-input-box" ref="commentFormRef">
       <h3 class="text-lg font-semibold text-white mb-4">{{ editingCommentId ? '리뷰 수정' : '리뷰 작성' }}</h3>
       
       <form @submit.prevent="handleSubmitComment">
@@ -203,6 +203,7 @@ const includeSpoiler = ref(false);
 const showSpoilers = ref(new Set<number>());
 const currentRating = ref(props.rating);
 const editingCommentId = ref<number | null>(null);
+const commentFormRef = ref<HTMLElement | null>(null);
 
 watch(() => props.rating, (newVal) => {
   if (!editingCommentId.value) {
@@ -269,7 +270,10 @@ const startEdit = (comment: Comment) => {
   newComment.value = comment.comment;
   currentRating.value = comment.rating || 0;
   includeSpoiler.value = comment.spoiler || false;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  commentFormRef.value?.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
 };
 
 const cancelEdit = () => {
@@ -312,6 +316,7 @@ const formatDate = (dateString: string) => {
   if (diffInDays < 365) return `${Math.floor(diffInDays / 30)}개월 전`;
   return date.toLocaleDateString('ko-KR');
 };
+
 </script>
 
 <style scoped>
