@@ -80,7 +80,7 @@ class MovieRatingSerializer(serializers.ModelSerializer):
             "id",
             "user_id", "username", "profile_image",
             "movie_id","movie_title",
-            "rating", "comment",
+            "rating", "comment","spoiler",
             "created_at", "likesCount", "isLiked",
         )
 

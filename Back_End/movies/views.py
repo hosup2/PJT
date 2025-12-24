@@ -286,7 +286,8 @@ class MovieRatingView(APIView):
         
         rating_value = request.data.get("rating")
         comment_value = request.data.get("comment", "")
-        
+        spoiler_value = request.data.get("spoiler", False)
+
         if rating_value is None:
             return Response(
                 {"error": "Rating is required"},
@@ -299,6 +300,7 @@ class MovieRatingView(APIView):
             defaults={
                 'rating': rating_value,
                 'comment': comment_value,
+                'spoiler': spoiler_value,
             }
         )
 
@@ -321,7 +323,8 @@ class MovieRatingDetailView(APIView):
         
         rating_value = request.data.get('rating')
         comment_value = request.data.get('comment')
-        
+        spoiler_value = request.data.get("spoiler")
+
         # 별점이 제공되면 업데이트
         if rating_value is not None:
             rating.rating = rating_value
@@ -329,6 +332,9 @@ class MovieRatingDetailView(APIView):
         # 댓글이 제공되면 업데이트
         if comment_value is not None:
             rating.comment = comment_value
+            
+        if spoiler_value is not None:
+            rating.spoiler = spoiler_value
             
         rating.save()
         
