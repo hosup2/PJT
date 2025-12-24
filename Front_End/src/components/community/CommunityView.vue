@@ -468,7 +468,7 @@ const goBack = () => router.back();
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   background: rgba(10, 11, 15, 0.95);
   backdrop-filter: blur(20px);
-  position: sticky;
+  position: static;
   top: 4rem; /* 네비게이션바 아래 */
   z-index: 40;
 }

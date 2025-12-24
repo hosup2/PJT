@@ -338,24 +338,27 @@ const movieLikesCount = ref(0);
 
 const saveActivity = async (spoiler: boolean) => {
   if (!isLoggedIn.value) return;
+
   try {
     const payload = {
       rating: userRating.value || null,
       comment: commentText.value,
-      spoiler: spoiler // ⭐ 추가
+      spoiler: spoiler, // ⭐ 타입 강제
     };
-    await axios.post(`http://127.0.0.1:8000/movies/${props.id}/rating/`, payload);
+
+    await axios.post(
+      `http://127.0.0.1:8000/movies/${props.id}/rating/`,
+      payload
+    );
+
     alert('리뷰가 저장되었습니다.');
     await fetchMovieData();
-    commentText.value = '';
-    userRating.value = 0;
 
-    emit('activity-updated');
   } catch (err) {
-    console.error('Failed to save activity:', err);
-    alert('리뷰 저장에 실패했습니다.');
+    console.error(err);
   }
 };
+
 
 const handleRatingChange = (rating: number) => {
   if (!isLoggedIn.value) return emit('openAuth');
@@ -383,8 +386,9 @@ const handleLikeMovie = async () => {
   }
 };
 
-const handleSubmitComment = (content: string, spoiler: boolean) => {
+const handleSubmitComment = (content: string, rating: number, spoiler: boolean) => {
   commentText.value = content;
+  userRating.value = rating;
   saveActivity(spoiler);
 };
 
