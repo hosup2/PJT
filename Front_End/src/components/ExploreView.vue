@@ -34,8 +34,7 @@
                 </div>
                 <h2 class="card-title">공개 예정작</h2>
                 <p class="card-desc">
-                  {{ movieGroups.length > 0 ? movieGroups[0].date : '곧 공개될' }} 
-                  새로운 영화 <span class="highlight">{{ totalMovieCount }}편</span>을 만나보세요.
+                  새로운 영화를 만나보세요.
                 </p>
               </div>
               
